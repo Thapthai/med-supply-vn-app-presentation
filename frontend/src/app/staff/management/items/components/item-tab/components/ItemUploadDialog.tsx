@@ -20,9 +20,16 @@ interface ItemUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  /** scope แผนกของ staff — template จะมีเฉพาะ item ในขอบเขตเดียวกับหน้ารายการ */
+  allowedDepartmentIds?: number[];
 }
 
-export default function ItemUploadDialog({ open, onOpenChange, onSuccess }: ItemUploadDialogProps) {
+export default function ItemUploadDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+  allowedDepartmentIds,
+}: ItemUploadDialogProps) {
   const [downloading, setDownloading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -43,7 +50,7 @@ export default function ItemUploadDialog({ open, onOpenChange, onSuccess }: Item
   const handleDownload = async () => {
     try {
       setDownloading(true);
-      await staffItemsApi.downloadUploadTemplate();
+      await staffItemsApi.downloadUploadTemplate(allowedDepartmentIds);
       toast.success('ดาวน์โหลด template สำเร็จ');
     } catch (e) {
       console.error(e);
