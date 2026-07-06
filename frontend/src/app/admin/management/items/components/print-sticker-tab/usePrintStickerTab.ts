@@ -1,69 +1,27 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { ArrowLeft, Printer, Zap, LayoutList, RefreshCw } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { cabinetApi, cabinetDepartmentApi, departmentApi, itemsApi, itemStockApi, stickerPrintApi } from '@/lib/api';
 import type { Item } from '@/types/item';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import SearchableSelect from '@/app/admin/management/cabinet-departments/components/SearchableSelect';
-import { PrintStickerItemListCard } from './components/PrintStickerItemListCard';
-import { PrintStickerOrderCard } from './components/PrintStickerOrderCard';
 import {
   AUTO_FETCH_LIMIT,
   MAX_PRINT,
   MAX_TOTAL_LABELS,
   PAGE_SIZE,
-} from './constants';
-import type { SelectedLine } from './types';
-import { clampCopies } from './utils';
+} from '@/app/admin/management/print-sticker/constants';
+import type { SelectedLine } from '@/app/admin/management/print-sticker/types';
+import { clampCopies } from '@/app/admin/management/print-sticker/utils';
+import { mapCabinetFromMapping, manualRefillCap } from './helpers';
+import type {
+  CabinetDepartmentMapping,
+  CabinetOpt,
+  DepartmentOpt,
+  PreparedStockRow,
+  PrintMode,
+} from './types';
 
-type CabinetDepartmentMapping = {
-  id: number;
-  cabinet_id: number;
-  department_id: number;
-  status?: string;
-  cabinet?: {
-    id: number;
-    cabinet_name?: string;
-    cabinet_code?: string;
-    cabinet_status?: string;
-  };
-};
-
-function mapCabinetFromMapping(cabinet: CabinetDepartmentMapping['cabinet']) {
-  if (!cabinet || typeof cabinet.id !== 'number') return null;
-  return {
-    id: cabinet.id,
-    cabinet_name: cabinet.cabinet_name,
-    cabinet_code: cabinet.cabinet_code,
-    cabinet_status: cabinet.cabinet_status,
-  };
-}
-
-type DepartmentOpt = { ID: number; DepName?: string; DepName2?: string };
-type CabinetOpt = { id: number; cabinet_name?: string; cabinet_code?: string; cabinet_status?: string };
-
-function manualRefillCap(row: Item): number {
-  void row;
-  // Manual ไม่จำกัดเพดานต่อรายการจาก refill/max ของตู้
-  // จำกัดสูงสุดด้วยเพดานระบบต่อคำขอแทน (MAX_TOTAL_LABELS)
-  return MAX_TOTAL_LABELS;
-}
-
-type PrintStickerWorkspaceProps = {
-  variant?: 'admin' | 'staff';
-};
-
-export default function PrintStickerWorkspace({ variant = 'admin' }: PrintStickerWorkspaceProps) {
-  type PreparedStockRow = { RowID: number; ItemCode?: string | null; RfidCode?: string | null };
-
-  const [mode, setMode] = useState<'auto' | 'manual'>('manual');
+export function usePrintStickerTab() {
 
   const [departments, setDepartments] = useState<DepartmentOpt[]>([]);
   const [cabinets, setCabinets] = useState<CabinetOpt[]>([]);
@@ -90,6 +48,8 @@ export default function PrintStickerWorkspace({ variant = 'admin' }: PrintSticke
   const [preparedRows, setPreparedRows] = useState<PreparedStockRow[]>([]);
   const [selectedPreparedRowIds, setSelectedPreparedRowIds] = useState<number[]>([]);
   const [deletingPrepared, setDeletingPrepared] = useState(false);
+
+  const [mode, setMode] = useState<PrintMode>('manual');
 
   const displayItems = useMemo(() => {
     if (mode !== 'auto') return items;
@@ -712,256 +672,59 @@ export default function PrintStickerWorkspace({ variant = 'admin' }: PrintSticke
       ? 'โหลดรายการ Item'
       : 'โหลดรายการจากตู้';
 
-  return (
-    <div className="flex w-full flex-col gap-6">
-      {variant === 'staff' ? (
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" asChild className="shrink-0 -ml-2">
-            <Link href="/staff/management" aria-label="กลับการจัดการ">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-          </Button>
-          <div className="rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 p-2.5 shadow-lg">
-            <Printer className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">พิมพ์สติ๊กเกอร์</h1>
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 p-2.5 shadow-lg">
-            <Printer className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">พิมพ์สติ๊กเกอร์</h1>
-          </div>
-        </div>
-      )}
+  const orderEmptyHint =
+    mode === 'auto'
+      ? 'โหลดแล้วแต่ยังไม่มีรายการต้องเติม (หรือ Max=0)'
+      : 'ยังไม่มีรายการ — ติ๊กเวชภัณฑ์จากตารางในตู้';
 
-      <Card className="border-slate-200 shadow-sm">
-
-        <CardContent className="flex flex-col gap-6 pt-1">
-           
-            <div className="grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => setMode('auto')}
-                className={cn(
-                  'flex gap-3 rounded-xl border bg-background p-3.5 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  mode === 'auto'
-                    ? 'border-primary bg-primary/[0.06] shadow-sm ring-2 ring-primary/15'
-                    : 'border-slate-200 hover:bg-muted/40',
-                )}
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-800">
-                  <Zap className="h-4 w-4" aria-hidden />
-                </span>
-                <span className="min-w-0 space-y-0.5">
-                  <span className="block text-lg font-medium text-slate-900">Auto</span>
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode('manual')}
-                className={cn(
-                  'flex gap-3 rounded-xl border bg-background p-3.5 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  mode === 'manual'
-                    ? 'border-primary bg-primary/[0.06] shadow-sm ring-2 ring-primary/15'
-                    : 'border-slate-200 hover:bg-muted/40',
-                )}
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
-                  <LayoutList className="h-4 w-4" aria-hidden />
-                </span>
-                <span className="min-w-0 space-y-0.5">
-                  <span className="block text-lg font-medium text-slate-900">Manual</span>
-                </span>
-              </button>
-            </div>
-       
-
-          <div
-            className={cn(
-              'rounded-xl border px-4 py-4 transition-colors sm:px-5',
-              mode === 'auto' ? 'border-amber-200/90 bg-amber-50/40' : 'border-slate-200 bg-slate-50/60',
-            )}
-          >
-            <div className="mb-3 flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between">
-              <p className="text-sm font-semibold text-slate-900">
-                {mode === 'auto' ? 'ระบุ Division และตู้' : 'กรองตู้'}
-              </p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <SearchableSelect
-                label={
-                  mode === 'auto'
-                    ? 'Division'
-                    : 'Division'
-                }
-                placeholder={mode === 'manual' ? 'ไม่เลือก = โหลด Item ใช้งาน' : 'เลือก Division'}
-                value={departmentId}
-                required={mode === 'auto'}
-                allowClear={mode === 'manual'}
-                clearLabel="ไม่เลือก"
-                onValueChange={(v) => setDepartmentId(v)}
-                options={departmentSelectOptions}
-                loading={loadingDepartments}
-                onSearch={(kw) => void loadDepartments(kw)}
-              />
-              <SearchableSelect
-                label={
-                  mode === 'auto'
-                    ? 'ตู้'
-                    : 'ตู้'
-                }
-                placeholder={
-                  departmentId ? 'เลือกตู้' : mode === 'manual' ? 'เลือก Division' : 'เลือก Division ก่อน'
-                }
-                value={cabinetId}
-                required={mode === 'auto'}
-                disabled={!departmentId}
-                allowClear={mode === 'manual' && !!departmentId}
-                clearLabel="ไม่เลือก"
-                onValueChange={(v) => setCabinetId(v)}
-                options={cabOptions}
-                loading={loadingCabinets}
-                onSearch={(kw) =>
-                  departmentId ? void resolveCabinets(departmentId, kw) : undefined
-                }
-              />
-            </div>
-            {(mode === 'auto' || cabinetId) && (
-              <div className="mt-3 rounded-md bg-background/80 px-3 py-2 text-xs text-muted-foreground">
-                {cabinetStockId != null ? (
-                  <span>
-                    Stock ID ตู้:{' '}
-                    <span className="font-mono font-medium text-slate-800">{cabinetStockId}</span>
-                  </span>
-                ) : cabinetId ? (
-                  <span className="text-amber-800">
-                    กำลังโหลด Stock ID...
-                  </span>
-                ) : mode === 'auto' ? (
-                  <span>เลือกตู้เมื่อเลือก Division แล้ว</span>
-                ) : null}
-              </div>
-            )}
-            {manualFilterIncomplete && (
-              <p className="mt-2 text-xs font-medium text-amber-900">
-                เลือก Division อยู่ — เลือกตู้เพื่อโหลดรายการในตู้ หรือค้นหา Item ทั้งระบบได้โดยไม่ต้องเลือกตู้
-              </p>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200/70 pt-4">
-            <Button
-              type="button"
-              className="h-10 gap-2 shrink-0"
-              disabled={reloadDisabled}
-              onClick={() => void fetchCabinetItems()}
-            >
-              <RefreshCw className={cn('h-4 w-4', loadingList && 'animate-spin')} />
-              {reloadButtonLabel}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <PrintStickerItemListCard
-        items={displayItems}
-        loadingList={loadingList}
-        total={listTotal}
-        page={mode === 'auto' ? 1 : page}
-        totalPages={listTotalPages}
-        keywordInput={keywordInput}
-        onKeywordInputChange={setKeywordInput}
-        onSearch={handleSearch}
-        onRefresh={fetchCabinetItems}
-        onSelectAllOnPage={selectAllOnPage}
-        onClearSelectionOnPage={clearSelectionOnPage}
-        onPageChange={handlePageChange}
-        selectedItemcodes={selectedItemcodes}
-        onToggleRow={toggleRow}
-        variant={cabinetPairSelected ? 'cabinet' : 'master'}
-        hidePagination={hidePagination}
-      />
-
-      <PrintStickerOrderCard
-        selectedLines={selectedLines}
-        preparing={preparing}
-        emptyHint={
-          mode === 'auto'
-            ? 'โหลดแล้วแต่ยังไม่มีรายการต้องเติม (หรือ Max=0)'
-            : 'ยังไม่มีรายการ — ติ๊กเวชภัณฑ์จากตารางในตู้'
-        }
-        onSetCopies={setCopiesFor}
-        onExpireDateChange={setExpireDateFor}
-        onLotNoChange={setLotNoFor}
-        onRemoveLine={removeLine}
-        onClearAll={() => setSelectedLines([])}
-        onPrepare={handlePrepare}
-      />
-
-      <Card className="border-slate-200 shadow-sm">
-        <CardHeader>
-          <CardDescription>ลบรายการที่ไม่ต้องการก่อน</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {preparedRows.length === 0 ? (
-            <p className="rounded-md border border-dashed py-8 text-center text-sm text-muted-foreground">
-              ยังไม่มีรายการที่บันทึกไว้
-            </p>
-          ) : (
-            <div className="max-h-[360px] overflow-auto rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-10">เลือก</TableHead>
-                    <TableHead className="w-[120px]">RowID</TableHead>
-                    <TableHead>itemcode</TableHead>
-                    <TableHead>RFID</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {preparedRows.map((r) => {
-                    const checked = selectedPreparedRowIds.includes(r.RowID);
-                    return (
-                      <TableRow key={r.RowID}>
-                        <TableCell>
-                          <Checkbox
-                            checked={checked}
-                            onCheckedChange={(v) => {
-                              setSelectedPreparedRowIds((prev) =>
-                                v ? [...prev, r.RowID] : prev.filter((id) => id !== r.RowID),
-                              );
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell className="font-mono text-xs">{r.RowID}</TableCell>
-                        <TableCell className="font-mono text-xs">{r.ItemCode ?? '-'}</TableCell>
-                        <TableCell className="font-mono text-xs">{r.RfidCode ?? '-'}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-          <div className="flex items-center justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={handleDeletePrepared}
-              disabled={deletingPrepared || selectedPreparedRowIds.length === 0}
-            >
-              {deletingPrepared ? 'กำลังลบ…' : 'ลบที่เลือก'}
-            </Button>
-            <Button onClick={handlePrint} disabled={printing || preparing || preparedRows.length === 0}>
-              {printing ? 'กำลังส่ง…' : `พิมพ์จากรายการที่บันทึกแล้ว (${preparedRows.length})`}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  return {
+    mode,
+    setMode,
+    departmentId,
+    setDepartmentId,
+    cabinetId,
+    setCabinetId,
+    cabinetStockId,
+    loadingDepartments,
+    loadingCabinets,
+    loadDepartments,
+    resolveCabinets,
+    departmentSelectOptions,
+    cabOptions,
+    manualFilterIncomplete,
+    reloadDisabled,
+    reloadButtonLabel,
+    fetchCabinetItems,
+    loadingList,
+    displayItems,
+    listTotal,
+    listTotalPages,
+    page,
+    hidePagination,
+    keywordInput,
+    setKeywordInput,
+    handleSearch,
+    handlePageChange,
+    selectedItemcodes,
+    toggleRow,
+    selectAllOnPage,
+    clearSelectionOnPage,
+    cabinetPairSelected,
+    selectedLines,
+    preparing,
+    setCopiesFor,
+    setExpireDateFor,
+    setLotNoFor,
+    removeLine,
+    clearSelectedLines: () => setSelectedLines([]),
+    handlePrepare,
+    preparedRows,
+    selectedPreparedRowIds,
+    setSelectedPreparedRowIds,
+    deletingPrepared,
+    printing,
+    handleDeletePrepared,
+    handlePrint,
+    orderEmptyHint,
+  };
 }

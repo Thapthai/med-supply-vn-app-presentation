@@ -20,16 +20,9 @@ interface ItemUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-  /** scope แผนกที่ผู้ใช้สังกัด — ให้ข้อมูลใน template ตรงกับที่หน้าเว็บแสดง */
-  allowedDepartmentIds?: number[];
 }
 
-export default function ItemUploadDialog({
-  open,
-  onOpenChange,
-  onSuccess,
-  allowedDepartmentIds,
-}: ItemUploadDialogProps) {
+export default function ItemUploadDialog({ open, onOpenChange, onSuccess }: ItemUploadDialogProps) {
   const [downloading, setDownloading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -50,7 +43,7 @@ export default function ItemUploadDialog({
   const handleDownload = async () => {
     try {
       setDownloading(true);
-      await staffItemsApi.downloadUploadTemplate(allowedDepartmentIds);
+      await staffItemsApi.downloadUploadTemplate();
       toast.success('ดาวน์โหลด template สำเร็จ');
     } catch (e) {
       console.error(e);
@@ -109,7 +102,7 @@ export default function ItemUploadDialog({
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto py-2 pr-1">
           {/* ขั้นตอนที่ 1: ดาวน์โหลด template */}
           <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-4">
-            <p className="text-sm font-semibold text-slate-900">1. ดาวน์โหลด Item Master </p>
+            <p className="text-sm font-semibold text-slate-900">1. ดาวน์โหลด Template</p>
             <p className="mt-0.5 text-xs text-slate-500">
               ไฟล์มี dropdown หน่วย/แผนกตามข้อมูลล่าสุดในระบบ และคำแนะนำการกรอก
             </p>
@@ -121,7 +114,7 @@ export default function ItemUploadDialog({
               disabled={downloading}
             >
               {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-              ดาวน์โหลด Item Master (.xlsx)
+              ดาวน์โหลด Template (.xlsx)
             </Button>
           </div>
 

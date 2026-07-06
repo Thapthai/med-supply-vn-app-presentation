@@ -91,11 +91,12 @@ export class StickerPrintService {
       return this.satoTemplateCache;
     }
 
+    // JS อยู่ dist/src/sticker-print/ แต่ nest assets ไป dist/sticker-print/example/
     const candidates = [
-      path.join(process.cwd(), 'src', 'sticker-print', 'example', 'SBPL1.txt'),
-      path.join(process.cwd(), 'backend', 'src', 'sticker-print', 'example', 'SBPL1.txt'),
+      path.join(__dirname, '..', '..', 'sticker-print', 'example', 'SBPL1.txt'),
+      path.join(process.cwd(), 'dist', 'sticker-print', 'example', 'SBPL1.txt'),
       path.join(process.cwd(), 'dist', 'src', 'sticker-print', 'example', 'SBPL1.txt'),
-      path.join(__dirname, 'example', 'SBPL1.txt'),
+      path.join(process.cwd(), 'src', 'sticker-print', 'example', 'SBPL1.txt'),
     ];
 
     for (const p of candidates) {
