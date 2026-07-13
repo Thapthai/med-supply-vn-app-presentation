@@ -71,8 +71,6 @@ export default function LoginPage() {
         // Check for specific error types
         const errorMessage = result.error;
 
-        console.log(errorMessage);
-
         if (errorMessage.includes('Invalid credentials')) {
           // Show error in alert box and red borders on both fields
           setEmailError('error'); // Just mark as error for styling

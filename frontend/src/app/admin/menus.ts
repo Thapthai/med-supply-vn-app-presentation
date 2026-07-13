@@ -108,6 +108,12 @@ export const adminMenuItems: StaffMenuItem[] = [
         icon: BookMarked,
       },
       {
+        name: 'เบิกอุปกรณ์ให้หน่วยงาน',
+        href: '/admin/department-dispense',
+        description: 'เอกสารควบคุมการเบิก 3 ขั้นตอน — ตำแหน่งจากเมนูตำแหน่งจัดเก็บอุปกรณ์',
+        icon: ClipboardList,
+      },
+      {
         name: 'เบิกอุปกรณ์จากตู้',
         href: '/admin/dispense-from-cabinet',
         description: 'การเบิกอุปกรณ์จากตู้ SmartCabinet',
@@ -151,6 +157,12 @@ export const adminMenuItems: StaffMenuItem[] = [
         href: '/admin/management/cabinets',
         icon: Package,
         description: 'จัดการตู้ Cabinet',
+      },
+      {
+        name: 'ตำแหน่งจัดเก็บอุปกรณ์',
+        href: '/admin/management/storage-locations',
+        icon: Layers,
+        description: 'บันทึก Row/Rack/Shelf ใน app_item_storage_locations แยกจากระบบอื่น',
       },
       {
         name: 'จัดการพนักงาน',

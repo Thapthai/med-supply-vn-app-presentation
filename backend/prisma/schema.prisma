@@ -36,16 +36,17 @@ model User {
   updated_at DateTime @updatedAt @map("updated_at")
 
   // Relations
-  oauth_accounts             OAuthAccount[]
-  api_keys                   ApiKey[]
-  client_credentials         ClientCredential[]
-  refreshTokens              RefreshToken[]
-  two_factor_tokens          TwoFactorToken[]
-  role                       StaffRole?                  @relation(fields: [role_id], references: [id])
-  department                 Department?                 @relation(fields: [department_id], references: [ID])
+  oauth_accounts              OAuthAccount[]
+  api_keys                    ApiKey[]
+  client_credentials          ClientCredential[]
+  refreshTokens               RefreshToken[]
+  two_factor_tokens           TwoFactorToken[]
+  role                        StaffRole?                   @relation(fields: [role_id], references: [id])
+  department                  Department?                  @relation(fields: [department_id], references: [ID])
   /// ผูกกับ employee.EmpCode — ว่างได้ถ้ายังไม่ map พนักงานในระบบ HR
-  employee                   Employee?                   @relation(fields: [emp_code], references: [EmpCode])
-  staffPermissionDepartments StaffPermissionDepartment[]
+  employee                    Employee?                    @relation(fields: [emp_code], references: [EmpCode])
+  staffPermissionDepartments  StaffPermissionDepartment[]
+  departmentDispenseDocuments DepartmentDispenseDocument[]
 
   @@map("app_users")
 }
@@ -320,13 +321,15 @@ model Item {
   item_status              Int?      @default(0)
 
   // Relations
-  itemType                ItemType?                 @relation(fields: [itemtypeID], references: [ID], onDelete: SetNull)
-  itemStocks              ItemStock[]
-  itemSlotInCabinet       ItemSlotInCabinet[]
-  itemSlotInCabinetDetail ItemSlotInCabinetDetail[] @relation("DetailToItem")
-  unit                    Unit?                     @relation("ItemMainUnit", fields: [UnitID], references: [ID], onDelete: SetNull)
-  subUnit                 Unit?                     @relation("ItemSubUnit", fields: [SubUnitID], references: [ID], onDelete: SetNull)
-  itemDepartments         ItemDepartments[]
+  itemType                        ItemType?                        @relation(fields: [itemtypeID], references: [ID], onDelete: SetNull)
+  itemStocks                      ItemStock[]
+  itemSlotInCabinet               ItemSlotInCabinet[]
+  itemSlotInCabinetDetail         ItemSlotInCabinetDetail[]        @relation("DetailToItem")
+  unit                            Unit?                            @relation("ItemMainUnit", fields: [UnitID], references: [ID], onDelete: SetNull)
+  subUnit                         Unit?                            @relation("ItemSubUnit", fields: [SubUnitID], references: [ID], onDelete: SetNull)
+  itemDepartments                 ItemDepartments[]
+  departmentDispenseDocumentLines DepartmentDispenseDocumentLine[]
+  itemStorageLocations            ItemStorageLocation[]
 
   @@index([itemtypeID])
   @@index([SubUnitID], map: "idx_item_sub_unit_id")
@@ -346,7 +349,7 @@ model ItemDepartments {
   B_ID             Int?
 
   // Relations
-  item Item? @relation(fields: [itemcode], references: [itemcode])
+  item       Item?       @relation(fields: [itemcode], references: [itemcode])
   department Department? @relation(fields: [DeptID], references: [ID])
 
   @@index([itemcode])
@@ -659,6 +662,8 @@ model Department {
   itemSlotBorrowDetails       ItemSlotInCabinetDetail[]    @relation("ItemSlotDetailBorrowDepartment")
   staffPermissionDepartments  StaffPermissionDepartment[]
   itemDepartments             ItemDepartments[]
+  departmentDispenseDocuments DepartmentDispenseDocument[]
+
   @@map("department")
 }
 
@@ -677,6 +682,8 @@ model cabinet {
   supplyItemReturnRecords SupplyItemReturnRecord[]
   cabinetItemSettings     CabinetItemSetting[]
   itemSlotInCabinet       ItemSlotInCabinet[]
+  cabinetSlotLocations    CabinetSlotLocation[]
+  itemStorageLocations    ItemStorageLocation[]
 
   @@map("app_cabinets")
 }
@@ -759,6 +766,45 @@ model ItemSlotInCabinetDetail {
   @@map("itemslotincabinet_detail")
 }
 
+/// ตำแหน่ง Row/Rack/Shelf ต่อช่องในตู้ — อ้างอิง StockID + SlotNo + Sensor จาก itemslotincabinet / itemslotincabinet_detail
+model CabinetSlotLocation {
+  id             Int      @id @default(autoincrement())
+  stock_id       Int      @map("stock_id")
+  slot_no        Int      @map("slot_no")
+  sensor         Int      @default(0) @map("sensor")
+  location_row   String?  @map("location_row") @db.VarChar(50)
+  location_rack  String?  @map("location_rack") @db.VarChar(50)
+  location_shelf String?  @map("location_shelf") @db.VarChar(50)
+  created_at     DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updated_at     DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  cabinet cabinet? @relation(fields: [stock_id], references: [stock_id], onDelete: Cascade)
+
+  @@unique([stock_id, slot_no, sensor], map: "uq_cabinet_slot_location")
+  @@index([stock_id])
+  @@map("app_cabinet_slot_locations")
+}
+
+/// ตำแหน่งจัดเก็บอุปกรณ์ — แยกเฉพาะการจัดการ Row/Rack/Shelf ต่อตู้ + item (ไม่ผูก itemstock / itemslotincabinet)
+model ItemStorageLocation {
+  id             Int      @id @default(autoincrement())
+  stock_id       Int      @map("stock_id")
+  itemcode       String   @map("itemcode") @db.VarChar(25)
+  location_row   String?  @map("location_row") @db.VarChar(50)
+  location_rack  String?  @map("location_rack") @db.VarChar(50)
+  location_shelf String?  @map("location_shelf") @db.VarChar(50)
+  created_at     DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updated_at     DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  cabinet cabinet? @relation(fields: [stock_id], references: [stock_id], onDelete: Cascade)
+  item    Item?    @relation(fields: [itemcode], references: [itemcode], onDelete: Cascade)
+
+  @@unique([stock_id, itemcode], map: "uq_item_storage_location")
+  @@index([stock_id])
+  @@index([itemcode])
+  @@map("app_item_storage_locations")
+}
+
 // user_cabinet.cabinet_id = app_cabinets.stock_id
 model UserCabinet {
   id         Int @id @default(autoincrement())
@@ -828,6 +874,48 @@ model DailyCabinetStockReportArchive {
   @@unique([report_date, format, filter_key], map: "uq_daily_cab_stock_archive")
   @@index([report_date(sort: Desc)], map: "idx_daily_cab_stock_report_date")
   @@map("app_daily_cabinet_stock_report_archives")
+}
+
+/// เอกสารควบคุมการเบิกอุปกรณ์ให้หน่วยงาน
+model DepartmentDispenseDocument {
+  id                 Int      @id @default(autoincrement())
+  doc_no             String   @unique @map("doc_no") @db.VarChar(32)
+  department_id      Int      @map("department_id")
+  status             String   @default("CONFIRMED") @map("status") @db.VarChar(20)
+  remark             String?  @map("remark") @db.Text
+  created_by_user_id Int?     @map("created_by_user_id")
+  created_at         DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updated_at         DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  department Department                       @relation(fields: [department_id], references: [ID])
+  createdBy  User?                            @relation(fields: [created_by_user_id], references: [id], onDelete: SetNull)
+  lines      DepartmentDispenseDocumentLine[]
+
+  @@index([department_id])
+  @@index([created_at(sort: Desc)])
+  @@map("app_department_dispense_documents")
+}
+
+model DepartmentDispenseDocumentLine {
+  id             Int     @id @default(autoincrement())
+  document_id    Int     @map("document_id")
+  line_order     Int     @default(0) @map("line_order")
+  itemcode       String  @map("itemcode") @db.VarChar(25)
+  item_name      String? @map("item_name") @db.VarChar(255)
+  qty            Int     @default(1) @map("qty")
+  location_row   String? @map("location_row") @db.VarChar(50)
+  location_rack  String? @map("location_rack") @db.VarChar(50)
+  location_shelf String? @map("location_shelf") @db.VarChar(50)
+  store_ref      String? @map("store_ref") @db.VarChar(255)
+  slot_no        Int?    @map("slot_no")
+  sensor         Int?    @map("sensor")
+
+  document DepartmentDispenseDocument @relation(fields: [document_id], references: [id], onDelete: Cascade)
+  item     Item?                      @relation(fields: [itemcode], references: [itemcode], onDelete: Restrict)
+
+  @@index([document_id])
+  @@index([itemcode])
+  @@map("app_department_dispense_document_lines")
 }
 
 /// หน่วยนับ (เช่น ชิ้น, กล่อง) — ตาราง `unit`

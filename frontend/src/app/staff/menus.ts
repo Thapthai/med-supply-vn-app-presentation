@@ -103,6 +103,12 @@ export const staffMenuItems = [
                 icon: BookMarked,
             },
             {
+                name: 'เบิกอุปกรณ์ให้หน่วยงาน',
+                href: '/staff/department-dispense',
+                description: 'สร้างเอกสารควบคุมการเบิก — เลือก Division รายการ และตำแหน่ง',
+                icon: ClipboardList,
+            },
+            {
                 name: 'เบิกอุปกรณ์จากตู้',
                 href: '/staff/dispense-from-cabinet',
                 description: 'กรองแบบทั้งหมดเป็นค่าเริ่มต้น — แคบด้วย Division / ตู้ได้',

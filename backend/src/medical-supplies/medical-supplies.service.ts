@@ -1407,7 +1407,7 @@ export class MedicalSuppliesService {
         lastname: data.Lastname,
         user_id: data.recorded_by_user_id,
         error_message: this.extractHttpErrorMessage(error),
-        error_code: error?.code,
+        error_code: (error as any)?.code,
         input_data: data,
       });
       throw error;
@@ -1439,8 +1439,6 @@ export class MedicalSuppliesService {
       const skip = (page - 1) * limit;
 
       const staffIds = staffScope?.staffAllowedDepartmentIds;
-
-      console.log('staffIds', staffIds);
 
       if (staffIds !== undefined && Array.isArray(staffIds) && staffIds.length === 0) {
         return {
@@ -2483,7 +2481,7 @@ export class MedicalSuppliesService {
         status: 'ERROR',
         usage_id: id,
         error_message: this.extractHttpErrorMessage(error),
-        error_code: error?.code,
+        error_code: (error as any)?.code,
         input_data: data,
       });
       throw error;
@@ -2521,8 +2519,8 @@ export class MedicalSuppliesService {
         type: 'DELETE',
         status: 'ERROR',
         usage_id: id,
-        error_message: error.message,
-        error_code: error.code,
+        error_message: (error as any).message,
+        error_code: (error as any).code,
       });
       throw error;
     }
@@ -2601,8 +2599,8 @@ export class MedicalSuppliesService {
         type: 'UPDATE_PRINT_INFO',
         status: 'ERROR',
         usage_id: usageId,
-        error_message: error.message,
-        error_code: error.code,
+        error_message: (error as any).message,
+        error_code: (error as any).code,
         input_data: printData,
       });
       throw error;
@@ -2759,8 +2757,8 @@ export class MedicalSuppliesService {
         action: 'updateBillingStatus',
         usage_id: id,
         new_status: status,
-        error_message: error.message,
-        error_code: error.code,
+        error_message: (error as any).message,
+        error_code: (error as any).code,
       });
       throw error;
     }
@@ -2958,8 +2956,8 @@ export class MedicalSuppliesService {
         type: 'RECORD_USED_WITH_PATIENT',
         status: 'ERROR',
         item_id: data.item_id,
-        error_message: error.message,
-        error_code: error.code,
+        error_message: (error as any).message,
+        error_code: (error as any).code,
       });
       throw error;
     }
@@ -3046,8 +3044,8 @@ export class MedicalSuppliesService {
         type: 'RECORD_RETURN',
         status: 'ERROR',
         item_id: data.item_id,
-        error_message: error.message,
-        error_code: error.code,
+        error_message: (error as any).message,
+        error_code: (error as any).code,
       });
       throw error;
     }
@@ -3129,15 +3127,7 @@ export class MedicalSuppliesService {
         limit,
       };
     } catch (error) {
-      // ไม่เก็บ log การดึงข้อมูล (ปิดไว้)
-      // await this.createLog(null, {
-      //   type: 'QUERY',
-      //   status: 'ERROR',
-      //   action: 'getPendingItems',
-      //   filters: query,
-      //   error_message: error.message,
-      //   error_code: error.code,
-      // });
+ 
       throw error;
     }
   }
@@ -4518,7 +4508,7 @@ export class MedicalSuppliesService {
       return {
         success: false,
         message: 'Failed to fetch dispensed vs usage summary',
-        error: error?.message,
+        error: (error as any).message,
       };
     }
   }
@@ -5072,8 +5062,8 @@ export class MedicalSuppliesService {
         type: 'UPDATE',
         status: 'ERROR',
         action: 'cancel_bill',
-        error_message: error.message,
-        error_code: error.code,
+        error_message: (error as any).message,
+        error_code: (error as any).code,
       });
       throw error;
     }
@@ -5195,15 +5185,7 @@ export class MedicalSuppliesService {
         filters: filters || {},
       };
     } catch (error) {
-      // ไม่เก็บ log การดึงข้อมูล (ปิดไว้)
-      // await this.createLog(null, {
-      //   type: 'QUERY',
-      //   status: 'ERROR',
-      //   action: 'getItemStocksForReturnToCabinet',
-      //   filters: filters || {},
-      //   error_message: error.message,
-      //   error_code: error.code,
-      // });
+ 
       throw error;
     }
   }

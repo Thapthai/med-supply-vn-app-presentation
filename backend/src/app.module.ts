@@ -16,6 +16,8 @@ import { StaffModule } from './staff/staff.module';
 import { WeighingModule } from './weighing/weighing.module';
 import { StickerPrintModule } from './sticker-print/sticker-print.module';
 import { EmpolyeeModule } from './empolyee/empolyee.module';
+import { DepartmentDispenseModule } from './department-dispense/department-dispense.module';
+import { CabinetSlotLocationModule } from './cabinet-slot-location/cabinet-slot-location.module';
 
 @Module({
   imports: [
@@ -37,6 +39,8 @@ import { EmpolyeeModule } from './empolyee/empolyee.module';
     WeighingModule,
     StickerPrintModule,
     EmpolyeeModule,
+    DepartmentDispenseModule,
+    CabinetSlotLocationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
