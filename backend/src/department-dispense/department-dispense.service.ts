@@ -7,8 +7,6 @@ import {
   DepartmentDispenseExportExcelService,
 } from './services/department-dispense-export-excel.service';
 import { DepartmentDispenseExportPdfService } from './services/department-dispense-export-pdf.service';
-import { itemStorageKey } from './utils/resolve-item-location';
-
 function departmentLabel(dept: {
   DepName?: string | null;
   DepName2?: string | null;
@@ -28,28 +26,6 @@ export class DepartmentDispenseService {
     private readonly exportPdfService: DepartmentDispenseExportPdfService,
   ) {}
 
-  /** stock_id ของตู้ที่ผูก ACTIVE กับ Division ผ่าน app_cabinet_departments */
-  private async getStockIdsForDepartment(departmentId: number) {
-    const links = await this.prisma.cabinetDepartment.findMany({
-      where: {
-        department_id: departmentId,
-        status: 'ACTIVE',
-        cabinet_id: { not: null },
-      },
-      select: { cabinet_id: true },
-    });
-    const cabinetIds = links
-      .map((l) => l.cabinet_id)
-      .filter((id): id is number => id != null);
-    if (cabinetIds.length === 0) return [];
-
-    const cabinets = await this.prisma.cabinet.findMany({
-      where: { id: { in: cabinetIds }, stock_id: { not: null } },
-      select: { stock_id: true, cabinet_name: true, cabinet_code: true },
-    });
-    return cabinets;
-  }
-
   private async generateDocNo(): Promise<string> {
     const now = new Date();
     const y = now.getFullYear();
@@ -68,6 +44,10 @@ export class DepartmentDispenseService {
     return `${prefix}${String(nextSeq).padStart(4, '0')}`;
   }
 
+  /**
+   * รายการที่ mapping ตำแหน่งแล้ว (ไม่ต้องผูก Item กับหน่วยงาน)
+   * departmentId ใช้ตรวจว่ามี Division และแนบกลับใน response
+   */
   async listDepartmentItems(departmentId: number, keyword?: string) {
     const dept = await this.prisma.department.findUnique({
       where: { ID: departmentId },
@@ -76,69 +56,56 @@ export class DepartmentDispenseService {
     if (!dept) throw new NotFoundException('ไม่พบ Division');
 
     const kw = keyword?.trim();
-    const links = await this.prisma.itemDepartments.findMany({
-      where: {
-        DeptID: departmentId,
-        OR: [{ IsCancel: 0 }, { IsCancel: null }],
-        ...(kw
-          ? {
-              item: {
+    const itemWhere: Prisma.ItemWhereInput = {
+      item_status: 0,
+      OR: [{ IsCancel: 0 }, { IsCancel: null }],
+      itemStorageLocations: { some: {} },
+      ...(kw
+        ? {
+            AND: [
+              {
                 OR: [
                   { itemcode: { contains: kw } },
                   { itemname: { contains: kw } },
+                  { itemcode2: { contains: kw } },
+                  { itemcode3: { contains: kw } },
                 ],
               },
-            }
-          : {}),
-      },
-      include: {
-        item: {
-          select: {
-            itemcode: true,
-            itemname: true,
-            Store: true,
-            item_status: true,
-            IsCancel: true,
-          },
-        },
+            ],
+          }
+        : {}),
+    };
+
+    const items = await this.prisma.item.findMany({
+      where: itemWhere,
+      select: {
+        itemcode: true,
+        itemname: true,
+        Store: true,
       },
       orderBy: { itemcode: 'asc' },
     });
 
-    const seen = new Set<string>();
-    const items = links
-      .filter((l) => l.item && l.item.IsCancel !== 1 && (l.item.item_status ?? 0) === 0)
-      .filter((l) => {
-        if (seen.has(l.itemcode)) return false;
-        seen.add(l.itemcode);
-        return true;
-      })
-      .map((l) => ({
-        itemcode: l.item!.itemcode,
-        itemname: l.item!.itemname,
-        store: l.item!.Store,
-      }));
-
-    return { success: true, data: { department: dept, items } };
+    return {
+      success: true,
+      data: {
+        department: dept,
+        items: items.map((i) => ({
+          itemcode: i.itemcode,
+          itemname: i.itemname,
+          store: i.Store,
+        })),
+      },
+    };
   }
 
-  async resolveItemLocations(itemcodes: string[], departmentId?: number) {
+  /**
+   * คืนตำแหน่งที่ mapping แล้วทั้งหมดของ itemcodes ที่เลือก (1 item มีได้หลายแถว)
+   */
+  async resolveItemLocations(itemcodes: string[], _departmentId?: number) {
     const unique = [...new Set(itemcodes.map((c) => c.trim()).filter(Boolean))];
     if (unique.length === 0) {
       return { success: true, data: [], missing_itemcodes: [] as string[] };
-    }
-
-    const divisionCabinets =
-      departmentId != null ? await this.getStockIdsForDepartment(departmentId) : [];
-    const allowedStockIds =
-      departmentId != null
-        ? divisionCabinets
-            .map((c) => c.stock_id)
-            .filter((id): id is number => id != null)
-        : [];
-
-    if (departmentId != null && allowedStockIds.length === 0) {
-      return { success: true, data: [], missing_itemcodes: unique };
     }
 
     const [items, storageRows] = await Promise.all([
@@ -146,85 +113,42 @@ export class DepartmentDispenseService {
         where: { itemcode: { in: unique } },
         select: { itemcode: true, itemname: true, Store: true, stock_max: true },
       }),
-      allowedStockIds.length > 0
-        ? this.prisma.itemStorageLocation.findMany({
-            where: {
-              itemcode: { in: unique },
-              stock_id: { in: allowedStockIds },
-            },
-            select: {
-              stock_id: true,
-              itemcode: true,
-              location_row: true,
-              location_rack: true,
-              location_shelf: true,
-            },
-          })
-        : Promise.resolve(
-            [] as Array<{
-              stock_id: number;
-              itemcode: string;
-              location_row: string | null;
-              location_rack: string | null;
-              location_shelf: string | null;
-            }>,
-          ),
+      this.prisma.itemStorageLocation.findMany({
+        where: { itemcode: { in: unique } },
+        select: {
+          id: true,
+          itemcode: true,
+          location_row: true,
+          location_rack: true,
+          location_shelf: true,
+          qty: true,
+        },
+        orderBy: [{ itemcode: 'asc' }, { id: 'asc' }],
+      }),
     ]);
 
-    const cabinetLookup = new Map(
-      divisionCabinets
-        .filter((c) => c.stock_id != null)
-        .map((c) => [c.stock_id as number, c]),
-    );
-    const storageByKey = new Map(
-      storageRows.map((row) => [itemStorageKey(row.stock_id, row.itemcode), row]),
-    );
+    const mappedCodes = new Set(storageRows.map((r) => r.itemcode));
+    const missingItemcodes = unique.filter((code) => !mappedCodes.has(code));
+    const itemByCode = new Map(items.map((i) => [i.itemcode, i]));
 
-    const data: Array<{
-      itemcode: string;
-      itemname: string | null;
-      location_row: string | null;
-      location_rack: string | null;
-      location_shelf: string | null;
-      store_ref: string | null;
-      location_source: 'item_storage';
-      stock_id: number;
-      cabinet_name: string | null;
-      cabinet_code: string | null;
-      max_qty: number | null;
-    }> = [];
-    const missingItemcodes: string[] = [];
-
-    for (const code of unique) {
-      let picked: (typeof storageRows)[number] | null = null;
-      for (const stockId of allowedStockIds) {
-        const loc = storageByKey.get(itemStorageKey(stockId, code));
-        if (loc && (loc.location_row || loc.location_rack || loc.location_shelf)) {
-          picked = loc;
-          break;
-        }
-      }
-      if (!picked) {
-        missingItemcodes.push(code);
-        continue;
-      }
-
-      const item = items.find((i) => i.itemcode === code);
-      const cabinet = cabinetLookup.get(picked.stock_id);
-      data.push({
-        itemcode: code,
+    const data = storageRows.map((row) => {
+      const item = itemByCode.get(row.itemcode);
+      return {
+        location_id: row.id,
+        itemcode: row.itemcode,
         itemname: item?.itemname ?? null,
-        location_row: picked.location_row,
-        location_rack: picked.location_rack,
-        location_shelf: picked.location_shelf,
+        location_row: row.location_row || null,
+        location_rack: row.location_rack || null,
+        location_shelf: row.location_shelf || null,
+        qty: row.qty ?? 0,
         store_ref: item?.Store ?? null,
-        location_source: 'item_storage',
-        stock_id: picked.stock_id,
-        cabinet_name: cabinet?.cabinet_name ?? null,
-        cabinet_code: cabinet?.cabinet_code ?? null,
+        location_source: 'item_storage' as const,
+        stock_id: null as number | null,
+        cabinet_name: null as string | null,
+        cabinet_code: null as string | null,
         max_qty: item?.stock_max ?? null,
-      });
-    }
+      };
+    });
 
     return { success: true, data, missing_itemcodes: missingItemcodes };
   }
@@ -243,8 +167,13 @@ export class DepartmentDispenseService {
 
     const itemcodes = [...new Set(lines.map((l) => l.itemcode.trim()).filter(Boolean))];
     const locRes = await this.resolveItemLocations(itemcodes, dto.department_id);
-    const locByCode = new Map((locRes.data ?? []).map((l) => [l.itemcode, l]));
-    const missingLoc = itemcodes.filter((c) => !locByCode.has(c));
+    const mappedById = new Map((locRes.data ?? []).map((l) => [l.location_id, l]));
+    const mappedByCode = new Map<string, (NonNullable<typeof locRes.data>)[number]>();
+    for (const loc of locRes.data ?? []) {
+      if (!mappedByCode.has(loc.itemcode)) mappedByCode.set(loc.itemcode, loc);
+    }
+
+    const missingLoc = itemcodes.filter((c) => !mappedByCode.has(c));
     if (missingLoc.length > 0) {
       throw new BadRequestException(
         `ไม่พบตำแหน่ง Row/Rack/Shelf สำหรับ: ${missingLoc.join(', ')} — กรุณาตั้งค่าที่เมนูตำแหน่งจัดเก็บอุปกรณ์`,
@@ -267,15 +196,17 @@ export class DepartmentDispenseService {
         created_by_user_id: userId ?? null,
         lines: {
           create: lines.map((line, idx) => {
-            const loc = locByCode.get(line.itemcode);
+            const fromId =
+              line.location_id != null ? mappedById.get(line.location_id) : undefined;
+            const loc = fromId ?? mappedByCode.get(line.itemcode);
             return {
               line_order: idx,
               itemcode: line.itemcode,
               item_name: nameByCode.get(line.itemcode) ?? loc?.itemname ?? null,
               qty: line.qty,
-              location_row: loc?.location_row ?? null,
-              location_rack: loc?.location_rack ?? null,
-              location_shelf: loc?.location_shelf ?? null,
+              location_row: line.location_row ?? loc?.location_row ?? null,
+              location_rack: line.location_rack ?? loc?.location_rack ?? null,
+              location_shelf: line.location_shelf ?? loc?.location_shelf ?? null,
               store_ref: loc?.store_ref ?? null,
               slot_no: null,
               sensor: null,
@@ -372,6 +303,7 @@ export class DepartmentDispenseService {
     limit?: number;
     department_id?: number;
     keyword?: string;
+    document_id?: number;
   }): Promise<DepartmentDispenseExportData> {
     const page = Math.max(1, params.page ?? 1);
     const limit = Math.min(500, Math.max(1, params.limit ?? 100));
@@ -379,6 +311,9 @@ export class DepartmentDispenseService {
     const keyword = params.keyword?.trim();
 
     const where: Prisma.DepartmentDispenseDocumentWhereInput = {};
+    if (params.document_id != null) {
+      where.id = params.document_id;
+    }
     if (params.department_id != null) {
       where.department_id = params.department_id;
     }
@@ -393,8 +328,8 @@ export class DepartmentDispenseService {
 
     const documents = await this.prisma.departmentDispenseDocument.findMany({
       where,
-      skip,
-      take: limit,
+      skip: params.document_id != null ? 0 : skip,
+      take: params.document_id != null ? 1 : limit,
       orderBy: { created_at: 'desc' },
       include: {
         department: {
@@ -416,9 +351,6 @@ export class DepartmentDispenseService {
         itemcode: line.itemcode,
         item_name: line.item_name,
         qty: line.qty,
-        location_row: line.location_row,
-        location_rack: line.location_rack,
-        location_shelf: line.location_shelf,
       })),
     }));
 
@@ -453,12 +385,17 @@ export class DepartmentDispenseService {
     limit?: number;
     department_id?: number;
     keyword?: string;
+    document_id?: number;
   }): Promise<{ buffer: Buffer; filename: string }> {
     const data = await this.buildExportData(params);
     if (data.documents.length === 0) {
       throw new BadRequestException('ไม่มีเอกสารสำหรับส่งออก');
     }
     const buffer = await this.exportPdfService.generateReport(data);
+    if (params.document_id != null && data.documents.length === 1) {
+      const docNo = data.documents[0].doc_no.replace(/[^\w.-]+/g, '_');
+      return { buffer, filename: `department_dispense_${docNo}.pdf` };
+    }
     const date = new Date().toISOString().split('T')[0];
     return { buffer, filename: `department_dispense_documents_${date}.pdf` };
   }

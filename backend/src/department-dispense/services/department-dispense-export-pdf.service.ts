@@ -162,7 +162,7 @@ export class DepartmentDispenseExportPdfService {
             doc.fontSize(8).font(fontName).fillColor('#212529');
             doc.text(val || '—', x + 2, rowY + 4, {
               width: w - 4,
-              align: i === 1 || i === 4 ? 'left' : 'center',
+              align: i === 1 || i === 2 || i === 4 ? 'left' : 'center',
               ellipsis: true,
             });
             x += w;
@@ -190,14 +190,11 @@ export class DepartmentDispenseExportPdfService {
         doc.y += 6;
 
         const detailCols = [
-          { label: 'เลขที่', width: 0.14 },
-          { label: 'รหัส', width: 0.12 },
-          { label: 'ชื่อ', width: 0.26 },
-          { label: 'จำนวน', width: 0.08 },
-          { label: 'Row', width: 0.08 },
-          { label: 'Rack', width: 0.08 },
-          { label: 'Shelf', width: 0.08 },
-          { label: 'หน่วยงาน', width: 0.16 },
+          { label: 'เลขที่', width: 0.18 },
+          { label: 'รหัส', width: 0.16 },
+          { label: 'ชื่อ', width: 0.34 },
+          { label: 'จำนวน', width: 0.1 },
+          { label: 'หน่วยงาน', width: 0.22 },
         ];
 
         drawTableHeader(detailCols);
@@ -210,9 +207,6 @@ export class DepartmentDispenseExportPdfService {
                 line.itemcode,
                 line.item_name ?? '—',
                 String(line.qty),
-                line.location_row ?? '—',
-                line.location_rack ?? '—',
-                line.location_shelf ?? '—',
                 docRow.department_label,
               ],
               detailCols,

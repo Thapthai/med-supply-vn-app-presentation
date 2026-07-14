@@ -12,9 +12,6 @@ export interface DepartmentDispenseExportDocument {
     itemcode: string;
     item_name?: string | null;
     qty: number;
-    location_row?: string | null;
-    location_rack?: string | null;
-    location_shelf?: string | null;
   }>;
 }
 
@@ -140,13 +137,13 @@ export class DepartmentDispenseExportExcelService {
     });
 
     applyExcelStandardTitleHeader(worksheet, workbook, {
-      mergeRange: 'A1:H2',
+      mergeRange: 'A1:E2',
       title: 'รายละเอียดรายการเบิกอุปกรณ์\nDepartment Dispense Lines',
       row1Height: 20,
       row2Height: 20,
     });
 
-    worksheet.mergeCells('A3:H3');
+    worksheet.mergeCells('A3:E3');
     const dateCell = worksheet.getCell('A3');
     dateCell.value = `วันที่รายงาน: ${reportDate}`;
     dateCell.font = { name: 'Tahoma', size: 12, color: { argb: 'FF6C757D' } };
@@ -158,9 +155,6 @@ export class DepartmentDispenseExportExcelService {
       'รหัสอุปกรณ์',
       'ชื่ออุปกรณ์',
       'จำนวนเบิก',
-      'Row',
-      'Rack',
-      'Shelf',
     ];
     const headerRow = worksheet.getRow(5);
     headers.forEach((h, i) => {
@@ -189,9 +183,6 @@ export class DepartmentDispenseExportExcelService {
           line.itemcode,
           line.item_name ?? '—',
           line.qty,
-          line.location_row ?? '—',
-          line.location_rack ?? '—',
-          line.location_shelf ?? '—',
         ].forEach((val, colIndex) => {
           const cell = row.getCell(colIndex + 1);
           cell.value = val as ExcelJS.CellValue;
@@ -214,12 +205,9 @@ export class DepartmentDispenseExportExcelService {
     }
 
     worksheet.getColumn(1).width = 22;
-    worksheet.getColumn(2).width = 30;
+    worksheet.getColumn(2).width = 36;
     worksheet.getColumn(3).width = 18;
-    worksheet.getColumn(4).width = 36;
+    worksheet.getColumn(4).width = 40;
     worksheet.getColumn(5).width = 12;
-    worksheet.getColumn(6).width = 10;
-    worksheet.getColumn(7).width = 10;
-    worksheet.getColumn(8).width = 10;
   }
 }

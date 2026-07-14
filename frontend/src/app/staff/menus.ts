@@ -105,7 +105,7 @@ export const staffMenuItems = [
             {
                 name: 'เบิกอุปกรณ์ให้หน่วยงาน',
                 href: '/staff/department-dispense',
-                description: 'สร้างเอกสารควบคุมการเบิก — เลือก Division รายการ และตำแหน่ง',
+                description: 'เลือก Division → รายการเบิก → ตำแหน่ง → เอกสารควบคุมการเบิก',
                 icon: ClipboardList,
             },
             {

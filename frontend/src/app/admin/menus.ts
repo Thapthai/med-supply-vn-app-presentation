@@ -110,7 +110,7 @@ export const adminMenuItems: StaffMenuItem[] = [
       {
         name: 'เบิกอุปกรณ์ให้หน่วยงาน',
         href: '/admin/department-dispense',
-        description: 'เอกสารควบคุมการเบิก 3 ขั้นตอน — ตำแหน่งจากเมนูตำแหน่งจัดเก็บอุปกรณ์',
+        description: 'เลือก Division → รายการเบิก → ตำแหน่ง Row/Rack/Shelf → เอกสารควบคุมการเบิก',
         icon: ClipboardList,
       },
       {
@@ -162,7 +162,7 @@ export const adminMenuItems: StaffMenuItem[] = [
         name: 'ตำแหน่งจัดเก็บอุปกรณ์',
         href: '/admin/management/storage-locations',
         icon: Layers,
-        description: 'บันทึก Row/Rack/Shelf ใน app_item_storage_locations แยกจากระบบอื่น',
+        description: 'บันทึก Row/Rack/Shelf ต่อ Item ใน app_item_storage_locations',
       },
       {
         name: 'จัดการพนักงาน',

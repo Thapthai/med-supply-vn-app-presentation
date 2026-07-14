@@ -4,7 +4,6 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  ParseIntPipe,
   Post,
   Query,
   UseGuards,
@@ -18,23 +17,49 @@ import { BulkUpsertItemStorageLocationsDto } from './dto/bulk-upsert-cabinet-slo
 export class CabinetSlotLocationController {
   constructor(private readonly service: CabinetSlotLocationService) {}
 
-  /** Step 1 — รายการจาก item สำหรับจัดการตำแหน่ง */
-  @Get('cabinet-items')
-  listCabinetItems(
-    @Query('cabinet_id', ParseIntPipe) cabinetId: number,
+  /** รายการ item สำหรับจัดการตำแหน่ง (ไม่ต้องเลือกตู้) */
+  @Get('items')
+  listItems(
     @Query('keyword') keyword?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.service.listCabinetItems(
-      cabinetId,
+    return this.service.listItems(
       keyword,
       page ? parseInt(page, 10) : undefined,
       limit ? parseInt(limit, 10) : undefined,
     );
   }
 
-  /** Step 2 — บันทึก mapping Row / Rack / Shelf */
+  /** รายการที่ mapping ตำแหน่งแล้ว */
+  @Get('mapped')
+  listMapped(
+    @Query('keyword') keyword?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.service.listMapped(
+      keyword,
+      page ? parseInt(page, 10) : undefined,
+      limit ? parseInt(limit, 10) : undefined,
+    );
+  }
+
+  /** @deprecated ใช้ GET /items แทน — คงไว้เพื่อไม่ให้ client เก่าพัง (ignore cabinet_id) */
+  @Get('cabinet-items')
+  listCabinetItems(
+    @Query('keyword') keyword?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.service.listItems(
+      keyword,
+      page ? parseInt(page, 10) : undefined,
+      limit ? parseInt(limit, 10) : undefined,
+    );
+  }
+
+  /** บันทึก mapping Row / Rack / Shelf / qty ต่อ itemcode */
   @Post('bulk')
   @HttpCode(HttpStatus.OK)
   bulkUpsert(@Body() dto: BulkUpsertItemStorageLocationsDto) {

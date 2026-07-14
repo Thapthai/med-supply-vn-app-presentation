@@ -28,11 +28,13 @@ export type DepartmentDispenseItem = {
 };
 
 export type DepartmentDispenseLocation = {
+  location_id: number;
   itemcode: string;
   itemname?: string | null;
   location_row: string | null;
   location_rack: string | null;
   location_shelf: string | null;
+  qty: number;
   store_ref: string | null;
   location_source?: 'item_storage';
   stock_id: number | null;
@@ -105,7 +107,14 @@ export const departmentDispenseApi = {
   createDocument: async (body: {
     department_id: number;
     remark?: string;
-    lines: Array<{ itemcode: string; qty: number }>;
+    lines: Array<{
+      itemcode: string;
+      qty: number;
+      location_id?: number;
+      location_row?: string | null;
+      location_rack?: string | null;
+      location_shelf?: string | null;
+    }>;
   }): Promise<ApiResponse<DepartmentDispenseDocument>> => {
     const response = await api.post('/department-dispense/documents', body);
     return response.data;
@@ -173,6 +182,23 @@ export const departmentDispenseApi = {
     downloadBase64File(
       res.data,
       `department_dispense_documents_${new Date().toISOString().split('T')[0]}.pdf`,
+      'application/pdf',
+    );
+  },
+
+  downloadDocumentPdf: async (id: number): Promise<void> => {
+    const response = await api.post(`/department-dispense/documents/${id}/export/pdf`);
+    const res = response.data as {
+      success?: boolean;
+      data?: { buffer?: string; filename?: string; contentType?: string };
+      error?: string;
+    };
+    if (!res?.success || !res?.data?.buffer) {
+      throw new Error(res?.error || 'ไม่สามารถสร้างไฟล์ PDF ได้');
+    }
+    downloadBase64File(
+      res.data,
+      `department_dispense_document_${id}.pdf`,
       'application/pdf',
     );
   },

@@ -4,20 +4,30 @@ import type { ApiResponse } from '@/types/common';
 export type ItemStorageLocationRow = {
   itemcode: string;
   itemname?: string | null;
-  stock_id: number;
   stock_max?: number | null;
+  mapped_count?: number;
   location_id?: number | null;
   location_row?: string | null;
   location_rack?: string | null;
   location_shelf?: string | null;
+  qty?: number | null;
+  updated_at?: string | null;
 };
 
 export type ItemStorageLocationMappingLine = {
-  stock_id: number;
   itemcode: string;
   location_row?: string | null;
   location_rack?: string | null;
   location_shelf?: string | null;
+  qty?: number | null;
+};
+
+export type ItemStorageLocationListResult = {
+  items: ItemStorageLocationRow[];
+  total: number;
+  page: number;
+  limit: number;
+  lastPage: number;
 };
 
 /** @deprecated use ItemStorageLocationRow */
@@ -30,27 +40,13 @@ export type CabinetSlotLocationMappingLine = ItemStorageLocationMappingLine & {
 };
 
 export const cabinetSlotLocationApi = {
-  listCabinetItems: async (
-    cabinetId: number,
-    params?: { keyword?: string; page?: number; limit?: number },
-  ): Promise<
-    ApiResponse<{
-      cabinet: {
-        id: number;
-        stock_id: number;
-        cabinet_name?: string | null;
-        cabinet_code?: string | null;
-      };
-      items: ItemStorageLocationRow[];
-      total: number;
-      page: number;
-      limit: number;
-      lastPage: number;
-    }>
-  > => {
-    const response = await api.get('/cabinet-slot-locations/cabinet-items', {
+  listItems: async (params?: {
+    keyword?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<ApiResponse<ItemStorageLocationListResult>> => {
+    const response = await api.get('/cabinet-slot-locations/items', {
       params: {
-        cabinet_id: cabinetId,
         keyword: params?.keyword || undefined,
         page: params?.page,
         limit: params?.limit,
@@ -58,6 +54,27 @@ export const cabinetSlotLocationApi = {
     });
     return response.data;
   },
+
+  listMapped: async (params?: {
+    keyword?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<ApiResponse<ItemStorageLocationListResult>> => {
+    const response = await api.get('/cabinet-slot-locations/mapped', {
+      params: {
+        keyword: params?.keyword || undefined,
+        page: params?.page,
+        limit: params?.limit,
+      },
+    });
+    return response.data;
+  },
+
+  /** @deprecated use listItems */
+  listCabinetItems: async (
+    _cabinetId: number,
+    params?: { keyword?: string; page?: number; limit?: number },
+  ) => cabinetSlotLocationApi.listItems(params),
 
   bulkUpsert: async (body: {
     locations: ItemStorageLocationMappingLine[];

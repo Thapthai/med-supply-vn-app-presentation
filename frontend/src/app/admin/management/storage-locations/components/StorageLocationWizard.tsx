@@ -15,59 +15,52 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import SearchableSelect from '@/app/admin/management/cabinet-departments/components/SearchableSelect';
-import { cabinetApi } from '@/lib/api';
+import Pagination from '@/components/Pagination';
 import {
   cabinetSlotLocationApi,
   type ItemStorageLocationRow,
 } from '@/lib/cabinetSlotLocationApi';
+import StorageLocationSearchCard from './StorageLocationSearchCard';
 
-type CabinetOpt = {
-  id: number;
-  cabinet_name?: string | null;
-  cabinet_code?: string | null;
-  stock_id?: number | null;
-};
+const ITEMS_PER_PAGE = 10;
 
 type MappingDraft = {
   location_row: string;
   location_rack: string;
   location_shelf: string;
+  qty: string;
 };
 
-function cabinetLabel(c: CabinetOpt): string {
-  const name = (c.cabinet_name ?? c.cabinet_code ?? '').trim() || `ตู้ #${c.id}`;
-  const code = c.cabinet_code?.trim();
-  const stock = c.stock_id != null ? `StockID ${c.stock_id}` : 'ไม่มี stock_id';
-  return code ? `${name} (${code}) — ${stock}` : `${name} — ${stock}`;
+const EMPTY_DRAFT: MappingDraft = {
+  location_row: '',
+  location_rack: '',
+  location_shelf: '',
+  qty: '',
+};
+
+function itemKey(item: Pick<ItemStorageLocationRow, 'itemcode'>) {
+  return item.itemcode;
 }
 
-function itemKey(item: Pick<ItemStorageLocationRow, 'stock_id' | 'itemcode'>) {
-  return `${item.itemcode}:${item.stock_id}`;
+function parseQty(value: string): number | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const n = Number(trimmed);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return Math.trunc(n);
 }
 
-function draftFromItem(item: ItemStorageLocationRow): MappingDraft {
-  return {
-    location_row: item.location_row ?? '',
-    location_rack: item.location_rack ?? '',
-    location_shelf: item.location_shelf ?? '',
-  };
-}
-
-function isDraftDirty(item: ItemStorageLocationRow, draft: MappingDraft): boolean {
-  const orig = draftFromItem(item);
-  return (
-    draft.location_row !== orig.location_row ||
-    draft.location_rack !== orig.location_rack ||
-    draft.location_shelf !== orig.location_shelf
+function isDraftFilled(draft: MappingDraft): boolean {
+  return !!(
+    draft.location_row.trim() ||
+    draft.location_rack.trim() ||
+    draft.location_shelf.trim() ||
+    draft.qty.trim()
   );
 }
 
 export default function StorageLocationWizard() {
-  const [cabinets, setCabinets] = useState<CabinetOpt[]>([]);
-  const [loadingCabinets, setLoadingCabinets] = useState(false);
-  const [cabinetId, setCabinetId] = useState('');
-  const [keyword, setKeyword] = useState('');
+  const [appliedKeyword, setAppliedKeyword] = useState('');
   const [items, setItems] = useState<ItemStorageLocationRow[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
@@ -76,62 +69,43 @@ export default function StorageLocationWizard() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [lastPage, setLastPage] = useState(1);
-  const limit = 100;
 
-  const selectedCabinet = useMemo(
-    () => cabinets.find((c) => String(c.id) === cabinetId) ?? null,
-    [cabinets, cabinetId],
+  const pageKeys = useMemo(() => items.map((item) => itemKey(item)), [items]);
+
+  const allPageSelected = useMemo(
+    () => pageKeys.length > 0 && pageKeys.every((key) => selectedKeys.has(key)),
+    [pageKeys, selectedKeys],
   );
 
-  const dirtyKeys = useMemo(() => {
-    const keys = new Set<string>();
-    for (const item of items) {
-      const key = itemKey(item);
+  const filledSelectedCount = useMemo(() => {
+    let n = 0;
+    for (const key of selectedKeys) {
       const draft = drafts[key];
-      if (draft && isDraftDirty(item, draft)) keys.add(key);
+      if (draft && isDraftFilled(draft)) n += 1;
     }
-    return keys;
-  }, [items, drafts]);
-
-  const loadCabinets = useCallback(async (kw?: string) => {
-    try {
-      setLoadingCabinets(true);
-      const res = await cabinetApi.getAll({ limit: 100, keyword: kw });
-      if (res.success && res.data) {
-        setCabinets((res.data as CabinetOpt[]).filter((c) => c.stock_id != null));
-      }
-    } catch {
-      toast.error('โหลดรายการตู้ไม่สำเร็จ');
-    } finally {
-      setLoadingCabinets(false);
-    }
-  }, []);
+    return n;
+  }, [selectedKeys, drafts]);
 
   const loadItems = useCallback(async () => {
-    if (!cabinetId) {
-      setItems([]);
-      return;
-    }
     try {
       setLoadingItems(true);
-      const res = await cabinetSlotLocationApi.listCabinetItems(Number(cabinetId), {
-        keyword,
+      const res = await cabinetSlotLocationApi.listItems({
+        keyword: appliedKeyword || undefined,
         page,
-        limit,
+        limit: ITEMS_PER_PAGE,
       });
       if (res.success && res.data) {
         setItems(res.data.items);
         setTotal(res.data.total);
         setLastPage(res.data.lastPage);
-        const nextDrafts: Record<string, MappingDraft> = {};
-        const nextSelected = new Set<string>();
-        for (const item of res.data.items) {
-          const key = itemKey(item);
-          nextDrafts[key] = draftFromItem(item);
-          nextSelected.add(key);
-        }
-        setDrafts(nextDrafts);
-        setSelectedKeys(nextSelected);
+        setDrafts((prev) => {
+          const next = { ...prev };
+          for (const item of res.data!.items) {
+            const key = itemKey(item);
+            if (!next[key]) next[key] = { ...EMPTY_DRAFT };
+          }
+          return next;
+        });
       } else {
         toast.error('โหลดรายการไม่สำเร็จ');
       }
@@ -141,26 +115,25 @@ export default function StorageLocationWizard() {
     } finally {
       setLoadingItems(false);
     }
-  }, [cabinetId, keyword, page, limit]);
+  }, [appliedKeyword, page]);
 
   useEffect(() => {
-    void loadCabinets();
-  }, [loadCabinets]);
+    void loadItems();
+  }, [loadItems]);
 
-  useEffect(() => {
+  const handleSearch = (keyword: string) => {
     setPage(1);
-  }, [cabinetId, keyword]);
+    setDrafts({});
+    setSelectedKeys(new Set());
+    setAppliedKeyword(keyword);
+  };
 
-  useEffect(() => {
-    if (!cabinetId) {
-      setItems([]);
-      setSelectedKeys(new Set());
-      setTotal(0);
-      return;
-    }
-    const timer = setTimeout(() => void loadItems(), 300);
-    return () => clearTimeout(timer);
-  }, [cabinetId, keyword, page, loadItems]);
+  const handleReset = () => {
+    setPage(1);
+    setDrafts({});
+    setSelectedKeys(new Set());
+    setAppliedKeyword('');
+  };
 
   const toggleItem = (item: ItemStorageLocationRow, checked: boolean) => {
     const key = itemKey(item);
@@ -173,17 +146,23 @@ export default function StorageLocationWizard() {
   };
 
   const toggleAll = (checked: boolean) => {
-    if (!checked) {
-      setSelectedKeys(new Set());
-      return;
-    }
-    setSelectedKeys(new Set(items.map((item) => itemKey(item))));
+    setSelectedKeys((prev) => {
+      const next = new Set(prev);
+      for (const key of pageKeys) {
+        if (checked) next.add(key);
+        else next.delete(key);
+      }
+      return next;
+    });
   };
 
   const updateDraft = (key: string, field: keyof MappingDraft, value: string) => {
     setDrafts((prev) => ({
       ...prev,
-      [key]: { ...(prev[key] ?? { location_row: '', location_rack: '', location_shelf: '' }), [field]: value },
+      [key]: {
+        ...(prev[key] ?? { ...EMPTY_DRAFT }),
+        [field]: value,
+      },
     }));
   };
 
@@ -192,21 +171,24 @@ export default function StorageLocationWizard() {
       toast.error('ไม่มีรายการที่จะบันทึก');
       return;
     }
-    const itemByKey = new Map(items.map((item) => [itemKey(item), item]));
     const locations = keysToSave
       .map((key) => {
-        const item = itemByKey.get(key);
-        if (!item) return null;
-        const draft = drafts[key] ?? draftFromItem(item);
+        const draft = drafts[key] ?? EMPTY_DRAFT;
+        if (!isDraftFilled(draft)) return null;
         return {
-          stock_id: item.stock_id,
-          itemcode: item.itemcode,
+          itemcode: key,
           location_row: draft.location_row.trim() || null,
           location_rack: draft.location_rack.trim() || null,
           location_shelf: draft.location_shelf.trim() || null,
+          qty: parseQty(draft.qty),
         };
       })
       .filter(Boolean);
+
+    if (locations.length === 0) {
+      toast.error('กรุณาระบุ Qty หรือ Row / Rack / Shelf ก่อนบันทึก');
+      return;
+    }
 
     try {
       setSaving(true);
@@ -215,6 +197,19 @@ export default function StorageLocationWizard() {
       });
       if (res.success) {
         toast.success(`บันทึกตำแหน่ง ${res.count ?? locations.length} รายการสำเร็จ`);
+        const savedKeys = new Set(
+          (locations as NonNullable<(typeof locations)[number]>[]).map((l) => l.itemcode),
+        );
+        setDrafts((prev) => {
+          const next = { ...prev };
+          for (const key of savedKeys) next[key] = { ...EMPTY_DRAFT };
+          return next;
+        });
+        setSelectedKeys((prev) => {
+          const next = new Set(prev);
+          for (const key of savedKeys) next.delete(key);
+          return next;
+        });
         void loadItems();
       } else {
         toast.error('บันทึกไม่สำเร็จ');
@@ -236,194 +231,148 @@ export default function StorageLocationWizard() {
     void saveItems(keys);
   };
 
-  const handleSaveDirty = () => {
-    const keys = [...dirtyKeys].filter((k) => selectedKeys.has(k));
-    if (keys.length === 0) {
-      toast.error('ไม่มีรายการที่แก้ไขในชุดที่เลือก');
-      return;
-    }
-    void saveItems(keys);
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      <StorageLocationSearchCard
+        description="ค้นจากรหัส/ชื่อ Item แล้วกดค้นหา เพื่อตั้งค่าตำแหน่ง"
+        loading={loadingItems}
+        onSearch={handleSearch}
+        onReset={handleReset}
+        onRefresh={() => void loadItems()}
+      />
+
       <Card>
         <CardHeader>
-          <CardTitle>ตำแหน่งจัดเก็บอุปกรณ์</CardTitle>
-          <CardDescription>
-            เลือกตู้ → แสดงรายการ item → บันทึกตำแหน่งใน app_item_storage_locations (แยกจาก itemstock / slot)
-          </CardDescription>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle>ตั้งค่าตำแหน่ง</CardTitle>
+              <CardDescription>
+                1 item ตั้งค่าตำแหน่งได้หลายแถว — ถ้า Item + Row + Rack + Shelf ซ้ำจะอัปเดต Qty ถ้าไม่ซ้ำจะสร้างใหม่
+              </CardDescription>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              disabled={saving || selectedKeys.size === 0}
+              onClick={handleSaveSelected}
+            >
+              {saving ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              บันทึกที่เลือก ({filledSelectedCount}/{selectedKeys.size})
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <SearchableSelect
-            label="ตู้ Cabinet"
-            placeholder="เลือกตู้"
-            value={cabinetId}
-            onValueChange={setCabinetId}
-            options={cabinets.map((c) => ({
-              value: String(c.id),
-              label: cabinetLabel(c),
-            }))}
-            loading={loadingCabinets}
-            onSearch={(kw) => void loadCabinets(kw)}
-            searchPlaceholder="ค้นหาชื่อตู้..."
-          />
+          {!loadingItems && total > 0 && (
+            <p className="text-sm text-muted-foreground">ทั้งหมด {total.toLocaleString()} รายการ</p>
+          )}
 
-          {cabinetId && (
-            <>
-              <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Input
-                    placeholder="ค้นหารหัส / ชื่อ Item"
-                    value={keyword}
-                    onChange={(e) => setKeyword(e.target.value)}
-                    className="max-w-xs"
-                  />
-                  {selectedCabinet && (
-                    <span className="text-sm text-muted-foreground">
-                      ตู้: <strong>{cabinetLabel(selectedCabinet)}</strong>
-                    </span>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={saving || dirtyKeys.size === 0}
-                    onClick={handleSaveDirty}
-                  >
-                    บันทึกที่แก้ไข ({dirtyKeys.size})
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    disabled={saving || selectedKeys.size === 0}
-                    onClick={handleSaveSelected}
-                  >
-                    {saving ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Save className="mr-2 h-4 w-4" />
-                    )}
-                    บันทึกที่เลือก ({selectedKeys.size})
-                  </Button>
-                </div>
-              </div>
-
-              {loadingItems ? (
-                <div className="flex justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-                </div>
-              ) : items.length === 0 ? (
-                <p className="rounded-md border border-dashed py-10 text-center text-sm text-muted-foreground">
-                  ไม่พบรายการ item — ลองค้นหาด้วยรหัสหรือชื่อ
-                </p>
-              ) : (
-                <div className="overflow-auto rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-10 sticky left-0 bg-background">
+          {loadingItems ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+            </div>
+          ) : items.length === 0 ? (
+            <p className="rounded-md border border-dashed py-10 text-center text-sm text-muted-foreground">
+              {appliedKeyword
+                ? 'ไม่พบรายการตามคำค้นหา'
+                : 'ไม่พบรายการ item — ลองค้นหาด้วยรหัสหรือชื่อ'}
+            </p>
+          ) : (
+            <div className="overflow-auto rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10 sticky left-0 bg-background">
+                      <Checkbox
+                        checked={allPageSelected}
+                        onCheckedChange={(v) => toggleAll(v === true)}
+                      />
+                    </TableHead>
+                    <TableHead>รหัส Item</TableHead>
+                    <TableHead>ชื่อ</TableHead>
+                    <TableHead className="w-24">แม็พแล้ว</TableHead>
+                    <TableHead className="min-w-[90px]">Qty</TableHead>
+                    <TableHead className="min-w-[100px]">Row</TableHead>
+                    <TableHead className="min-w-[100px]">Rack</TableHead>
+                    <TableHead className="min-w-[100px]">Shelf</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {items.map((item) => {
+                    const key = itemKey(item);
+                    const checked = selectedKeys.has(key);
+                    const draft = drafts[key] ?? EMPTY_DRAFT;
+                    const mappedCount = item.mapped_count ?? 0;
+                    return (
+                      <TableRow key={key} className={checked ? 'bg-amber-50/40' : undefined}>
+                        <TableCell className="sticky left-0 bg-inherit">
                           <Checkbox
-                            checked={items.length > 0 && selectedKeys.size === items.length}
-                            onCheckedChange={(v) => toggleAll(v === true)}
+                            checked={checked}
+                            onCheckedChange={(v) => toggleItem(item, v === true)}
                           />
-                        </TableHead>
-                        <TableHead>รหัส Item</TableHead>
-                        <TableHead>ชื่อ</TableHead>
-                        <TableHead className="w-20">ใส่ได้สูงสุด</TableHead>
-                        <TableHead className="min-w-[100px]">Row</TableHead>
-                        <TableHead className="min-w-[100px]">Rack</TableHead>
-                        <TableHead className="min-w-[100px]">Shelf</TableHead>
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{item.itemcode}</TableCell>
+                        <TableCell>{item.itemname ?? '—'}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {mappedCount > 0 ? `${mappedCount} ตำแหน่ง` : '—'}
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            min={0}
+                            className="h-8 min-w-[80px]"
+                            value={draft.qty}
+                            onChange={(e) => updateDraft(key, 'qty', e.target.value)}
+                            placeholder="0"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            className="h-8 min-w-[88px]"
+                            value={draft.location_row}
+                            onChange={(e) => updateDraft(key, 'location_row', e.target.value)}
+                            placeholder="Row"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            className="h-8 min-w-[88px]"
+                            value={draft.location_rack}
+                            onChange={(e) => updateDraft(key, 'location_rack', e.target.value)}
+                            placeholder="Rack"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            className="h-8 min-w-[88px]"
+                            value={draft.location_shelf}
+                            onChange={(e) => updateDraft(key, 'location_shelf', e.target.value)}
+                            placeholder="Shelf"
+                          />
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {items.map((item) => {
-                        const key = itemKey(item);
-                        const checked = selectedKeys.has(key);
-                        const draft = drafts[key] ?? draftFromItem(item);
-                        const dirty = isDraftDirty(item, draft);
-                        const hasMapping = !!(item.location_row || item.location_rack || item.location_shelf);
-                        return (
-                          <TableRow
-                            key={key}
-                            className={dirty ? 'bg-amber-50/60' : hasMapping ? 'bg-green-50/40' : undefined}
-                          >
-                            <TableCell className="sticky left-0 bg-inherit">
-                              <Checkbox
-                                checked={checked}
-                                onCheckedChange={(v) => toggleItem(item, v === true)}
-                              />
-                            </TableCell>
-                            <TableCell className="font-mono text-xs">{item.itemcode}</TableCell>
-                            <TableCell>{item.itemname ?? '—'}</TableCell>
-                            <TableCell>{item.stock_max ?? '—'}</TableCell>
-                            <TableCell>
-                              <Input
-                                className="h-8 min-w-[88px]"
-                                value={draft.location_row}
-                                onChange={(e) => updateDraft(key, 'location_row', e.target.value)}
-                                placeholder="Row"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                className="h-8 min-w-[88px]"
-                                value={draft.location_rack}
-                                onChange={(e) => updateDraft(key, 'location_rack', e.target.value)}
-                                placeholder="Rack"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                className="h-8 min-w-[88px]"
-                                value={draft.location_shelf}
-                                onChange={(e) => updateDraft(key, 'location_shelf', e.target.value)}
-                                placeholder="Shelf"
-                              />
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
 
-              {items.length > 0 && (
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-xs text-muted-foreground">
-                    แถวสีเขียว = มีตำแหน่งบันทึกแล้ว · แถวสีเหลือง = แก้ไขแล้วยังไม่บันทึก
-                    {total > 0 ? ` · ทั้งหมด ${total.toLocaleString()} รายการ` : ''}
-                  </p>
-                  {lastPage > 1 && (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={page <= 1 || loadingItems}
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      >
-                        ก่อนหน้า
-                      </Button>
-                      <span className="text-xs text-muted-foreground">
-                        หน้า {page} / {lastPage}
-                      </span>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={page >= lastPage || loadingItems}
-                        onClick={() => setPage((p) => p + 1)}
-                      >
-                        ถัดไป
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
+          {!loadingItems && items.length > 0 && (
+            <>
+              <p className="text-xs text-muted-foreground">
+                กรอกตำแหน่งใหม่แล้วเลือกแถวเพื่อบันทึก · ดูรายการที่สร้างแล้วได้ที่แท็บ &quot;ตำแหน่งที่
+                mapping แล้ว&quot;
+              </p>
+              <Pagination
+                currentPage={page}
+                totalPages={lastPage}
+                onPageChange={setPage}
+                loading={loadingItems}
+              />
             </>
           )}
         </CardContent>

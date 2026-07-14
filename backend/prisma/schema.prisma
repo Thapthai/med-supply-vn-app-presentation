@@ -683,7 +683,6 @@ model cabinet {
   cabinetItemSettings     CabinetItemSetting[]
   itemSlotInCabinet       ItemSlotInCabinet[]
   cabinetSlotLocations    CabinetSlotLocation[]
-  itemStorageLocations    ItemStorageLocation[]
 
   @@map("app_cabinets")
 }
@@ -785,22 +784,20 @@ model CabinetSlotLocation {
   @@map("app_cabinet_slot_locations")
 }
 
-/// ตำแหน่งจัดเก็บอุปกรณ์ — แยกเฉพาะการจัดการ Row/Rack/Shelf ต่อตู้ + item (ไม่ผูก itemstock / itemslotincabinet)
+/// ตำแหน่งจัดเก็บอุปกรณ์ — 1 item มีได้หลายตำแหน่ง; unique ที่ itemcode+Row+Rack+Shelf
 model ItemStorageLocation {
   id             Int      @id @default(autoincrement())
-  stock_id       Int      @map("stock_id")
   itemcode       String   @map("itemcode") @db.VarChar(25)
-  location_row   String?  @map("location_row") @db.VarChar(50)
-  location_rack  String?  @map("location_rack") @db.VarChar(50)
-  location_shelf String?  @map("location_shelf") @db.VarChar(50)
+  location_row   String   @default("") @map("location_row") @db.VarChar(50)
+  location_rack  String   @default("") @map("location_rack") @db.VarChar(50)
+  location_shelf String   @default("") @map("location_shelf") @db.VarChar(50)
+  qty            Int?     @map("qty")
   created_at     DateTime @default(now()) @map("created_at") @db.DateTime(3)
   updated_at     DateTime @updatedAt @map("updated_at") @db.DateTime(3)
 
-  cabinet cabinet? @relation(fields: [stock_id], references: [stock_id], onDelete: Cascade)
-  item    Item?    @relation(fields: [itemcode], references: [itemcode], onDelete: Cascade)
+  item Item? @relation(fields: [itemcode], references: [itemcode], onDelete: Cascade)
 
-  @@unique([stock_id, itemcode], map: "uq_item_storage_location")
-  @@index([stock_id])
+  @@unique([itemcode, location_row, location_rack, location_shelf], map: "uq_item_storage_location")
   @@index([itemcode])
   @@map("app_item_storage_locations")
 }

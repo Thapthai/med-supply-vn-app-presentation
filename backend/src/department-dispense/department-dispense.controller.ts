@@ -35,7 +35,7 @@ function toFileResponse(buffer: Buffer, filename: string, contentType: string) {
 export class DepartmentDispenseController {
   constructor(private readonly service: DepartmentDispenseService) {}
 
-  /** Step 2 — รายการ Item ที่ผูกกับ Division */
+  /** รายการ Item ที่ mapping ตำแหน่งแล้ว (ไม่ต้องผูกกับ Division) */
   @Get('department-items')
   listDepartmentItems(
     @Query('department_id', ParseIntPipe) departmentId: number,
@@ -81,12 +81,6 @@ export class DepartmentDispenseController {
     });
   }
 
-  /** รายละเอียดเอกสาร */
-  @Get('documents/:id')
-  getDocument(@Param('id', ParseIntPipe) id: number) {
-    return this.service.getDocument(id);
-  }
-
   /** ส่งออกรายการเอกสารควบคุมการเบิก — Excel */
   @Post('documents/export/excel')
   @HttpCode(HttpStatus.OK)
@@ -127,5 +121,24 @@ export class DepartmentDispenseController {
       const message = error instanceof Error ? error.message : 'ส่งออก PDF ไม่สำเร็จ';
       return { success: false, error: message };
     }
+  }
+
+  /** ส่งออกเอกสารเดี่ยว — PDF */
+  @Post('documents/:id/export/pdf')
+  @HttpCode(HttpStatus.OK)
+  async exportDocumentPdf(@Param('id', ParseIntPipe) id: number) {
+    try {
+      const result = await this.service.exportDocumentsPdf({ document_id: id });
+      return toFileResponse(result.buffer, result.filename, PDF_CONTENT);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'ส่งออก PDF ไม่สำเร็จ';
+      return { success: false, error: message };
+    }
+  }
+
+  /** รายละเอียดเอกสาร */
+  @Get('documents/:id')
+  getDocument(@Param('id', ParseIntPipe) id: number) {
+    return this.service.getDocument(id);
   }
 }

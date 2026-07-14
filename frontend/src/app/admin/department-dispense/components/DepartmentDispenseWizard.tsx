@@ -1,12 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { CheckCircle2, ChevronRight, Download, Loader2, Printer, RotateCcw } from 'lucide-react';
+import { CheckCircle2, Loader2, Printer, RotateCcw, Search, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -22,7 +21,6 @@ import {
   departmentDispenseApi,
   type DepartmentDispenseDocument,
   type DepartmentDispenseItem,
-  type DepartmentDispenseLocation,
 } from '@/lib/departmentDispenseApi';
 
 type DepartmentOpt = {
@@ -32,10 +30,11 @@ type DepartmentOpt = {
   RefDepID?: string;
 };
 
-type SelectedLine = {
+type SelectedItem = {
   itemcode: string;
   itemname?: string | null;
-  qty: number;
+  /** อนุญาต '' ตอนกำลังล้างค่าในช่องกรอก */
+  qty: number | '';
 };
 
 function deptLabel(d: DepartmentOpt): string {
@@ -56,19 +55,14 @@ export default function DepartmentDispenseWizard() {
   const [departments, setDepartments] = useState<DepartmentOpt[]>([]);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [departmentId, setDepartmentId] = useState('');
-  const [keyword, setKeyword] = useState('');
+  const [keywordInput, setKeywordInput] = useState('');
+  const [appliedKeyword, setAppliedKeyword] = useState('');
   const [items, setItems] = useState<DepartmentDispenseItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
-  const [selected, setSelected] = useState<SelectedLine[]>([]);
-  const [locations, setLocations] = useState<DepartmentDispenseLocation[]>([]);
-  const [missingLocationCodes, setMissingLocationCodes] = useState<string[]>([]);
-  const [loadingLocations, setLoadingLocations] = useState(false);
+  const [selected, setSelected] = useState<SelectedItem[]>([]);
   const [remark, setRemark] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [lastDoc, setLastDoc] = useState<DepartmentDispenseDocument | null>(null);
-  const [history, setHistory] = useState<DepartmentDispenseDocument[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
-  const [exportLoading, setExportLoading] = useState<'excel' | 'pdf' | null>(null);
   const prevDepartmentIdRef = useRef('');
 
   const selectedDept = useMemo(
@@ -76,45 +70,28 @@ export default function DepartmentDispenseWizard() {
     [departments, departmentId],
   );
 
-  const selectedCodesKey = useMemo(
-    () => selected.map((s) => s.itemcode).sort().join(','),
-    [selected],
-  );
+  const selectedByCode = useMemo(() => {
+    const map = new Map<string, SelectedItem>();
+    for (const s of selected) map.set(s.itemcode, s);
+    return map;
+  }, [selected]);
 
-  const locationLines = useMemo(
+  const canSubmit = useMemo(
     () =>
-      locations.map((loc) => {
-        const sel = selected.find((s) => s.itemcode === loc.itemcode);
-        return {
-          ...loc,
-          dispense_qty: sel?.qty ?? 1,
-          itemname: sel?.itemname ?? loc.itemname,
-        };
-      }),
-    [locations, selected],
+      !!departmentId &&
+      selected.some((s) => typeof s.qty === 'number' && s.qty > 0),
+    [departmentId, selected],
   );
 
   const loadDepartments = useCallback(async (kw?: string) => {
     try {
       setLoadingDepartments(true);
-      const res = await departmentApi.getAll({ limit: 80, keyword: kw, withCabinet: true });
+      const res = await departmentApi.getAll({ limit: 80, keyword: kw });
       if (res.success && res.data) setDepartments(res.data as DepartmentOpt[]);
     } catch {
       toast.error('โหลดหน่วยงานไม่สำเร็จ');
     } finally {
       setLoadingDepartments(false);
-    }
-  }, []);
-
-  const loadHistory = useCallback(async () => {
-    try {
-      setLoadingHistory(true);
-      const res = await departmentDispenseApi.listDocuments({ page: 1, limit: 10 });
-      if (res.success) setHistory(res.data ?? []);
-    } catch {
-      /* ignore */
-    } finally {
-      setLoadingHistory(false);
     }
   }, []);
 
@@ -125,7 +102,10 @@ export default function DepartmentDispenseWizard() {
     }
     try {
       setLoadingItems(true);
-      const res = await departmentDispenseApi.listDepartmentItems(Number(departmentId), keyword);
+      const res = await departmentDispenseApi.listDepartmentItems(
+        Number(departmentId),
+        appliedKeyword || undefined,
+      );
       if (res.success && res.data) {
         setItems(res.data.items);
       } else {
@@ -136,96 +116,93 @@ export default function DepartmentDispenseWizard() {
     } finally {
       setLoadingItems(false);
     }
-  }, [departmentId, keyword]);
-
-  const loadLocations = useCallback(
-    async (codes: string[], deptId: string) => {
-      if (codes.length === 0 || !deptId) {
-        setLocations([]);
-        setMissingLocationCodes([]);
-        return;
-      }
-      try {
-        setLoadingLocations(true);
-        const res = await departmentDispenseApi.resolveItemLocations(codes, Number(deptId));
-        if (res.success && res.data) {
-          setLocations(res.data);
-          setMissingLocationCodes(res.missing_itemcodes ?? []);
-        } else {
-          toast.error('โหลดตำแหน่งไม่สำเร็จ');
-        }
-      } catch {
-        toast.error('โหลดตำแหน่งไม่สำเร็จ');
-      } finally {
-        setLoadingLocations(false);
-      }
-    },
-    [],
-  );
+  }, [departmentId, appliedKeyword]);
 
   useEffect(() => {
     void loadDepartments();
-    void loadHistory();
-  }, [loadDepartments, loadHistory]);
+  }, [loadDepartments]);
 
   useEffect(() => {
     if (departmentId !== prevDepartmentIdRef.current) {
       setSelected([]);
-      setLocations([]);
-      setMissingLocationCodes([]);
+      setKeywordInput('');
+      setAppliedKeyword('');
       prevDepartmentIdRef.current = departmentId;
     }
     if (!departmentId) {
       setItems([]);
       return;
     }
-    const timer = setTimeout(() => void loadItems(), 300);
-    return () => clearTimeout(timer);
-  }, [departmentId, keyword, loadItems]);
+    void loadItems();
+  }, [departmentId, appliedKeyword, loadItems]);
 
-  useEffect(() => {
-    const codes = selectedCodesKey ? selectedCodesKey.split(',') : [];
-    const timer = setTimeout(() => void loadLocations(codes, departmentId), 200);
-    return () => clearTimeout(timer);
-  }, [selectedCodesKey, departmentId, loadLocations]);
-
-  const toggleItem = (item: DepartmentDispenseItem, checked: boolean) => {
+  const upsertSelectedQty = (
+    item: Pick<DepartmentDispenseItem, 'itemcode' | 'itemname'>,
+    qty: number | '',
+  ) => {
     setSelected((prev) => {
-      if (!checked) return prev.filter((l) => l.itemcode !== item.itemcode);
-      if (prev.some((l) => l.itemcode === item.itemcode)) return prev;
-      return [...prev, { itemcode: item.itemcode, itemname: item.itemname, qty: 1 }];
+      const numericZero = typeof qty === 'number' && qty <= 0;
+      if (qty === '' || numericZero) {
+        return prev.filter((l) => l.itemcode !== item.itemcode);
+      }
+      const exists = prev.some((l) => l.itemcode === item.itemcode);
+      if (!exists) {
+        return [...prev, { itemcode: item.itemcode, itemname: item.itemname, qty }];
+      }
+      return prev.map((l) => (l.itemcode === item.itemcode ? { ...l, qty } : l));
     });
   };
 
-  const setQty = (itemcode: string, qty: number) => {
+  const setSelectedQty = (itemcode: string, qty: number | '') => {
     setSelected((prev) =>
-      prev.map((l) => (l.itemcode === itemcode ? { ...l, qty: Math.max(1, qty) } : l)),
+      prev.map((l) => {
+        if (l.itemcode !== itemcode) return l;
+        if (qty === '') return { ...l, qty: '' };
+        const n = Math.trunc(Number(qty));
+        return { ...l, qty: Number.isFinite(n) && n >= 0 ? n : '' };
+      }),
     );
   };
 
+  const removeSelected = (itemcode: string) => {
+    setSelected((prev) => prev.filter((l) => l.itemcode !== itemcode));
+  };
+
+  const clearSelected = () => {
+    setSelected([]);
+    setRemark('');
+  };
+
   const handleSubmit = async () => {
-    if (!departmentId || selected.length === 0) return;
-    if (locationLines.length === 0) {
-      toast.error('ไม่พบตำแหน่ง — กรุณาตั้งค่าที่เมนูตำแหน่งจัดเก็บอุปกรณ์');
+    if (!departmentId) return;
+    const lines = selected
+      .filter((s) => typeof s.qty === 'number' && s.qty > 0)
+      .map((s) => ({
+        itemcode: s.itemcode,
+        qty: s.qty as number,
+      }));
+
+    if (lines.length === 0) {
+      toast.error('กรุณาเลือกรายการและระบุจำนวนเบิกอย่างน้อย 1');
       return;
     }
+
     try {
       setSubmitting(true);
       const res = await departmentDispenseApi.createDocument({
         department_id: Number(departmentId),
         remark: remark.trim() || undefined,
-        lines: selected.map((s) => ({ itemcode: s.itemcode, qty: s.qty })),
+        lines,
       });
       if (res.success && res.data) {
         setLastDoc(res.data);
         toast.success(`บันทึกเอกสาร ${res.data.doc_no} สำเร็จ`);
-        void loadHistory();
         setDepartmentId('');
         setSelected([]);
         setItems([]);
-        setLocations([]);
-        setMissingLocationCodes([]);
         setRemark('');
+        setKeywordInput('');
+        setAppliedKeyword('');
       } else {
         toast.error(res.message || 'บันทึกไม่สำเร็จ');
       }
@@ -237,42 +214,22 @@ export default function DepartmentDispenseWizard() {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const handlePrint = () => window.print();
 
   const resetWizard = () => {
     setDepartmentId('');
-    setKeyword('');
+    setKeywordInput('');
+    setAppliedKeyword('');
     setItems([]);
     setSelected([]);
-    setLocations([]);
-    setMissingLocationCodes([]);
     setRemark('');
     setLastDoc(null);
   };
 
-  const handleExportHistory = async (format: 'excel' | 'pdf') => {
-    if (history.length === 0) {
-      toast.error('ไม่มีเอกสารสำหรับส่งออก');
-      return;
-    }
-    try {
-      setExportLoading(format);
-      toast.info(`กำลังสร้างไฟล์ ${format.toUpperCase()}...`);
-      const params = { page: 1, limit: 10 };
-      if (format === 'excel') {
-        await departmentDispenseApi.downloadDocumentsExcel(params);
-      } else {
-        await departmentDispenseApi.downloadDocumentsPdf(params);
-      }
-      toast.success(`ดาวน์โหลด ${format.toUpperCase()} สำเร็จ`);
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'ส่งออกไม่สำเร็จ';
-      toast.error(msg);
-    } finally {
-      setExportLoading(null);
-    }
+  const parseQtyInput = (raw: string): number | '' => {
+    if (raw === '') return '';
+    const n = parseInt(raw, 10);
+    return Number.isFinite(n) && n >= 0 ? n : '';
   };
 
   return (
@@ -294,13 +251,6 @@ export default function DepartmentDispenseWizard() {
           }
         }
       `}</style>
-
-      <div className="flex justify-end print:hidden">
-        <Button type="button" variant="ghost" size="sm" className="gap-1" onClick={resetWizard}>
-          <RotateCcw className="h-4 w-4" />
-          เริ่มใหม่
-        </Button>
-      </div>
 
       {lastDoc && (
         <div className="print:hidden flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900">
@@ -344,9 +294,6 @@ export default function DepartmentDispenseWizard() {
                 <TableHead>รหัส</TableHead>
                 <TableHead>ชื่อ</TableHead>
                 <TableHead>จำนวนเบิก</TableHead>
-                <TableHead>Row</TableHead>
-                <TableHead>Rack</TableHead>
-                <TableHead>Shelf</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -355,9 +302,6 @@ export default function DepartmentDispenseWizard() {
                   <TableCell className="font-mono text-xs">{line.itemcode}</TableCell>
                   <TableCell>{line.item_name ?? '—'}</TableCell>
                   <TableCell>{line.qty}</TableCell>
-                  <TableCell>{line.location_row ?? '—'}</TableCell>
-                  <TableCell>{line.location_rack ?? '—'}</TableCell>
-                  <TableCell>{line.location_shelf ?? '—'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -366,21 +310,19 @@ export default function DepartmentDispenseWizard() {
       )}
 
       <Card className="print:hidden">
-        <CardHeader>
-          <CardTitle>เบิกอุปกรณ์ให้หน่วยงาน</CardTitle>
-          <CardDescription>
-            เลือกหน่วยงาน → เลือกรายการเบิก → ตำแหน่งแสดงอัตโนมัติ → บันทึกเอกสารควบคุมการเบิก
-          </CardDescription>
+        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+          <div className="space-y-1.5">
+            <CardTitle>เบิกอุปกรณ์ให้หน่วยงาน</CardTitle>
+            <CardDescription>
+              เลือกหน่วยงาน → ค้นหา/ใส่จำนวนฝั่งซ้าย → ตรวจรายการที่เลือกฝั่งขวา → ส่งข้อมูล
+            </CardDescription>
+          </div>
+          <Button type="button" variant="ghost" size="sm" className="shrink-0 gap-1" onClick={resetWizard}>
+            <RotateCcw className="h-4 w-4" />
+            เริ่มใหม่
+          </Button>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span className="rounded-full bg-slate-100 px-3 py-1">1. เลือกหน่วยงาน</span>
-            <ChevronRight className="h-4 w-4" />
-            <span className="rounded-full bg-slate-100 px-3 py-1">2. เลือกรายการเบิก</span>
-            <ChevronRight className="h-4 w-4" />
-            <span className="rounded-full bg-slate-100 px-3 py-1">3. ตำแหน่ง + บันทึกเอกสาร</span>
-          </div>
-
           <SearchableSelect
             label="หน่วยงาน (Division)"
             placeholder="เลือกหน่วยงาน"
@@ -395,130 +337,175 @@ export default function DepartmentDispenseWizard() {
             searchPlaceholder="ค้นหาชื่อหน่วยงาน..."
           />
 
-          {departmentId && (
-            <>
-              <div className="flex flex-wrap items-center gap-2 border-t pt-4">
-                <Input
-                  placeholder="ค้นหารหัส / ชื่อ Item"
-                  value={keyword}
-                  onChange={(e) => setKeyword(e.target.value)}
-                  className="max-w-xs"
-                />
-                {selectedDept && (
-                  <span className="text-sm text-muted-foreground">
-                    หน่วยงาน: <strong>{deptLabel(selectedDept)}</strong>
-                  </span>
+          {!departmentId ? (
+            <p className="rounded-md border border-dashed py-10 text-center text-sm text-muted-foreground">
+              เลือกหน่วยงานเพื่อเริ่มบันทึกการเบิก
+            </p>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {/* Left: catalog */}
+              <div className="space-y-3 rounded-lg border p-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">รายการอุปกรณ์</h3>
+                  {selectedDept && (
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      หน่วยงาน: <strong>{deptLabel(selectedDept)}</strong>
+                      {' · '}แสดงรายการที่ mapping ตำแหน่งแล้ว
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Input
+                      placeholder="ค้นหาจากชื่ออุปกรณ์ หรือ รหัสอุปกรณ์"
+                      value={keywordInput}
+                      onChange={(e) => setKeywordInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          setAppliedKeyword(keywordInput.trim());
+                        }
+                      }}
+                      className="h-10 bg-white pl-9 shadow-sm"
+                    />
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="gap-1"
+                      disabled={loadingItems}
+                      onClick={() => setAppliedKeyword(keywordInput.trim())}
+                    >
+                      <Search className="h-4 w-4" />
+                      ค้นหา
+                    </Button>
+                    {appliedKeyword ? (
+                      <>
+                        <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-900">
+                          คำค้น: {appliedKeyword}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 gap-1 px-2 text-xs text-slate-600"
+                          disabled={loadingItems}
+                          onClick={() => {
+                            setKeywordInput('');
+                            setAppliedKeyword('');
+                          }}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                          ล้าง
+                        </Button>
+                      </>
+                    ) : null}
+                  </div>
+                </div>
+
+                {loadingItems ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+                  </div>
+                ) : items.length === 0 ? (
+                  <p className="rounded-md border border-dashed py-10 text-center text-sm text-muted-foreground">
+                    ไม่มีรายการที่ mapping แล้ว — ตั้งค่าตำแหน่งที่เมนูตำแหน่งจัดเก็บอุปกรณ์ก่อน
+                  </p>
+                ) : (
+                  <div className="max-h-[480px] overflow-auto rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>ItemCode</TableHead>
+                          <TableHead>ItemName</TableHead>
+                          <TableHead className="w-24">Qty</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {items.map((item) => {
+                          const line = selectedByCode.get(item.itemcode);
+                          return (
+                            <TableRow key={item.itemcode}>
+                              <TableCell className="font-mono text-xs">{item.itemcode}</TableCell>
+                              <TableCell>{item.itemname ?? '—'}</TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  className="h-8 w-20"
+                                  value={line ? line.qty : 0}
+                                  onChange={(e) => {
+                                    const qty = parseQtyInput(e.target.value);
+                                    upsertSelectedQty(item, qty === '' ? 0 : qty);
+                                  }}
+                                />
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </div>
 
-              {loadingItems ? (
-                <div className="flex justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+              {/* Right: selected basket */}
+              <div className="flex flex-col space-y-3 rounded-lg border p-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">รายการที่เลือก</h3>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {selected.length > 0
+                      ? `${selected.length} รายการ`
+                      : 'ใส่จำนวน Qty ฝั่งซ้ายเพื่อเพิ่มรายการ'}
+                  </p>
                 </div>
-              ) : items.length === 0 ? (
-                <p className="rounded-md border border-dashed py-10 text-center text-sm text-muted-foreground">
-                  ไม่มีรายการ — ตรวจสอบว่า Item ผูกกับหน่วยงานนี้แล้ว
-                </p>
-              ) : (
-                <div className="max-h-[360px] overflow-auto rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-10">เลือก</TableHead>
-                        <TableHead>รหัส</TableHead>
-                        <TableHead>ชื่ออุปกรณ์</TableHead>
-                        <TableHead className="w-24">จำนวน</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {items.map((item) => {
-                        const line = selected.find((s) => s.itemcode === item.itemcode);
-                        const checked = !!line;
-                        return (
-                          <TableRow key={item.itemcode}>
-                            <TableCell>
-                              <Checkbox
-                                checked={checked}
-                                onCheckedChange={(v) => toggleItem(item, v === true)}
-                              />
-                            </TableCell>
-                            <TableCell className="font-mono text-xs">{item.itemcode}</TableCell>
-                            <TableCell>{item.itemname ?? '—'}</TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                min={1}
-                                className="h-8 w-20"
-                                disabled={!checked}
-                                value={line?.qty ?? 1}
-                                onChange={(e) => setQty(item.itemcode, parseInt(e.target.value, 10) || 1)}
-                              />
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
 
-              {selected.length > 0 && (
-                <div className="space-y-4 border-t pt-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <div>
-                      <h3 className="text-sm font-medium">ตำแหน่งรายการที่เลือก (Row / Rack / Shelf)</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        จากเมนูตำแหน่งจัดเก็บอุปกรณ์ (app_item_storage_locations)
-                      </p>
-                    </div>
-                    {loadingLocations && (
-                      <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
-                    )}
-                  </div>
-
-                  {missingLocationCodes.length > 0 && (
-                    <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                      รายการต่อไปนี้ยังไม่มีตำแหน่ง — ตั้งค่าที่เมนูตำแหน่งจัดเก็บอุปกรณ์:{' '}
-                      <span className="font-mono">{missingLocationCodes.join(', ')}</span>
-                    </p>
-                  )}
-
-                  {loadingLocations ? (
-                    <div className="flex justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-                    </div>
-                  ) : locationLines.length === 0 ? (
-                    <p className="rounded-md border border-dashed py-8 text-center text-sm text-muted-foreground">
-                      ไม่พบตำแหน่ง — ตั้งค่า Row/Rack/Shelf ที่เมนูตำแหน่งจัดเก็บอุปกรณ์ก่อน
+                <div className="min-h-[200px] flex-1">
+                  {selected.length === 0 ? (
+                    <p className="rounded-md border border-dashed py-10 text-center text-sm text-muted-foreground">
+                      ยังไม่มีรายการที่เลือก
                     </p>
                   ) : (
-                    <div className="overflow-auto rounded-md border">
+                    <div className="max-h-[480px] overflow-auto rounded-md border">
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>รหัส</TableHead>
-                            <TableHead>ชื่อ</TableHead>
-                            <TableHead className="w-20">จำนวนเบิก</TableHead>
-                            <TableHead>Row</TableHead>
-                            <TableHead>Rack</TableHead>
-                            <TableHead>Shelf</TableHead>
-                            <TableHead>ตู้</TableHead>
+                            <TableHead>ItemCode</TableHead>
+                            <TableHead>ItemName</TableHead>
+                            <TableHead className="w-24">Qty</TableHead>
+                            <TableHead className="w-16 text-right">ลบ</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {locationLines.map((line) => (
+                          {selected.map((line) => (
                             <TableRow key={line.itemcode}>
                               <TableCell className="font-mono text-xs">{line.itemcode}</TableCell>
                               <TableCell>{line.itemname ?? '—'}</TableCell>
-                              <TableCell>{line.dispense_qty}</TableCell>
-                              <TableCell>{line.location_row ?? '—'}</TableCell>
-                              <TableCell>{line.location_rack ?? '—'}</TableCell>
-                              <TableCell>{line.location_shelf ?? '—'}</TableCell>
-                              <TableCell className="text-xs">
-                                {line.cabinet_name ?? line.cabinet_code ?? '—'}
-                                {line.stock_id != null ? (
-                                  <span className="text-muted-foreground"> ({line.stock_id})</span>
-                                ) : null}
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  className="h-8 w-20"
+                                  value={line.qty}
+                                  onChange={(e) =>
+                                    setSelectedQty(line.itemcode, parseQtyInput(e.target.value))
+                                  }
+                                />
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 gap-1 px-2 text-red-600 hover:text-red-700"
+                                  onClick={() => removeSelected(line.itemcode)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  ลบ
+                                </Button>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -526,7 +513,9 @@ export default function DepartmentDispenseWizard() {
                       </Table>
                     </div>
                   )}
+                </div>
 
+                {selected.length > 0 && (
                   <div>
                     <label className="mb-1 block text-sm font-medium">หมายเหตุ (ถ้ามี)</label>
                     <Textarea
@@ -536,104 +525,34 @@ export default function DepartmentDispenseWizard() {
                       rows={2}
                     />
                   </div>
+                )}
 
-                  <div className="flex justify-end">
-                    <Button
-                      type="button"
-                      disabled={submitting || loadingLocations || locationLines.length === 0}
-                      onClick={() => void handleSubmit()}
-                    >
-                      {submitting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          กำลังบันทึก…
-                        </>
-                      ) : (
-                        'บันทึกเอกสารควบคุมการเบิก'
-                      )}
-                    </Button>
-                  </div>
+                <div className="flex flex-wrap justify-end gap-2 pt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="border-red-200 text-red-700 hover:bg-red-50"
+                    disabled={selected.length === 0 && !remark}
+                    onClick={clearSelected}
+                  >
+                    ยกเลิกข้อมูล
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={submitting || !canSubmit}
+                    onClick={() => void handleSubmit()}
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        กำลังบันทึก…
+                      </>
+                    ) : (
+                      'ส่งข้อมูล'
+                    )}
+                  </Button>
                 </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="print:hidden">
-        <CardHeader>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <CardTitle className="text-base">เอกสารควบคุมการเบิกล่าสุด</CardTitle>
-              <CardDescription>รายการที่บันทึกในระบบ</CardDescription>
-            </div>
-            {history.length > 0 && (
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={exportLoading !== null}
-                  onClick={() => void handleExportHistory('excel')}
-                >
-                  {exportLoading === 'excel' ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Download className="mr-2 h-4 w-4" />
-                  )}
-                  Excel
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={exportLoading !== null}
-                  onClick={() => void handleExportHistory('pdf')}
-                >
-                  {exportLoading === 'pdf' ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Download className="mr-2 h-4 w-4" />
-                  )}
-                  PDF
-                </Button>
               </div>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          {loadingHistory ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-            </div>
-          ) : history.length === 0 ? (
-            <p className="text-center text-sm text-muted-foreground py-6">ยังไม่มีเอกสาร</p>
-          ) : (
-            <div className="overflow-auto rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>เลขที่เอกสาร</TableHead>
-                    <TableHead>หน่วยงาน</TableHead>
-                    <TableHead className="w-20">รายการ</TableHead>
-                    <TableHead>วันที่</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {history.map((doc) => (
-                    <TableRow key={doc.id}>
-                      <TableCell className="font-mono text-xs">{doc.doc_no}</TableCell>
-                      <TableCell>
-                        {doc.department
-                          ? deptLabel(doc.department as DepartmentOpt)
-                          : doc.department_id}
-                      </TableCell>
-                      <TableCell>{doc._count?.lines ?? doc.lines?.length ?? '—'}</TableCell>
-                      <TableCell className="text-xs">{formatThDate(doc.created_at)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
             </div>
           )}
         </CardContent>
