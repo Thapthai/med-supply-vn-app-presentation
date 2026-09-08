@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { itemsApi } from '@/lib/api';
+import { itemsApi, weighingApi } from '@/lib/api';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -23,6 +23,8 @@ interface UpdateMinMaxDialogProps {
   item: Item | null;
   cabinetId?: number;
   onSuccess: () => void;
+  /** default `items` = PATCH /items/.../minmax; `weighing` = PATCH /weighing/.../minmax */
+  minMaxEndpoint?: 'items' | 'weighing';
 }
 
 export default function UpdateMinMaxDialog({
@@ -31,6 +33,7 @@ export default function UpdateMinMaxDialog({
   item,
   cabinetId,
   onSuccess,
+  minMaxEndpoint = 'items',
 }: UpdateMinMaxDialogProps) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -87,7 +90,8 @@ export default function UpdateMinMaxDialog({
 
     try {
       setLoading(true);
-      const response = await itemsApi.updateMinMax(item.itemcode, formData, cabinetId);
+      const api = minMaxEndpoint === 'weighing' ? weighingApi : itemsApi;
+      const response = await api.updateMinMax(item.itemcode, formData, cabinetId);
 
       if (response.success) {
         toast.success('อัปเดต Min/Max ต่อตู้สำเร็จ');

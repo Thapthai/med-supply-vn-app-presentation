@@ -312,7 +312,12 @@ export class DepartmentService {
         take: limit,
         include: {
           cabinetDepartments: {
-            select: { id: true, department_id: true, status: true },
+            select: {
+              id: true,
+              department_id: true,
+              status: true,
+              department: { select: { ID: true, DepName: true, DepName2: true } },
+            },
           },
         },
       }),

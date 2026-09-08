@@ -1,0 +1,327 @@
+'use client';
+
+import { Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { cabinetDepartmentLine } from '../items-stock-shared';
+
+/** สอดคล้อง master `app_cabinets_type` (code, has_expiry, show_rfid_code) */
+export interface CabinetTabCabinet {
+  id: number;
+  cabinet_name?: string | null;
+  cabinet_code?: string | null;
+  stock_id?: number | null;
+  cabinet_type?: string | null;
+  cabinetTypeDef?: {
+    code: string;
+    name_th?: string | null;
+    name_en?: string | null;
+    has_expiry?: boolean;
+    show_rfid_code?: boolean;
+    description?: string | null;
+  } | null;
+  cabinetDepartments?: {
+    id: number;
+    department_id: number;
+    status: string;
+    department?: { ID?: number; DepName?: string | null; DepName2?: string | null } | null;
+  }[];
+}
+
+/** ค่าตรงกับ code ใน master ประเภทตู้ (WEIGHING / RFID) */
+export type CabinetStockTableMode = 'WEIGHING' | 'RFID';
+
+export function cabinetStockTableMode(cabinet: CabinetTabCabinet | null): CabinetStockTableMode {
+  if (!cabinet) return 'WEIGHING';
+
+  const def = cabinet.cabinetTypeDef;
+  if (def?.code) {
+    const code = def.code.trim().toUpperCase();
+    if (code === 'WEIGHING') return 'WEIGHING';
+    if (code === 'RFID') return 'RFID';
+    if (def.show_rfid_code === true) return 'RFID';
+    return 'WEIGHING';
+  }
+
+  const raw = (cabinet.cabinet_type ?? '').toString().trim().toUpperCase();
+  if (raw === 'WEIGHING') return 'WEIGHING';
+  if (raw === 'RFID') return 'RFID';
+  return 'WEIGHING';
+}
+
+/** ชิป «หมดอายุ / ใกล้หมดอายุ (30 วัน)» ใช้เฉพาะตู้ประเภท RFID เท่านั้น */
+export function cabinetTypeShowsExpiryFilters(cabinet: CabinetTabCabinet | null): boolean {
+  return cabinetStockTableMode(cabinet) === 'RFID';
+}
+
+/** ตู้แรกที่เลือกอัตโนมัติ: ถ้ามี preferredMode ใช้ประเภทนั้นก่อน */
+export function pickDefaultCabinet(
+  sorted: CabinetTabCabinet[],
+  preferredMode?: CabinetStockTableMode,
+): CabinetTabCabinet | null {
+  const ws = sorted.filter((c) => c.stock_id != null && Number(c.stock_id) > 0);
+  if (ws.length === 0) return null;
+  if (preferredMode) {
+    return ws.find((c) => cabinetStockTableMode(c) === preferredMode) ?? null;
+  }
+  const firstWeighing = ws.find((c) => cabinetStockTableMode(c) === 'WEIGHING');
+  return firstWeighing ?? ws[0];
+}
+
+interface CabinetStockTabsProps {
+  cabinets: CabinetTabCabinet[];
+  selectedCabinetId: number | null;
+  onSelectCabinet: (cabinet: CabinetTabCabinet) => void;
+  loading?: boolean;
+  typeMode: CabinetStockTableMode;
+  onTypeModeChange: (mode: CabinetStockTableMode) => void;
+}
+
+function typeLabel(c: CabinetTabCabinet): string {
+  const code = c.cabinetTypeDef?.code?.trim() || c.cabinet_type?.trim();
+  if (code) return code.toUpperCase();
+  return 'ตู้';
+}
+
+/** ข้อความในป้ายประเภท: ชื่อไทยจาก master ถ้ามี ไม่เช่นนั้นใช้รหัส */
+function typeBadgeText(c: CabinetTabCabinet): string {
+  const th = c.cabinetTypeDef?.name_th?.trim();
+  if (th) return th;
+  return typeLabel(c);
+}
+
+function cabinetTitle(c: CabinetTabCabinet): string {
+  return (c.cabinet_name || c.cabinet_code || `Stock ${c.stock_id ?? ''}`).trim();
+}
+
+function typeBadgeClass(mode: CabinetStockTableMode, selected: boolean) {
+  if (mode === 'RFID') {
+    return selected
+      ? 'border-violet-400 bg-violet-100/90 text-violet-900'
+      : 'border-violet-300/90 bg-violet-50 text-violet-900';
+  }
+  return selected
+    ? 'border-amber-400 bg-amber-100/80 text-amber-950'
+    : 'border-amber-300/90 bg-amber-50 text-amber-950';
+}
+
+function CabinetTypeBadge({
+  cabinet,
+  selected,
+  compact,
+}: {
+  cabinet: CabinetTabCabinet;
+  selected: boolean;
+  compact?: boolean;
+}) {
+  const mode = cabinetStockTableMode(cabinet);
+  return (
+    <span
+      className={cn(
+        'inline-flex shrink-0 items-center rounded-md border font-bold leading-tight tracking-wide',
+        compact ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-[10px]',
+        typeBadgeClass(mode, selected),
+      )}
+      title={typeLabel(cabinet)}
+    >
+      <span className="min-w-0 truncate">{typeBadgeText(cabinet)}</span>
+    </span>
+  );
+}
+
+function CabinetTabButton({
+  cabinet,
+  selected,
+  onSelect,
+  variant,
+}: {
+  cabinet: CabinetTabCabinet;
+  selected: boolean;
+  onSelect: () => void;
+  variant: 'mobile' | 'desktop';
+}) {
+  const depLine = cabinetDepartmentLine(cabinet.cabinetDepartments);
+  const title = cabinetTitle(cabinet);
+
+  if (variant === 'mobile') {
+    return (
+      <button
+        type="button"
+        onClick={onSelect}
+        className={cn(
+          'flex w-full items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-all duration-200',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2',
+          selected
+            ? 'border-blue-500 bg-blue-50 shadow-sm ring-1 ring-blue-500/25'
+            : 'border-slate-200/90 bg-white shadow-sm active:bg-slate-50',
+        )}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <CabinetTypeBadge cabinet={cabinet} selected={selected} compact />
+            <p className="min-w-0 truncate text-sm font-semibold text-gray-900" title={title}>
+              {title}
+            </p>
+          </div>
+          {depLine ? (
+            <p className="mt-0.5 truncate text-xs text-gray-500" title={depLine}>
+              {depLine}
+            </p>
+          ) : null}
+        </div>
+        {selected ? (
+          <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white">
+            <Check className="size-3.5" strokeWidth={3} />
+          </span>
+        ) : (
+          <span className="size-6 shrink-0 rounded-full border border-slate-200/90 bg-slate-50" aria-hidden />
+        )}
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={cn(
+        'shrink-0 text-left rounded-xl border px-4 py-3 min-w-[168px] max-w-[260px] transition-all duration-200',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2',
+        selected
+          ? 'border-blue-500 bg-blue-50 shadow-md ring-1 ring-blue-500/30'
+          : 'border-slate-200/80 bg-white shadow-sm hover:border-slate-300 hover:bg-slate-50',
+      )}
+    >
+      <CabinetTypeBadge cabinet={cabinet} selected={selected} />
+      <p className="mt-2 truncate text-sm font-semibold text-gray-900" title={title}>
+        {title}
+      </p>
+      <p className="mt-1 truncate text-xs text-gray-500" title={depLine}>
+        {depLine}
+      </p>
+    </button>
+  );
+}
+
+function TypeModeSwitch({
+  typeMode,
+  weighingCount,
+  rfidCount,
+  onTypeModeChange,
+}: {
+  typeMode: CabinetStockTableMode;
+  weighingCount: number;
+  rfidCount: number;
+  onTypeModeChange: (mode: CabinetStockTableMode) => void;
+}) {
+  return (
+    <div className="inline-flex w-fit max-w-full items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50/80 p-1">
+      <button
+        type="button"
+        onClick={() => onTypeModeChange('WEIGHING')}
+        className={cn(
+          'inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-all',
+          typeMode === 'WEIGHING'
+            ? 'bg-amber-100 text-amber-950 shadow-sm ring-1 ring-amber-400/70'
+            : 'text-slate-600 hover:bg-white',
+        )}
+      >
+        WEIGHING
+        <span className="text-xs font-medium tabular-nums opacity-70">({weighingCount})</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => onTypeModeChange('RFID')}
+        className={cn(
+          'inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-all',
+          typeMode === 'RFID'
+            ? 'bg-violet-100 text-violet-950 shadow-sm ring-1 ring-violet-400/70'
+            : 'text-slate-600 hover:bg-white',
+        )}
+      >
+        RFID
+        <span className="text-xs font-medium tabular-nums opacity-70">({rfidCount})</span>
+      </button>
+    </div>
+  );
+}
+
+export default function CabinetStockTabs({
+  cabinets,
+  selectedCabinetId,
+  onSelectCabinet,
+  loading,
+  typeMode,
+  onTypeModeChange,
+}: CabinetStockTabsProps) {
+  const withStock = cabinets.filter((c) => c.stock_id != null && Number(c.stock_id) > 0);
+  const weighingCabinets = withStock.filter((c) => cabinetStockTableMode(c) === 'WEIGHING');
+  const rfidCabinets = withStock.filter((c) => cabinetStockTableMode(c) === 'RFID');
+  const visible = typeMode === 'RFID' ? rfidCabinets : weighingCabinets;
+
+  if (loading) {
+    return (
+      <div className="space-y-3 px-1 py-2">
+        <TypeModeSwitch
+          typeMode={typeMode}
+          weighingCount={0}
+          rfidCount={0}
+          onTypeModeChange={onTypeModeChange}
+        />
+        <div className="flex min-h-[72px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-4 py-5 text-sm text-gray-500 md:py-6">
+          กำลังโหลดรายการตู้...
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3 px-1 py-2">
+      <div className="flex flex-col items-start gap-2">
+        <TypeModeSwitch
+          typeMode={typeMode}
+          weighingCount={weighingCabinets.length}
+          rfidCount={rfidCabinets.length}
+          onTypeModeChange={onTypeModeChange}
+        />
+      </div>
+
+      {visible.length === 0 ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+          {withStock.length === 0
+            ? 'ไม่พบตู้ที่มี stock_id — ไม่สามารถแสดงการ์ดตู้ได้'
+            : `ไม่พบตู้ประเภท ${typeMode}`}
+        </div>
+      ) : (
+        <>
+          <div className="space-y-2 md:hidden">
+            {visible.map((c) => (
+              <CabinetTabButton
+                key={c.id}
+                cabinet={c}
+                selected={selectedCabinetId != null && c.id === selectedCabinetId}
+                onSelect={() => onSelectCabinet(c)}
+                variant="mobile"
+              />
+            ))}
+          </div>
+
+          <div className="relative -mx-1 hidden md:block">
+            <div className="overflow-x-auto overscroll-x-contain pb-1 scrollbar-thin">
+              <div className="flex min-w-min gap-3 px-1 pt-0.5">
+                {visible.map((c) => (
+                  <CabinetTabButton
+                    key={c.id}
+                    cabinet={c}
+                    selected={selectedCabinetId != null && c.id === selectedCabinetId}
+                    onSelect={() => onSelectCabinet(c)}
+                    variant="desktop"
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

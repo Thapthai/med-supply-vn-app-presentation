@@ -1358,12 +1358,16 @@ export const reportsApi = {
     cabinetCode?: string;
     departmentId?: number;
     asOfDate?: string;
+    keyword?: string;
+    statusFilter?: string;
   }): Promise<void> => {
     const body = {
       cabinetId: params?.cabinetId,
       cabinetCode: params?.cabinetCode,
       departmentId: params?.departmentId,
       asOfDate: params?.asOfDate,
+      keyword: params?.keyword?.trim() || undefined,
+      statusFilter: params?.statusFilter && params.statusFilter !== 'all' ? params.statusFilter : undefined,
     };
     const response = await api.post('/reports/cabinet-stock/excel', body);
     const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
@@ -1387,12 +1391,16 @@ export const reportsApi = {
     cabinetCode?: string;
     departmentId?: number;
     asOfDate?: string;
+    keyword?: string;
+    statusFilter?: string;
   }): Promise<void> => {
     const body = {
       cabinetId: params?.cabinetId,
       cabinetCode: params?.cabinetCode,
       departmentId: params?.departmentId,
       asOfDate: params?.asOfDate,
+      keyword: params?.keyword?.trim() || undefined,
+      statusFilter: params?.statusFilter && params.statusFilter !== 'all' ? params.statusFilter : undefined,
     };
     const response = await api.post('/reports/cabinet-stock/pdf', body);
     const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
@@ -1584,8 +1592,13 @@ export const reportsApi = {
   },
 
   /** รายงานสต๊อกตู้ Weighing - Excel */
-  downloadWeighingStockExcel: async (params?: { stockId?: number; itemName?: string; itemcode?: string }): Promise<void> => {
-    const body = { stockId: params?.stockId, itemName: params?.itemName || undefined, itemcode: params?.itemcode || undefined };
+  downloadWeighingStockExcel: async (params?: { stockId?: number; itemName?: string; itemcode?: string; statusFilter?: string }): Promise<void> => {
+    const body = {
+      stockId: params?.stockId,
+      itemName: params?.itemName || undefined,
+      itemcode: params?.itemcode || undefined,
+      statusFilter: params?.statusFilter && params.statusFilter !== 'all' ? params.statusFilter : undefined,
+    };
     const response = await api.post('/reports/weighing-stock/excel', body);
     const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
     if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
@@ -1604,8 +1617,13 @@ export const reportsApi = {
   },
 
   /** รายงานสต๊อกตู้ Weighing - PDF */
-  downloadWeighingStockPdf: async (params?: { stockId?: number; itemName?: string; itemcode?: string }): Promise<void> => {
-    const body = { stockId: params?.stockId, itemName: params?.itemName || undefined, itemcode: params?.itemcode || undefined };
+  downloadWeighingStockPdf: async (params?: { stockId?: number; itemName?: string; itemcode?: string; statusFilter?: string }): Promise<void> => {
+    const body = {
+      stockId: params?.stockId,
+      itemName: params?.itemName || undefined,
+      itemcode: params?.itemcode || undefined,
+      statusFilter: params?.statusFilter && params.statusFilter !== 'all' ? params.statusFilter : undefined,
+    };
     const response = await api.post('/reports/weighing-stock/pdf', body);
     const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
     if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
@@ -1617,6 +1635,83 @@ export const reportsApi = {
     const link = document.createElement('a');
     link.href = url;
     link.setAttribute('download', res.data.filename || `weighing_stock_report_${new Date().toISOString().split('T')[0]}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  downloadItemsStockCombinedExcel: async (params?: {
+    itemName?: string;
+    itemcode?: string;
+    statusFilter?: string;
+  }): Promise<void> => {
+    const body = {
+      itemName: params?.itemName || undefined,
+      itemcode: params?.itemcode || undefined,
+      statusFilter: params?.statusFilter && params.statusFilter !== 'all' ? params.statusFilter : undefined,
+    };
+    const response = await api.post('/reports/items-stock-combined/excel', body);
+    const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
+    if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    const binary = atob(res.data.buffer);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.data.contentType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', res.data.filename || `items_stock_combined_report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  downloadItemsStockLowCombinedExcel: async (params?: {
+    itemName?: string;
+    itemcode?: string;
+  }): Promise<void> => {
+    const body = {
+      itemName: params?.itemName || undefined,
+      itemcode: params?.itemcode || undefined,
+    };
+    const response = await api.post('/reports/items-stock-low-combined/excel', body);
+    const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
+    if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    const binary = atob(res.data.buffer);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.data.contentType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', res.data.filename || `items_stock_low_combined_${new Date().toISOString().split('T')[0]}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  downloadItemsStockLowCombinedPdf: async (params?: {
+    itemName?: string;
+    itemcode?: string;
+  }): Promise<void> => {
+    const body = {
+      itemName: params?.itemName || undefined,
+      itemcode: params?.itemcode || undefined,
+    };
+    const response = await api.post('/reports/items-stock-low-combined/pdf', body);
+    const res = response.data as { success?: boolean; data?: { buffer?: string; filename?: string; contentType?: string } };
+    if (!res?.success || !res?.data?.buffer) throw new Error((res as any)?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    const binary = atob(res.data.buffer);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.data.contentType || 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', res.data.filename || `items_stock_low_combined_${new Date().toISOString().split('T')[0]}.pdf`);
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -2302,8 +2397,13 @@ export const cabinetDepartmentApi = {
 
 // =========================== Weighing API (ItemSlotInCabinet) ===========================
 export const weighingApi = {
-  getAll: async (params?: { page?: number; limit?: number; itemName?: string; itemcode?: string; stockId?: number }): Promise<{ success: boolean; data: any[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> => {
+  getAll: async (params?: { page?: number; limit?: number; itemName?: string; itemcode?: string; stockId?: number; stock_status?: string }): Promise<{ success: boolean; data: any[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> => {
     const response = await api.get('/weighing', { params });
+    return response.data;
+  },
+
+  getLowStockRefill: async (params?: { page?: number; limit?: number; itemName?: string; stockId?: number }): Promise<{ success: boolean; data: any[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> => {
+    const response = await api.get('/weighing/low-stock', { params });
     return response.data;
   },
 
@@ -2326,6 +2426,19 @@ export const weighingApi = {
   /** รายการตู้ที่มีสต๊อก Weighing (สำหรับ dropdown หน้า weighing-departments) */
   getCabinets: async (): Promise<{ success: boolean; data: { id: number; cabinet_name: string | null; cabinet_code: string | null; cabinet_status?: string; stock_id: number | null }[] }> => {
     const response = await api.get('/weighing/cabinets/list');
+    return response.data;
+  },
+
+  /** กำหนด min/max ต่อตู้ (CabinetItemSetting) — PATCH /weighing/:itemcode/minmax */
+  updateMinMax: async (
+    itemcode: string,
+    data: { stock_min?: number; stock_max?: number },
+    cabinetId?: number,
+  ): Promise<ApiResponse<Item>> => {
+    const code = encodeURIComponent(itemcode);
+    const url =
+      cabinetId != null ? `/weighing/${code}/minmax?cabinet_id=${cabinetId}` : `/weighing/${code}/minmax`;
+    const response = await api.patch(url, data);
     return response.data;
   },
 };

@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, Loader2, Package, Plus } from 'lucide-react';
+import { normalizeCabinetType } from './cabinetTypes';
 import {
   ChevronLeft,
   ChevronRight,
@@ -49,6 +49,17 @@ export default function CabinetsTable({
   onPageChange,
   onCreateClick,
 }: CabinetsTableProps) {
+  const getTypeBadge = (type?: string) => {
+    const code = normalizeCabinetType(type);
+    if (code === 'RFID') {
+      return <Badge className="border-violet-200 bg-violet-100 text-violet-900 hover:bg-violet-100">RFID</Badge>;
+    }
+    if (code === 'WEIGHING') {
+      return <Badge className="border-amber-200 bg-amber-100 text-amber-950 hover:bg-amber-100">WEIGHING</Badge>;
+    }
+    return <span className="text-muted-foreground">{type || '-'}</span>;
+  };
+
   const getStatusBadge = (status?: string) => {
     const u = (status ?? '').toUpperCase();
     if (u === 'INACTIVE') {
@@ -114,7 +125,7 @@ export default function CabinetsTable({
                   <TableCell className="font-medium">{cabinet.id}</TableCell>
                   <TableCell>{cabinet.cabinet_name || '-'}</TableCell>
                   <TableCell>{cabinet.cabinet_code || '-'}</TableCell>
-                  <TableCell>{cabinet.cabinet_type || '-'}</TableCell>
+                  <TableCell>{getTypeBadge(cabinet.cabinet_type)}</TableCell>
                   <TableCell>{cabinet.stock_id || '-'}</TableCell>
                   <TableCell>{getStatusBadge(cabinet.cabinet_status)}</TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>

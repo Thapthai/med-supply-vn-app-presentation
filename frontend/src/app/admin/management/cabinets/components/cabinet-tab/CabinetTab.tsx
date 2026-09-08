@@ -9,6 +9,7 @@ import EditCabinetDialog from '../EditCabinetDialog';
 import DeleteCabinetDialog from '../DeleteCabinetDialog';
 import CabinetsTable from '../CabinetsTable';
 import CabinetsSearchCard from '../CabinetsSearchCard';
+import { normalizeCabinetType, type CabinetTypeCode } from '../cabinetTypes';
 
 interface Cabinet {
   id: number;
@@ -27,6 +28,7 @@ export default function CabinetTab() {
   const [loading, setLoading] = useState(true);
   const [keywordInput, setKeywordInput] = useState('');
   const [activeKeyword, setActiveKeyword] = useState('');
+  const [typeFilter, setTypeFilter] = useState<CabinetTypeCode | 'all'>('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -45,7 +47,7 @@ export default function CabinetTab() {
   useEffect(() => {
     filterCabinets();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cabinets, activeKeyword]);
+  }, [cabinets, activeKeyword, typeFilter]);
 
   const fetchCabinets = async () => {
     try {
@@ -96,6 +98,9 @@ export default function CabinetTab() {
           cabinet.cabinet_code?.toLowerCase().includes(kw),
       );
     }
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter((cabinet) => normalizeCabinetType(cabinet.cabinet_type) === typeFilter);
+    }
     setFilteredCabinets(filtered);
   };
 
@@ -107,6 +112,7 @@ export default function CabinetTab() {
   const handleClearFilters = () => {
     setKeywordInput('');
     setActiveKeyword('');
+    setTypeFilter('all');
     setCurrentPage(1);
   };
 
@@ -140,7 +146,9 @@ export default function CabinetTab() {
       <CabinetsSearchCard
         keywordInput={keywordInput}
         activeKeyword={activeKeyword}
+        typeFilter={typeFilter}
         onKeywordInputChange={setKeywordInput}
+        onTypeFilterChange={setTypeFilter}
         onSearch={handleSearch}
         onClearFilters={handleClearFilters}
         onRefresh={fetchCabinets}

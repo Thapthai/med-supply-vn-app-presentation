@@ -102,6 +102,12 @@ export const adminMenuItems: StaffMenuItem[] = [
         icon: Package,
       },
       {
+        name: 'สต๊อกอุปกรณ์ตามตู้',
+        href: '/admin/items-stock',
+        description: 'เลือกตู้ — ตู้ชั่งแสดงช่อง/สล็อต ตู้ RFID แสดงวันหมดอายุและแท็ก',
+        icon: Package,
+      },
+      {
         name: 'อุปกรณ์ยืม',
         href: '/admin/item-borrow',
         description: 'รายการยืมจาก slot detail + Division จากตู้',

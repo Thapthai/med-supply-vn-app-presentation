@@ -35,6 +35,9 @@ export class StaffItemsController {
     @Query('cabinet_id') cabinet_id?: string,
     @Query('department_id') department_id?: string,
     @Query('status') status?: string,
+    @Query('stock_status') stock_status?: string,
+    @Query('expire_from') expire_from?: string,
+    @Query('expire_to') expire_to?: string,
   ) {
     const departmentId =
       department_id != null && String(department_id).trim() !== ''
@@ -70,6 +73,9 @@ export class StaffItemsController {
         departmentId,
         status,
         { restrictedStockIds: stockIds, usageDepartmentIds },
+        stock_status,
+        expire_from,
+        expire_to,
       );
     }
 
@@ -89,6 +95,10 @@ export class StaffItemsController {
       cabinetId,
       departmentId,
       status,
+      undefined,
+      stock_status,
+      expire_from,
+      expire_to,
     );
   }
 }

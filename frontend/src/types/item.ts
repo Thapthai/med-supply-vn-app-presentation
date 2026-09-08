@@ -105,6 +105,9 @@ export interface Item {
   /** จาก Prisma include `subUnit` (หน่วยการเบิก) */
   subUnit?: { ID?: number; UnitName?: string | null };
 
+  Alternatename?: string | null;
+  /** Min/Max ต่อตู้ (จาก CabinetItemSetting เมื่อกรอง cabinet_id) */
+  cabinetItemSetting?: { stock_min?: number | null; stock_max?: number | null } | null;
   // Item stocks (from API when included, e.g. findAllItems)
   itemStocks?: ItemStockRow[];
   count_itemstock?: number;
@@ -136,6 +139,7 @@ export interface ItemStockRow {
   Qty?: number;
   RfidCode?: string;
   ExpireDate?: string; // ISO date string
+  expDate?: string | Date | null;
   /** true = อยู่ในตู้, false = ถูกเบิก */
   IsStock?: boolean;
   cabinet?: {
@@ -289,6 +293,10 @@ export interface GetItemsQuery {
   department_id?: number;
   cabinet_id?: number;
   status?: string;
+  /** กรองชิปสถานะหน้า items-stock (all | expired | soon | low) */
+  stock_status?: string;
+  expire_from?: string;
+  expire_to?: string;
   sort_by?: 'itemname' | 'itemcode' | 'CostPrice' | 'stock_balance' | 'CreateDate';
   sort_order?: 'asc' | 'desc';
 }

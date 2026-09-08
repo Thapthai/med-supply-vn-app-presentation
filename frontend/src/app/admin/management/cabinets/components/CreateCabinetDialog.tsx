@@ -23,6 +23,15 @@ import {
 } from '@/components/ui/form';
 import { toast } from 'sonner';
 import { Package } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import { CABINET_TYPE_OPTIONS } from './cabinetTypes';
 
 const fieldInputClass = 'bg-white';
 
@@ -35,6 +44,7 @@ interface CreateCabinetDialogProps {
 const defaultValues: CabinetFormData = {
   cabinet_name: '',
   stock_id: '',
+  cabinet_type: 'WEIGHING',
 };
 
 export default function CreateCabinetDialog({
@@ -58,8 +68,9 @@ export default function CreateCabinetDialog({
   const handleSubmit = async (values: CabinetFormData) => {
     try {
       setLoading(true);
-      const data: { cabinet_name: string; stock_id?: number } = {
+      const data: { cabinet_name: string; cabinet_type: string; stock_id?: number } = {
         cabinet_name: values.cabinet_name.trim(),
+        cabinet_type: values.cabinet_type,
       };
       if (values.stock_id?.trim()) {
         const sid = parseInt(values.stock_id.trim(), 10);
@@ -96,6 +107,33 @@ export default function CreateCabinetDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="cabinet_type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    ประเภทตู้ <span className="text-destructive">*</span>
+                  </FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger className={cn('w-full', fieldInputClass)}>
+                        <SelectValue placeholder="เลือกประเภทตู้" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {CABINET_TYPE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="cabinet_name"

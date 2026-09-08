@@ -158,6 +158,9 @@ export class ItemService {
       restrictedStockIds?: number[];
       usageDepartmentIds?: string[] | null;
     },
+    stock_status?: string,
+    expire_from?: string,
+    expire_to?: string,
   ) {
     try {
       const emptyPage = () => ({
@@ -176,6 +179,7 @@ export class ItemService {
       if (keyword) {
         where.OR = [
           { itemname: { contains: keyword } },
+          { Alternatename: { contains: keyword } },
           { itemcode: { contains: keyword } },
           { itemcode2: { contains: keyword } },
           { itemcode3: { contains: keyword } },
@@ -230,6 +234,9 @@ export class ItemService {
         if (cabinet?.stock_id) {
           cabinetStockId = cabinet.stock_id;
           itemStocksWhere.StockID = cabinet.stock_id;
+          if (stock_status != null) {
+            itemStocksWhere.IsStock = true;
+          }
         }
         // รวบรวม department_id จาก cabinetDepartments ของตู้นี้
         if (cabinet?.cabinetDepartments?.length) {
@@ -287,6 +294,7 @@ export class ItemService {
         select: {
           itemcode: true,
           itemname: true,
+          Alternatename: true,
           UnitID: true,
           SubUnitID: true,
           SubUnitQty: true,
@@ -306,6 +314,7 @@ export class ItemService {
               Qty: true,
               RfidCode: true,
               ExpireDate: true,
+              expDate: true,
               IsStock: true,
               cabinet: {
                 select: {
@@ -533,8 +542,9 @@ export class ItemService {
         let hasNearExpire = false;
 
         matchingItemStocks.forEach((stock: any) => {
-          if (!stock.ExpireDate) return;
-          const exp = new Date(stock.ExpireDate);
+          const raw = stock.ExpireDate ?? stock.expDate;
+          if (!raw) return;
+          const exp = new Date(raw);
 
           if (!earliestExpireDate || exp.getTime() < (earliestExpireDate as Date).getTime()) {
             earliestExpireDate = exp;
@@ -654,6 +664,13 @@ export class ItemService {
           ...item,
           stock_min: effectiveStockMin,
           stock_max: effectiveStockMax,
+          cabinetItemSetting:
+            cabinet_id != null
+              ? {
+                  stock_min: overrideMap.get(item.itemcode)?.stock_min ?? null,
+                  stock_max: overrideMap.get(item.itemcode)?.stock_max ?? null,
+                }
+              : null,
           itemStocks: matchingItemStocks,
           count_itemstock: countItemStock,
           qty_in_use: qtyInUse,
@@ -675,14 +692,84 @@ export class ItemService {
           isLowStock,
           needsRefill: refillQty > 0,
           refillQty,
-          earliestExpireDate,
+          earliestExpireDate: earliestExpireDate as Date | null,
         };
       });
 
       const REFILL_PREVIEW_LIMIT = 15;
 
-      const sortedItems = itemsWithMeta
+      const startOfDayLocal = (d: Date) => {
+        const x = new Date(d);
+        x.setHours(0, 0, 0, 0);
+        return x;
+      };
+      const toYmdLocal = (d: Date): string => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      };
+
+      let metaForList = itemsWithMeta;
+      if (stock_status != null) {
+        const todayCal = startOfDayLocal(new Date());
+        const nearExpireLimitCal = new Date(todayCal);
+        nearExpireLimitCal.setDate(nearExpireLimitCal.getDate() + 30);
+        metaForList = itemsWithMeta.map((x) => {
+          let hasExpired = false;
+          let hasNearExpire = false;
+          let earliestExpireDate: Date | null = null;
+          for (const stock of x.item.itemStocks ?? []) {
+            const raw = stock.ExpireDate ?? stock.expDate;
+            if (!raw) continue;
+            const exp = new Date(raw);
+            if (Number.isNaN(exp.getTime())) continue;
+            if (!earliestExpireDate || exp.getTime() < earliestExpireDate.getTime()) {
+              earliestExpireDate = exp;
+            }
+            const ed = startOfDayLocal(exp);
+            if (ed < todayCal) hasExpired = true;
+            else if (ed <= nearExpireLimitCal) hasNearExpire = true;
+          }
+          return { ...x, hasExpired, hasNearExpire, earliestExpireDate };
+        });
+
+        const ymdRe = /^(\d{4})-(\d{2})-(\d{2})$/;
+        const fromStr = (expire_from ?? '').trim();
+        const toStr = (expire_to ?? '').trim();
+        if (fromStr || toStr) {
+          metaForList = metaForList.filter((x) => {
+            const raw = x.earliestExpireDate as Date | null | undefined;
+            if (raw == null) return false;
+            const itemYmd = toYmdLocal(new Date(raw));
+            if (fromStr && ymdRe.test(fromStr) && itemYmd <= fromStr) return false;
+            if (toStr && ymdRe.test(toStr) && itemYmd > toStr) return false;
+            return true;
+          });
+        }
+
+        const chip = (stock_status ?? 'all').trim().toLowerCase();
+        if (chip && chip !== 'all') {
+          metaForList = metaForList.filter((x) => {
+            if (chip === 'expired') return x.hasExpired;
+            if (chip === 'soon') return x.hasNearExpire;
+            if (chip === 'low') return x.isLowStock;
+            return true;
+          });
+        }
+      }
+
+      const sortedItems = metaForList
         .sort((a, b) => {
+          if (stock_status != null) {
+            if (a.hasExpired !== b.hasExpired) return a.hasExpired ? -1 : 1;
+            if (a.hasNearExpire !== b.hasNearExpire) return a.hasNearExpire ? -1 : 1;
+            if (a.isLowStock !== b.isLowStock) return a.isLowStock ? -1 : 1;
+            if (a.earliestExpireDate && b.earliestExpireDate) {
+              return (a.earliestExpireDate as Date).getTime() - (b.earliestExpireDate as Date).getTime();
+            }
+            return (a.item.itemcode || '').localeCompare(b.item.itemcode || '');
+          }
           // 1) ต้องเติม (refill > 0) — ความสำคัญหลัก
           if (a.needsRefill !== b.needsRefill) {
             return a.needsRefill ? -1 : 1;

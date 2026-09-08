@@ -69,6 +69,9 @@ export const cabinetFormSchema = z.object({
       },
       { message: 'Stock ID ต้องเป็นตัวเลขที่ถูกต้อง' },
     ),
+  cabinet_type: z.enum(['WEIGHING', 'RFID'], {
+    message: 'กรุณาเลือกประเภทตู้',
+  }),
 });
 
 export type LoginFormData = z.infer<typeof loginSchema>;
