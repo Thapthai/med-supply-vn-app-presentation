@@ -29,8 +29,7 @@ async function bootstrap() {
       'https://phc.dyndns.biz',
       'https://poseintelligence.co.th',
       'https://www.poseintelligence.co.th',
-      'http://172.20.220.112:7101',
-      process.env.CORS_ORIGIN,
+      'http://172.20.220.112:7101'
     ];
   app.enableCors({
     origin: allowedOrigins,
