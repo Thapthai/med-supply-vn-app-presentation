@@ -3,6 +3,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { ItemModule } from '../item/item.module';
 import { MedicalSuppliesModule } from '../medical-supplies/medical-supplies.module';
 import { WeighingModule } from '../weighing/weighing.module';
+import { CabinetModule } from '../cabinet/cabinet.module';
 import { ReportServiceController } from './report.controller';
 import { ReportServiceService } from './report-service.service';
 import { DailyCabinetStockArchiveService } from './daily-cabinet-stock-archive.service';
@@ -41,8 +42,10 @@ import { DispensedItemsForPatientsPdfService } from './services/dispensed-items-
 import { ItemBorrowReportExcelService } from './services/item-borrow-report-excel.service';
 import { ItemBorrowReportPdfService } from './services/item-borrow-report-pdf.service';
 import { ItemMasterUploadService } from './services/item-master-upload.service';
+import { CabinetTempHumReportExcelService } from './services/cabinet-temp-hum-report-excel.service';
+import { CabinetTempHumReportPdfService } from './services/cabinet-temp-hum-report-pdf.service';
 @Module({
-  imports: [PrismaModule, ItemModule, MedicalSuppliesModule, WeighingModule],
+  imports: [PrismaModule, ItemModule, MedicalSuppliesModule, WeighingModule, CabinetModule],
   controllers: [ReportServiceController],
   providers: [
     ReportServiceService,
@@ -81,6 +84,8 @@ import { ItemMasterUploadService } from './services/item-master-upload.service';
     DispensedItemsForPatientsPdfService,
     ItemBorrowReportExcelService,
     ItemBorrowReportPdfService,
+    CabinetTempHumReportExcelService,
+    CabinetTempHumReportPdfService,
     ItemMasterUploadService,
   ],
   exports: [ReportServiceService, ItemMasterUploadService],

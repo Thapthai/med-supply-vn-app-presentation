@@ -687,6 +687,19 @@ model cabinet {
   @@map("app_cabinets")
 }
 
+/// อุณหภูมิ/ความชื้นของตู้ — ตาราง weighing `cabinet_temp_hum_log`
+/// `cabinet_id` คือรหัสตู้ในระบบชั่ง (= `app_cabinets.stock_id` เมื่อมี mapping)
+model CabinetTempHumLog {
+  id          Int      @id @default(autoincrement())
+  cabinet_id  Int      @default(0)
+  temp_log    Decimal  @default(0.00) @db.Decimal(5, 2)
+  hum_log     Decimal  @default(0.00) @db.Decimal(5, 2)
+  create_date DateTime @default(now())
+
+  @@index([cabinet_id, create_date], name: "idx_cabinet_date")
+  @@map("cabinet_temp_hum_log")
+}
+
 // Min/Max ต่อตู้ — override ของ item.stock_min/stock_max เมื่อมีแถวสำหรับ (cabinet_id, item_code)
 model CabinetItemSetting {
   id         Int      @id @default(autoincrement())
@@ -928,3 +941,5 @@ model Unit {
 
   @@map("units")
 }
+
+ 

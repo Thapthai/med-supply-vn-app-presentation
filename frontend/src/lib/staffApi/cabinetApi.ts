@@ -2,6 +2,85 @@ import staffApi from './index';
 import { createCabinetListGetAll, createCabinetUsersApi } from '@/lib/cabinet-http-clients';
 import type { ApiResponse } from '@/types/common';
 
+export type StaffCabinetTempHumLogPoint = {
+  id: number;
+  create_date: string;
+  temp_log: number;
+  hum_log: number;
+};
+
+export type StaffCabinetTempHumCabinet = {
+  log_cabinet_id: number;
+  app_cabinet_id: number | null;
+  cabinet_name: string | null;
+  cabinet_code: string | null;
+  last_log_at: string | null;
+  latest_temp: number | null;
+  latest_hum: number | null;
+  log_count: number;
+  logs: StaffCabinetTempHumLogPoint[];
+};
+
+export type StaffCabinetTempHumChartData = {
+  cabinets: StaffCabinetTempHumCabinet[];
+  selected: {
+    log_cabinet_id: number;
+    app_cabinet_id: number | null;
+    cabinet_name: string | null;
+    cabinet_code: string | null;
+  } | null;
+  latest: { create_date: string; temp_log: number; hum_log: number } | null;
+  stats: {
+    min_temp: number;
+    max_temp: number;
+    avg_temp: number;
+    min_hum: number;
+    max_hum: number;
+    delta_temp: number;
+  } | null;
+  points: StaffCabinetTempHumLogPoint[];
+  range: {
+    hours: number | null;
+    year: number | null;
+    month: number | null;
+    from: string;
+    to: string;
+    used_fallback: boolean;
+  };
+};
+
+export type StaffCabinetTempHumOverviewData = {
+  cabinets: StaffCabinetTempHumCabinet[];
+  range: {
+    hours: number | null;
+    year: number | null;
+    month: number | null;
+    from: string;
+    to: string;
+  };
+};
+
+export const staffCabinetTempHumApi = {
+  getOverview: async (params?: {
+    year?: number;
+    month?: number;
+  }): Promise<ApiResponse<StaffCabinetTempHumOverviewData>> => {
+    const response = await staffApi.get('/cabinet/temp-hum-logs/overview', { params });
+    return response.data;
+  },
+
+  getChart: async (params?: {
+    cabinet_id?: number;
+    hours?: number;
+    year?: number;
+    month?: number;
+    limit?: number;
+  }): Promise<ApiResponse<StaffCabinetTempHumChartData>> => {
+    const response = await staffApi.get('/cabinet/temp-hum-logs/chart', { params });
+    return response.data;
+  },
+};
+
 /** ผู้ใช้ในตู้ — โค้ดเดียวกับ admin / `cabinet-http-clients` เปลี่ยนแค่ axios instance → staffApi */
 export const staffCabinetUsersApi = createCabinetUsersApi(staffApi);
 

@@ -9,6 +9,7 @@ import type { ItemWithExpiry } from './components/ItemsWithExpirySidebar';
 import StatsCards from './components/StatsCards';
 import DashboardMappingsTable, { type CabinetDepartment } from './components/DashboardMappingsTable';
 import DispensedVsUsageChartCard from './components/DispensedVsUsageChartCard';
+import CabinetTempHumChartCard from './components/CabinetTempHumChartCard';
 import ItemsWithExpirySidebar from './components/ItemsWithExpirySidebar';
 
 export default function DashboardPage() {
@@ -135,6 +136,7 @@ export default function DashboardPage() {
               }}
               loadingMappings={loadingMappings}
             />
+            <CabinetTempHumChartCard />
             <DashboardMappingsTable mappings={mappings} loading={loadingMappings} />
           </div>
           <div className="lg:col-span-1 h-full min-h-0 flex flex-col">

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { getSession } from 'next-auth/react';
-import { createCabinetListGetAll, createCabinetUsersApi } from '@/lib/cabinet-http-clients';
+import { createCabinetListGetAll, createCabinetTempHumApi, createCabinetUsersApi } from '@/lib/cabinet-http-clients';
 import type { ApiResponse, PaginatedResponse, ItemsStats } from '@/types/common';
 import type { AuthResponse, User, RegisterDto, LoginDto } from '@/types/auth';
 import type { Item, CreateItemDto, UpdateItemDto, GetItemsQuery, ItemMasterUploadResult } from '@/types/item';
@@ -1641,6 +1641,50 @@ export const reportsApi = {
     window.URL.revokeObjectURL(url);
   },
 
+  /** รายงานอุณหภูมิ/ความชื้นในตู้ — Backend POST /reports/cabinet-temp-hum/excel */
+  downloadCabinetTempHumExcel: async (params?: { year?: number; month?: number }): Promise<void> => {
+    const response = await api.post('/reports/cabinet-temp-hum/excel', {
+      year: params?.year,
+      month: params?.month,
+    });
+    const res = response.data as { success?: boolean; error?: string; data?: { buffer?: string; filename?: string; contentType?: string } };
+    if (!res?.success || !res?.data?.buffer) throw new Error(res?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    const binary = atob(res.data.buffer);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.data.contentType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', res.data.filename || `cabinet_temp_hum_report.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  /** รายงานอุณหภูมิ/ความชื้นในตู้ — Backend POST /reports/cabinet-temp-hum/pdf */
+  downloadCabinetTempHumPdf: async (params?: { year?: number; month?: number }): Promise<void> => {
+    const response = await api.post('/reports/cabinet-temp-hum/pdf', {
+      year: params?.year,
+      month: params?.month,
+    });
+    const res = response.data as { success?: boolean; error?: string; data?: { buffer?: string; filename?: string; contentType?: string } };
+    if (!res?.success || !res?.data?.buffer) throw new Error(res?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    const binary = atob(res.data.buffer);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.data.contentType || 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', res.data.filename || `cabinet_temp_hum_report.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
   downloadItemsStockCombinedExcel: async (params?: {
     itemName?: string;
     itemcode?: string;
@@ -2355,6 +2399,9 @@ export const cabinetApi = {
 
 /** ผู้ใช้ในตู้ — โค้ดเส้นทางเดียวกับ factory ใน `@/lib/cabinet-http-clients` (axios หลัก admin) */
 export const cabinetUsersApi = createCabinetUsersApi(api);
+
+/** log อุณหภูมิ/ความชื้นของตู้ — GET /cabinet/temp-hum-logs/chart */
+export const cabinetTempHumApi = createCabinetTempHumApi(api);
 
 // =========================== Cabinet Department Mapping API ===========================
 // Backend: cabinet-departments (GET/POST/PUT/DELETE), item-stocks/in-cabinet (GET)

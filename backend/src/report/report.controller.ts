@@ -690,4 +690,24 @@ export class ReportServiceController {
       return { success: false, error: error?.message };
     }
   }
+
+  @Post('cabinet-temp-hum/excel')
+  async generateCabinetTempHumExcel(@Body() data: { year?: number; month?: number }) {
+    try {
+      const result = await this.reportServiceService.generateCabinetTempHumExcel(data);
+      return toFileResponse(result.buffer, result.filename, EXCEL_CONTENT);
+    } catch (error: any) {
+      return { success: false, error: error?.message };
+    }
+  }
+
+  @Post('cabinet-temp-hum/pdf')
+  async generateCabinetTempHumPdf(@Body() data: { year?: number; month?: number }) {
+    try {
+      const result = await this.reportServiceService.generateCabinetTempHumPdf(data);
+      return toFileResponse(result.buffer, result.filename, PDF_CONTENT);
+    } catch (error: any) {
+      return { success: false, error: error?.message };
+    }
+  }
 }

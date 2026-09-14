@@ -7,6 +7,7 @@ import { staffCabinetDepartmentApi } from '@/lib/staffApi/cabinetApi';
 import type { ItemWithExpiry } from './components/ItemsWithExpirySidebar';
 import DashboardMappingsTable, { type CabinetDepartment } from './components/DashboardMappingsTable';
 import DispensedVsUsageChartCard from './components/DispensedVsUsageChartCard';
+import CabinetTempHumChartCard from './components/CabinetTempHumChartCard';
 import ItemsWithExpirySidebar from './components/ItemsWithExpirySidebar';
 
 export default function DashboardPage() {
@@ -133,15 +134,16 @@ export default function DashboardPage() {
       {/* แถว 1: สรุปการเชื่อมโยง (เล็ก) + รายการเชื่อมโยง (ตาราง) | Card อุปกรณ์ใกล้หมดอายุ ความสูงเท่ากัน */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:items-stretch">
         <div className="lg:col-span-2 flex flex-col gap-4 min-h-0">
-          <DispensedVsUsageChartCard
-            mappingSummary={{
-              total: mappings.length,
-              cabinets: new Set(mappings.map((m) => m.cabinet_id)).size,
-              departments: new Set(mappings.map((m) => m.department_id)).size,
-            }}
-            loadingMappings={loadingMappings}
-          />
-          <DashboardMappingsTable mappings={mappings} loading={loadingMappings} />
+            <DispensedVsUsageChartCard
+              mappingSummary={{
+                total: mappings.length,
+                cabinets: new Set(mappings.map((m) => m.cabinet_id)).size,
+                departments: new Set(mappings.map((m) => m.department_id)).size,
+              }}
+              loadingMappings={loadingMappings}
+            />
+            <CabinetTempHumChartCard />
+            <DashboardMappingsTable mappings={mappings} loading={loadingMappings} />
         </div>
         <div className="lg:col-span-1 h-full min-h-0 flex flex-col">
           <ItemsWithExpirySidebar

@@ -72,6 +72,13 @@ import { EquipmentDisbursementReportData } from './types/equipment-disbursement-
 import { ItemComparisonReportData } from './types/item-comparison-report.types';
 import { WeighingService } from '../weighing/weighing.service';
 import { ItemService } from '../item/item.service';
+import { CabinetTempHumService } from '../cabinet/cabinet-temp-hum.service';
+import {
+  CabinetTempHumReportExcelService,
+  CabinetTempHumReportData,
+} from './services/cabinet-temp-hum-report-excel.service';
+import { CabinetTempHumReportPdfService } from './services/cabinet-temp-hum-report-pdf.service';
+import { formatReportDateOnlyUtc, formatReportDateTimeUtc } from './utils/date-timeformat';
 
 @Injectable()
 export class ReportServiceService {
@@ -114,6 +121,9 @@ export class ReportServiceService {
     private readonly dispensedItemsForPatientsExcelService: DispensedItemsForPatientsExcelService,
     private readonly dispensedItemsForPatientsPdfService: DispensedItemsForPatientsPdfService,
     private readonly itemService: ItemService,
+    private readonly cabinetTempHumService: CabinetTempHumService,
+    private readonly cabinetTempHumReportExcelService: CabinetTempHumReportExcelService,
+    private readonly cabinetTempHumReportPdfService: CabinetTempHumReportPdfService,
   ) {}
 
   /** ชื่อแผนกบนรายงาน — logic เดียวกับ frontend ItemsTable.getItemDepartmentDisplay */
@@ -3390,6 +3400,95 @@ export class ReportServiceService {
     } catch (error) {
       const errorMessage = error?.message || error?.toString() || 'Unknown error';
       throw new Error(`Failed to generate Item Borrow Report PDF: ${errorMessage}`);
+    }
+  }
+
+  private buildCabinetTempHumReportData(params: {
+    year?: number;
+    month?: number;
+  }): Promise<CabinetTempHumReportData> {
+    return this.getCabinetTempHumReportData(params);
+  }
+
+  private async getCabinetTempHumReportData(params: {
+    year?: number;
+    month?: number;
+  }): Promise<CabinetTempHumReportData> {
+    const now = new Date();
+    const year = params.year ?? now.getFullYear();
+    const month = params.month ?? now.getMonth() + 1;
+    const overview = await this.cabinetTempHumService.getOverview({ year, month });
+    const monthLabel = new Date(year, month - 1, 1).toLocaleDateString('th-TH', {
+      year: 'numeric',
+      month: 'long',
+      timeZone: 'Asia/Bangkok',
+    });
+    const formatLogTime = (at: Date | string | null | undefined) =>
+      at != null
+        ? new Date(at).toLocaleTimeString('th-TH', {
+            timeZone: 'UTC',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+          })
+        : '-';
+    const totalLogs = overview.cabinets.reduce((sum, c) => sum + (c.log_count ?? c.logs?.length ?? 0), 0);
+    return {
+      filters: { year, month, month_label: monthLabel },
+      summary: { total_rows: overview.cabinets.length, total_logs: totalLogs },
+      data: overview.cabinets.map((c, i) => {
+        const name = c.cabinet_name?.trim() || c.cabinet_code?.trim() || `ตู้ #${c.log_cabinet_id}`;
+        const at = c.last_log_at;
+        const full = at ? formatReportDateTimeUtc(at) : '-';
+        const datePart = at ? formatReportDateOnlyUtc(at) : '-';
+        const timePart = formatLogTime(at);
+        return {
+          seq: i + 1,
+          cabinet_name: name,
+          log_date: datePart || full,
+          log_time: timePart,
+          temp: c.latest_temp != null ? c.latest_temp.toFixed(1) : '-',
+          hum: c.latest_hum != null ? c.latest_hum.toFixed(1) : '-',
+          subRows: (c.logs ?? []).map((log, logIndex) => ({
+            seq: logIndex + 1,
+            log_date: formatReportDateOnlyUtc(log.create_date),
+            log_time: formatLogTime(log.create_date),
+            temp: log.temp_log != null ? Number(log.temp_log).toFixed(1) : '-',
+            hum: log.hum_log != null ? Number(log.hum_log).toFixed(1) : '-',
+          })),
+        };
+      }),
+    };
+  }
+
+  async generateCabinetTempHumExcel(params: {
+    year?: number;
+    month?: number;
+  }): Promise<{ buffer: Buffer; filename: string }> {
+    try {
+      const reportData = await this.buildCabinetTempHumReportData(params);
+      const buffer = await this.cabinetTempHumReportExcelService.generateReport(reportData);
+      const ym = `${reportData.filters?.year ?? ''}${String(reportData.filters?.month ?? '').padStart(2, '0')}`;
+      return { buffer, filename: `cabinet_temp_hum_report_${ym}.xlsx` };
+    } catch (error: any) {
+      const errorMessage = error?.message || error?.toString() || 'Unknown error';
+      throw new Error(`Failed to generate Cabinet Temp Hum Excel report: ${errorMessage}`);
+    }
+  }
+
+  async generateCabinetTempHumPdf(params: {
+    year?: number;
+    month?: number;
+  }): Promise<{ buffer: Buffer; filename: string }> {
+    try {
+      const reportData = await this.buildCabinetTempHumReportData(params);
+      const buffer = await this.cabinetTempHumReportPdfService.generateReport(reportData);
+      const ym = `${reportData.filters?.year ?? ''}${String(reportData.filters?.month ?? '').padStart(2, '0')}`;
+      return { buffer, filename: `cabinet_temp_hum_report_${ym}.pdf` };
+    } catch (error: any) {
+      const errorMessage = error?.message || error?.toString() || 'Unknown error';
+      throw new Error(`Failed to generate Cabinet Temp Hum PDF report: ${errorMessage}`);
     }
   }
 }

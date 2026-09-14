@@ -68,3 +68,84 @@ export function createCabinetListGetAll(http: AxiosInstance) {
     },
   };
 }
+
+export type CabinetTempHumChartPoint = {
+  id: number;
+  create_date: string;
+  temp_log: number;
+  hum_log: number;
+};
+
+export type CabinetTempHumChartCabinet = {
+  log_cabinet_id: number;
+  app_cabinet_id: number | null;
+  cabinet_name: string | null;
+  cabinet_code: string | null;
+  last_log_at: string | null;
+  latest_temp: number | null;
+  latest_hum: number | null;
+  log_count: number;
+  logs: CabinetTempHumChartPoint[];
+};
+
+export type CabinetTempHumChartData = {
+  cabinets: CabinetTempHumChartCabinet[];
+  selected: {
+    log_cabinet_id: number;
+    app_cabinet_id: number | null;
+    cabinet_name: string | null;
+    cabinet_code: string | null;
+  } | null;
+  latest: { create_date: string; temp_log: number; hum_log: number } | null;
+  stats: {
+    min_temp: number;
+    max_temp: number;
+    avg_temp: number;
+    min_hum: number;
+    max_hum: number;
+    delta_temp: number;
+  } | null;
+  points: CabinetTempHumChartPoint[];
+  range: {
+    hours: number | null;
+    year: number | null;
+    month: number | null;
+    from: string;
+    to: string;
+    used_fallback: boolean;
+  };
+};
+
+export type CabinetTempHumOverviewData = {
+  cabinets: CabinetTempHumChartCabinet[];
+  range: {
+    hours: number | null;
+    year: number | null;
+    month: number | null;
+    from: string;
+    to: string;
+  };
+};
+
+export function createCabinetTempHumApi(http: AxiosInstance) {
+  return {
+    getOverview: async (params?: {
+      year?: number;
+      month?: number;
+    }): Promise<ApiResponse<CabinetTempHumOverviewData>> => {
+      const response = await http.get('/cabinet/temp-hum-logs/overview', { params });
+      return response.data;
+    },
+
+    getChart: async (params?: {
+      cabinet_id?: number;
+      hours?: number;
+      year?: number;
+      month?: number;
+      limit?: number;
+    }): Promise<ApiResponse<CabinetTempHumChartData>> => {
+      const response = await http.get('/cabinet/temp-hum-logs/chart', { params });
+      return response.data;
+    },
+  };
+}

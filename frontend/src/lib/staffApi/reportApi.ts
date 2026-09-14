@@ -164,4 +164,20 @@ export const staffReportApi = {
     const res = response.data as { success?: boolean; error?: string };
     if (!res?.success) throw new Error(res?.error || 'สำรองรายงานไม่สำเร็จ');
   },
+
+  downloadCabinetTempHumExcel: async (params?: { year?: number; month?: number }): Promise<void> => {
+    const response = await staffApi.post('/reports/cabinet-temp-hum/excel', {
+      year: params?.year,
+      month: params?.month,
+    });
+    triggerNestedDownload(response.data, 'cabinet_temp_hum_report.xlsx');
+  },
+
+  downloadCabinetTempHumPdf: async (params?: { year?: number; month?: number }): Promise<void> => {
+    const response = await staffApi.post('/reports/cabinet-temp-hum/pdf', {
+      year: params?.year,
+      month: params?.month,
+    });
+    triggerNestedDownload(response.data, 'cabinet_temp_hum_report.pdf');
+  },
 };
