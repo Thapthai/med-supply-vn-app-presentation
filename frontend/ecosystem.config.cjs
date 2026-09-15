@@ -83,7 +83,7 @@ for (const key of passthroughKeys) {
 module.exports = {
   apps: [
     {
-      name: 'med-supplies-vtn-next-app',
+      name: 'med-supplies-vtn-presentation-frontend',
       cwd: __dirname,
       script: path.join(__dirname, 'node_modules', 'next', 'dist', 'bin', 'next'),
       args: 'start',

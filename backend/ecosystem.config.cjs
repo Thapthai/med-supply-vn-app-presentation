@@ -53,7 +53,7 @@ if (!fs.existsSync(mainEntry)) {
 module.exports = {
   apps: [
     {
-      name: 'med-supplies-vtn-backend',
+      name: 'med-supplies-vtn-presentation-backend',
       cwd: __dirname,
       script: mainEntry,
       interpreter: 'node',
