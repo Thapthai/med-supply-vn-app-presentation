@@ -759,7 +759,7 @@ model ItemSlotInCabinetDetail {
   SlotNo     Int      @map("SlotNo")
   Sensor     Int      @map("Sensor")
   Qty        Int      @map("Qty")
-  ModifyDate DateTime @map("ModifyDate")
+  ModifyDate DateTime? @map("ModifyDate")
   UserID     Int      @map("UserID")
   IsDeproom  String   @map("IsDeproom") @db.VarChar(25)
   Sign       String   @map("Sign")

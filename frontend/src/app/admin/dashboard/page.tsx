@@ -9,8 +9,8 @@ import type { ItemWithExpiry } from './components/ItemsWithExpirySidebar';
 import StatsCards from './components/StatsCards';
 import DashboardMappingsTable, { type CabinetDepartment } from './components/DashboardMappingsTable';
 import DispensedVsUsageChartCard from './components/DispensedVsUsageChartCard';
-import CabinetTempHumChartCard from './components/CabinetTempHumChartCard';
 import ItemsWithExpirySidebar from './components/ItemsWithExpirySidebar';
+import CabinetTempHumChartCard from './components/CabinetTempHumChartCard';
 
 export default function DashboardPage() {
   const { user } = useAuth();

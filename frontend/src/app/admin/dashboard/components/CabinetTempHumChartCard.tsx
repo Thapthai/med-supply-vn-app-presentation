@@ -1,21 +1,17 @@
 'use client';
 
-import { Fragment, useEffect, useMemo, useState, type MouseEvent } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ChevronDown, ChevronRight, FileSpreadsheet, FileText, Loader2, Thermometer } from 'lucide-react';
+import { FileSpreadsheet, FileText, Loader2, Thermometer } from 'lucide-react';
 import { cabinetTempHumApi, reportsApi } from '@/lib/api';
 import type {
   CabinetTempHumChartCabinet,
   CabinetTempHumChartData,
   CabinetTempHumChartPoint,
 } from '@/lib/cabinet-http-clients';
-import { formatUtcDateTime } from '@/lib/formatThaiDateTime';
-
-const SUB_LOG_VISIBLE_COUNT = 10;
-/** header 40px + 10 แถว × 36px */
-const SUB_LOG_SCROLL_MAX_HEIGHT = 40 + SUB_LOG_VISIBLE_COUNT * 36;
+import { formatUtcDateTime, toUtcYyyyMmDd } from '@/lib/formatThaiDateTime';
+import { cn } from '@/lib/utils';
 
 const TH_MONTHS = [
   'มกราคม',
@@ -59,6 +55,63 @@ function monthLabel(year: number, month: number) {
   return `${TH_MONTHS[month - 1] ?? month} ${year + 543}`;
 }
 
+function daysInMonth(year: number, month: number) {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+function formatLogTime(value: string) {
+  return formatUtcDateTime(value, {
+    year: undefined,
+    month: undefined,
+    day: undefined,
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function groupLogsByDay(logs: CabinetTempHumChartPoint[], year: number, month: number) {
+  const map = new Map<number, CabinetTempHumChartPoint[]>();
+  for (const log of logs) {
+    const ymd = toUtcYyyyMmDd(log.create_date);
+    if (!ymd) continue;
+    const [y, m, d] = ymd.split('-').map(Number);
+    if (y !== year || m !== month || !d) continue;
+    const list = map.get(d) ?? [];
+    list.push(log);
+    map.set(d, list);
+  }
+  for (const list of map.values()) {
+    list.sort((a, b) => new Date(a.create_date).getTime() - new Date(b.create_date).getTime());
+  }
+  return map;
+}
+
+function collectTimes(
+  cabinets: CabinetTempHumChartCabinet[],
+  year: number,
+  month: number,
+): string[] {
+  const set = new Set<string>();
+  for (const cabinet of cabinets) {
+    for (const log of cabinet.logs ?? []) {
+      const ymd = toUtcYyyyMmDd(log.create_date);
+      if (!ymd) continue;
+      const [y, m] = ymd.split('-').map(Number);
+      if (y !== year || m !== month) continue;
+      set.add(formatLogTime(log.create_date));
+    }
+  }
+  return [...set].sort();
+}
+
+function readingAt(
+  byDay: Map<number, CabinetTempHumChartPoint[]>,
+  day: number,
+  time: string,
+): CabinetTempHumChartPoint | undefined {
+  return (byDay.get(day) ?? []).find((log) => formatLogTime(log.create_date) === time);
+}
+
 function currentYearMonth() {
   const now = new Date();
   return { year: now.getFullYear(), month: now.getMonth() + 1 };
@@ -78,7 +131,7 @@ function niceDomain(minT: number, maxT: number) {
   const half = Math.max((maxT - minT) / 2 + 0.6, 1.4);
   const yMin = mid - half;
   const yMax = mid + half;
-  const step = niceStep((yMax - yMin) / 3);
+  const step = niceStep((yMax - yMin) / 5);
   const start = Math.floor(yMin / step) * step;
   const ticks: number[] = [];
   for (let v = start; v <= yMax + step * 0.01; v += step) {
@@ -101,193 +154,248 @@ function smoothPath(xs: number[], ys: number[]) {
   return d;
 }
 
-function formatAxisTime(value: string) {
-  return formatUtcDateTime(value, { year: undefined, month: 'short', day: 'numeric' });
+const LINE_COLORS = ['#ef4444', '#22c55e', '#3b82f6', '#f59e0b', '#a855f7', '#14b8a6', '#f97316', '#64748b'];
+
+type TimeSeries = {
+  time: string;
+  color: string;
+  points: { day: number; value: number }[];
+};
+
+function buildTimeSeries(
+  points: CabinetTempHumChartPoint[],
+  year: number,
+  month: number,
+  metric: 'temp' | 'hum',
+): TimeSeries[] {
+  const byTime = new Map<string, { day: number; value: number }[]>();
+  for (const point of points) {
+    const ymd = toUtcYyyyMmDd(point.create_date);
+    if (!ymd) continue;
+    const [y, m, d] = ymd.split('-').map(Number);
+    if (y !== year || m !== month || !d) continue;
+    const time = formatLogTime(point.create_date);
+    const value = metric === 'temp' ? point.temp_log : point.hum_log;
+    if (value == null || Number.isNaN(value)) continue;
+    const list = byTime.get(time) ?? [];
+    const existing = list.find((item) => item.day === d);
+    if (existing) existing.value = value;
+    else list.push({ day: d, value });
+    byTime.set(time, list);
+  }
+  return [...byTime.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([time, seriesPoints], i) => ({
+      time,
+      color: LINE_COLORS[i % LINE_COLORS.length],
+      points: seriesPoints.sort((a, b) => a.day - b.day),
+    }));
 }
 
-function TempHumLineChart({
+function DailyMetricChart({
   points,
+  year,
+  month,
+  metric,
   title,
-  gradientId,
 }: {
   points: CabinetTempHumChartPoint[];
+  year: number;
+  month: number;
+  metric: 'temp' | 'hum';
   title: string;
-  gradientId: string;
 }) {
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const [hoverDay, setHoverDay] = useState<number | null>(null);
+  const dayCount = daysInMonth(year, month);
+  const series = useMemo(() => buildTimeSeries(points, year, month, metric), [points, year, month, metric]);
 
   const layout = useMemo(() => {
-    const width = 800;
-    const height = 300;
-    const padL = 52;
-    const padR = 52;
-    const padT = 28;
-    const padB = 56;
-    const temps = points.map((p) => p.temp_log);
-    const hums = points.map((p) => p.hum_log);
-    const tempDomain = niceDomain(Math.min(...temps), Math.max(...temps));
-    const humDomain = niceDomain(Math.min(...hums), Math.max(...hums));
+    const width = 980;
+    const height = 400;
+    const padL = 58;
+    const padR = 20;
+    const padT = 24;
+    const padB = 48;
+    const values = series.flatMap((s) => s.points.map((p) => p.value));
+    const domain = values.length
+      ? niceDomain(Math.min(...values), Math.max(...values))
+      : { yMin: 0, yMax: 1, ticks: [0, 1] };
     const innerW = width - padL - padR;
     const innerH = height - padT - padB;
-    const times = points.map((p) => new Date(p.create_date).getTime());
-    const tMin = Math.min(...times);
-    const tMax = Math.max(...times);
-    const tSpan = Math.max(tMax - tMin, 1);
-    const xInset = points.length === 1 ? innerW / 2 : Math.max(innerW * 0.08, 28);
-    const xs = points.map((_, i) => {
-      if (points.length === 1) return padL + innerW / 2;
-      return padL + xInset + ((times[i] - tMin) / tSpan) * (innerW - xInset * 2);
-    });
-    const tempYs = points.map(
-      (p) => padT + ((tempDomain.yMax - p.temp_log) / (tempDomain.yMax - tempDomain.yMin)) * innerH,
-    );
-    const humYs = points.map(
-      (p) => padT + ((humDomain.yMax - p.hum_log) / (humDomain.yMax - humDomain.yMin)) * innerH,
-    );
-    const tempLine = smoothPath(xs, tempYs);
-    const humLine = smoothPath(xs, humYs);
-    const area = `${tempLine} L ${xs[xs.length - 1].toFixed(2)} ${(padT + innerH).toFixed(2)} L ${xs[0].toFixed(2)} ${(padT + innerH).toFixed(2)} Z`;
-    const xLabels =
-      points.length === 1
-        ? [{ x: xs[0], label: formatAxisTime(points[0].create_date) }]
-        : [
-            { x: xs[0], label: formatAxisTime(points[0].create_date) },
-            { x: xs[xs.length - 1], label: formatAxisTime(points[points.length - 1].create_date) },
-          ];
-    return {
-      width,
-      height,
-      padL,
-      padR,
-      padT,
-      innerH,
-      xs,
-      tempYs,
-      humYs,
-      tempLine,
-      humLine,
-      area,
-      tempDomain,
-      humDomain,
-      xLabels,
-    };
-  }, [points]);
+    const xAt = (day: number) =>
+      dayCount <= 1 ? padL + innerW / 2 : padL + ((day - 1) / (dayCount - 1)) * innerW;
+    const yAt = (value: number) =>
+      padT + ((domain.yMax - value) / Math.max(domain.yMax - domain.yMin, 0.1)) * innerH;
+    const lines = series.map((s) => ({
+      ...s,
+      xs: s.points.map((p) => xAt(p.day)),
+      ys: s.points.map((p) => yAt(p.value)),
+      path: smoothPath(
+        s.points.map((p) => xAt(p.day)),
+        s.points.map((p) => yAt(p.value)),
+      ),
+    }));
+    const xLabels = Array.from({ length: dayCount }, (_, i) => i + 1);
+    return { width, height, padL, padR, padT, innerW, innerH, domain, xAt, yAt, lines, xLabels };
+  }, [series, dayCount]);
 
-  if (points.length === 0) return null;
+  if (series.length === 0) return null;
 
   const onMove = (event: MouseEvent<SVGSVGElement>) => {
     const svg = event.currentTarget;
     const rect = svg.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * layout.width;
-    let nearest = 0;
+    let nearest = 1;
     let best = Infinity;
-    layout.xs.forEach((px, i) => {
-      const d = Math.abs(px - x);
+    for (let day = 1; day <= dayCount; day += 1) {
+      const d = Math.abs(layout.xAt(day) - x);
       if (d < best) {
         best = d;
-        nearest = i;
+        nearest = day;
       }
-    });
-    setHoverIndex(nearest);
+    }
+    setHoverDay(nearest);
   };
 
-  const hi = hoverIndex ?? points.length - 1;
-  const hover = points[hi];
-  const tooltipLeft = Math.min(Math.max((layout.xs[hi] / layout.width) * 100, 18), 82);
+  const unit = metric === 'temp' ? '°C' : '%';
+  const axisColor = metric === 'temp' ? '#c2410c' : '#0369a1';
+  const day = hoverDay;
+  const tooltipRows =
+    day == null
+      ? []
+      : layout.lines
+          .map((s) => {
+            const point = s.points.find((p) => p.day === day);
+            return point ? { time: s.time, color: s.color, value: point.value } : null;
+          })
+          .filter((row): row is { time: string; color: string; value: number } => row != null);
+  const tooltipLeft =
+    day == null ? 50 : Math.min(Math.max((layout.xAt(day) / layout.width) * 100, 16), 84);
 
   return (
-    <div className="relative rounded-2xl border border-slate-200 bg-white px-4 pb-8 pt-5">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm font-semibold text-slate-800">{title}</p>
-        <div className="flex items-center gap-4 text-xs text-slate-600">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-sm bg-orange-500" />
-            อุณหภูมิ
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-sm bg-sky-500" />
-            ความชื้น
-          </span>
+    <div className="relative rounded-2xl border border-slate-200 bg-white px-5 pb-6 pt-5">
+      <p className="mb-1 text-center text-base font-semibold text-slate-800">{title}</p>
+   
+      <div className="flex gap-4">
+        <svg
+          viewBox={`0 0 ${layout.width} ${layout.height}`}
+          className="h-[400px] min-w-0 flex-1"
+          preserveAspectRatio="xMidYMid meet"
+          onMouseMove={onMove}
+          onMouseLeave={() => setHoverDay(null)}
+          role="img"
+          aria-label={title}
+        >
+          <text
+            x={16}
+            y={layout.padT + layout.innerH / 2}
+            textAnchor="middle"
+            fill={axisColor}
+            fontSize="13"
+            fontWeight="600"
+            transform={`rotate(-90 16 ${layout.padT + layout.innerH / 2})`}
+          >
+            {metric === 'temp' ? '°C' : '%'}
+          </text>
+          {layout.domain.ticks.map((tick) => {
+            const y = layout.yAt(tick);
+            return (
+              <g key={`tick-${tick}`}>
+                <line
+                  x1={layout.padL}
+                  x2={layout.width - layout.padR}
+                  y1={y}
+                  y2={y}
+                  stroke="#e2e8f0"
+                  strokeDasharray="5 6"
+                />
+                <text x={layout.padL - 10} y={y + 5} textAnchor="end" fill={axisColor} fontSize="13">
+                  {tick.toFixed(1)}
+                </text>
+              </g>
+            );
+          })}
+          {day != null && (
+            <line
+              x1={layout.xAt(day)}
+              x2={layout.xAt(day)}
+              y1={layout.padT}
+              y2={layout.padT + layout.innerH}
+              stroke="#cbd5e1"
+              strokeDasharray="4 4"
+            />
+          )}
+          {layout.lines.map((s) => (
+            <g key={s.time}>
+              <path
+                d={s.path}
+                fill="none"
+                stroke={s.color}
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {s.xs.map((x, i) => (
+                <circle
+                  key={`${s.time}-${s.points[i].day}`}
+                  cx={x}
+                  cy={s.ys[i]}
+                  r={day === s.points[i].day ? 6 : 4.5}
+                  fill={s.color}
+                  stroke="#fff"
+                  strokeWidth="2"
+                />
+              ))}
+            </g>
+          ))}
+          {layout.xLabels.map((labelDay) => (
+            <text
+              key={`x-${labelDay}`}
+              x={layout.xAt(labelDay)}
+              y={layout.height - 22}
+              textAnchor="middle"
+              fill="#64748b"
+              fontSize="13"
+            >
+              {labelDay}
+            </text>
+          ))}
+          <text
+            x={layout.padL + layout.innerW / 2}
+            y={layout.height - 4}
+            textAnchor="middle"
+            fill="#64748b"
+            fontSize="13"
+          >
+            วันที่
+          </text>
+        </svg>
+        <div className="flex w-24 shrink-0 flex-col items-start justify-center gap-2.5">
+          <p className="text-xs font-semibold text-slate-500">เวลา</p>
+          {layout.lines.map((s) => (
+            <span key={s.time} className="inline-flex items-center gap-2 text-sm text-slate-700">
+              <span className="h-3 w-3 rounded-[3px]" style={{ backgroundColor: s.color }} />
+              {s.time}
+            </span>
+          ))}
         </div>
       </div>
-      <svg
-        viewBox={`0 0 ${layout.width} ${layout.height}`}
-        className="h-[280px] w-full"
-        preserveAspectRatio="xMidYMid meet"
-        onMouseMove={onMove}
-        onMouseLeave={() => setHoverIndex(null)}
-        role="img"
-        aria-label={`กราฟอุณหภูมิและความชื้น ${title}`}
-      >
-        <defs>
-          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fb923c" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="#fff7ed" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        {layout.tempDomain.ticks.map((tick) => {
-          const y =
-            layout.padT +
-            ((layout.tempDomain.yMax - tick) / (layout.tempDomain.yMax - layout.tempDomain.yMin)) * layout.innerH;
-          return (
-            <g key={`t-${tick}`}>
-              <line
-                x1={layout.padL}
-                x2={layout.width - layout.padR}
-                y1={y}
-                y2={y}
-                stroke="#e2e8f0"
-                strokeDasharray="5 6"
-              />
-              <text x={layout.padL - 10} y={y + 4} textAnchor="end" fill="#c2410c" fontSize="11">
-                {tick.toFixed(1)}
-              </text>
-            </g>
-          );
-        })}
-        {layout.humDomain.ticks.map((tick) => {
-          const y =
-            layout.padT +
-            ((layout.humDomain.yMax - tick) / (layout.humDomain.yMax - layout.humDomain.yMin)) * layout.innerH;
-          return (
-            <text key={`h-${tick}`} x={layout.width - layout.padR + 10} y={y + 4} fill="#0369a1" fontSize="11">
-              {tick.toFixed(1)}
-            </text>
-          );
-        })}
-        <path d={layout.area} fill={`url(#${gradientId})`} />
-        <path d={layout.humLine} fill="none" stroke="#0ea5e9" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-        <path d={layout.tempLine} fill="none" stroke="#ea580c" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-        {layout.xs.map((x, i) => (
-          <g key={points[i].id}>
-            <circle cx={x} cy={layout.humYs[i]} r={i === hi ? 5 : 3.5} fill="#0ea5e9" stroke="#fff" strokeWidth="2" />
-            <circle cx={x} cy={layout.tempYs[i]} r={i === hi ? 6 : 4.5} fill="#ea580c" stroke="#fff" strokeWidth="2.5" />
-          </g>
-        ))}
-        {hover && (
-          <line
-            x1={layout.xs[hi]}
-            x2={layout.xs[hi]}
-            y1={layout.padT}
-            y2={layout.padT + layout.innerH}
-            stroke="#cbd5e1"
-            strokeDasharray="4 4"
-          />
-        )}
-        {layout.xLabels.map((item) => (
-          <text key={`${item.x}-${item.label}`} x={item.x} y={layout.height - 18} textAnchor="middle" fill="#64748b" fontSize="11">
-            {item.label}
-          </text>
-        ))}
-      </svg>
-      {hover && (
+      {day != null && tooltipRows.length > 0 && (
         <div
-          className="pointer-events-none absolute top-12 z-10 -translate-x-1/2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs shadow-md"
+          className="pointer-events-none absolute top-10 z-10 -translate-x-1/2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs shadow-md"
           style={{ left: `${tooltipLeft}%` }}
         >
-          <div className="font-semibold text-orange-700">{formatTemp(hover.temp_log)}</div>
-          <div className="font-semibold text-sky-700">{formatHum(hover.hum_log)}</div>
-          <div className="text-slate-500">{formatUtcDateTime(hover.create_date)}</div>
+          <div className="mb-1 font-semibold text-slate-700">วันที่ {day}</div>
+          {tooltipRows.map((row) => (
+            <div key={row.time} className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-[2px]" style={{ backgroundColor: row.color }} />
+              <span className="text-slate-500">{row.time}</span>
+              <span className="font-semibold" style={{ color: row.color }}>
+                {row.value.toFixed(1)}
+                {unit}
+              </span>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -345,17 +453,28 @@ function CabinetChartBlock({
           ไม่มีข้อมูลกราฟของ {cabinetLabel(cabinet)} ในเดือนนี้
         </p>
       ) : (
-        <TempHumLineChart
-          points={data.points}
-          title={`${cabinetLabel(cabinet)} · ${monthLabel(year, month)}`}
-          gradientId={`tempFill-${cabinetId}`}
-        />
+        <div className="flex flex-col gap-4">
+          <DailyMetricChart
+            points={data.points}
+            year={year}
+            month={month}
+            metric="temp"
+            title={`อุณหภูมิ ${cabinetLabel(cabinet)} · เดือน ${monthLabel(year, month)}`}
+          />
+          <DailyMetricChart
+            points={data.points}
+            year={year}
+            month={month}
+            metric="hum"
+            title={`ความชื้น ${cabinetLabel(cabinet)} · เดือน ${monthLabel(year, month)}`}
+          />
+        </div>
       )}
     </div>
   );
 }
 
-export default function CabinetTempHumChartCard() {
+export default function CabinetTempHumChartCardV2() {
   const initial = currentYearMonth();
   const [year, setYear] = useState(initial.year);
   const [month, setMonth] = useState(initial.month);
@@ -363,6 +482,8 @@ export default function CabinetTempHumChartCard() {
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [exportLoading, setExportLoading] = useState<'excel' | 'pdf' | null>(null);
+  const calendarScrollRef = useRef<HTMLDivElement>(null);
+  const todayColRef = useRef<HTMLTableCellElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -390,9 +511,32 @@ export default function CabinetTempHumChartCard() {
   }, [year, month]);
 
   const selectedCabinets = cabinets.filter((c) => selectedIds.includes(cabinetSelectValue(c)));
+  const dayCount = daysInMonth(year, month);
+  const days = useMemo(() => Array.from({ length: dayCount }, (_, i) => i + 1), [dayCount]);
+  const timeSlots = useMemo(() => {
+    const slots = collectTimes(cabinets, year, month);
+    return slots.length > 0 ? slots : ['—'];
+  }, [cabinets, year, month]);
+  const today = currentYearMonth();
+  const todayDay = today.year === year && today.month === month ? new Date().getDate() : null;
+
+  useLayoutEffect(() => {
+    const scroller = calendarScrollRef.current;
+    const todayCol = todayColRef.current;
+    if (!scroller || !todayCol || todayDay == null) return;
+    const scrollerRect = scroller.getBoundingClientRect();
+    const colRect = todayCol.getBoundingClientRect();
+    const stickyWidth = Array.from(todayCol.parentElement?.querySelectorAll('th[rowspan]') ?? []).reduce(
+      (sum, el) => sum + el.getBoundingClientRect().width,
+      0,
+    ) || 208;
+    const visible = scroller.clientWidth - stickyWidth;
+    const colCenter = colRect.left - scrollerRect.left + scroller.scrollLeft + colRect.width / 2;
+    scroller.scrollLeft = Math.max(0, colCenter - stickyWidth - visible / 2);
+  }, [todayDay, year, month, loading, cabinets.length]);
 
   const toggleCabinet = (id: number) => {
-    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    setSelectedIds((prev) => (prev.includes(id) ? [] : [id]));
   };
 
   const exportExcel = async () => {
@@ -470,125 +614,159 @@ export default function CabinetTempHumChartCard() {
           </div>
         ) : (
           <div className="flex flex-col gap-6">
-            <div className="overflow-hidden rounded-xl border border-slate-200">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-b border-slate-200 bg-slate-100/80 hover:bg-slate-100/80">
-                    <TableHead className="w-10 px-2 py-3" />
-                    <TableHead className="px-3 py-3 text-slate-600">ลำดับ</TableHead>
-                    <TableHead className="px-3 py-3 text-slate-600">ตู้</TableHead>
-                    <TableHead className="px-3 py-3 text-slate-600">วันที่</TableHead>
-                    <TableHead className="px-3 py-3 text-slate-600">เวลา</TableHead>
-                    <TableHead className="px-3 py-3 text-slate-600">อุณหภูมิ</TableHead>
-                    <TableHead className="px-3 py-3 text-slate-600">ความชื้น</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {cabinets.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="py-10 text-center text-slate-500">
-                        ไม่มีข้อมูลใน {monthLabel(year, month)}
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    cabinets.map((c, i) => {
-                      const id = cabinetSelectValue(c);
-                      const active = selectedIds.includes(id);
-                      const at = c.last_log_at ? formatUtcDateTime(c.last_log_at) : '—';
-                      const [datePart, timePart] = at.includes(' ') ? at.split(/ (?=\d{1,2}:)/) : [at, '—'];
-                      const logs = c.logs ?? [];
-                      return (
-                        <Fragment key={`${c.log_cabinet_id}-${c.app_cabinet_id ?? 'none'}`}>
-                          <TableRow
-                            className={`cursor-pointer ${active ? 'bg-orange-50 hover:bg-orange-50' : 'hover:bg-slate-50'}`}
-                            onClick={() => toggleCabinet(id)}
-                          >
-                            <TableCell className="px-2 py-3">
-                              <button
-                                type="button"
-                                className="rounded p-1 hover:bg-slate-200/80"
-                                aria-expanded={active}
-                                aria-label={active ? 'ยุบรายการวันเวลา' : 'ขยายดูแต่ละวันเวลา'}
-                              >
-                                {active ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                              </button>
-                            </TableCell>
-                            <TableCell className="px-3 py-3">{i + 1}</TableCell>
-                            <TableCell className="px-3 py-3 font-medium text-slate-800">
-                              <div className="flex flex-col">
-                                <span>{cabinetLabel(c)}</span>
-                                <span className="text-xs font-normal text-slate-500">
-                                  {c.log_count ?? logs.length} บันทึก
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="px-3 py-3 text-slate-600">{datePart}</TableCell>
-                            <TableCell className="px-3 py-3 text-slate-600">{timePart}</TableCell>
-                            <TableCell className="px-3 py-3 font-semibold text-orange-700">{formatTemp(c.latest_temp)}</TableCell>
-                            <TableCell className="px-3 py-3 font-semibold text-sky-700">{formatHum(c.latest_hum)}</TableCell>
-                          </TableRow>
-                          {active && (
-                            <TableRow className="hover:bg-transparent">
-                              <TableCell colSpan={7} className="bg-slate-50 px-4 py-3">
-                                {logs.length === 0 ? (
-                                  <p className="py-4 text-center text-sm text-slate-500">ไม่มีบันทึกวันเวลาในเดือนนี้</p>
-                                ) : (
-                                  <div className="overflow-hidden rounded-md border border-slate-200 bg-white">
-                                    <div
-                                      className="overflow-y-auto overscroll-contain"
-                                      style={
-                                        logs.length > SUB_LOG_VISIBLE_COUNT
-                                          ? { maxHeight: SUB_LOG_SCROLL_MAX_HEIGHT }
-                                          : undefined
-                                      }
+            <div className="overflow-hidden rounded-xl bg-slate-50/60">
+              <div className="px-4 py-3 text-center text-sm font-semibold tracking-wide text-slate-600">
+                เดือน {monthLabel(year, month)}
+              </div>
+              {cabinets.length === 0 ? (
+                <p className="py-10 text-center text-slate-500">ไม่มีข้อมูลใน {monthLabel(year, month)}</p>
+              ) : (
+                <div ref={calendarScrollRef} className="overflow-x-auto px-0.5 pb-2">
+                  <table className="min-w-full border-separate border-spacing-0 text-sm">
+                    <thead>
+                      <tr>
+                        <th
+                          rowSpan={2}
+                          className="sticky left-0 z-30 w-32 min-w-32 max-w-32 bg-slate-100 px-2.5 py-2 text-left text-[13px] font-semibold text-slate-500 shadow-[inset_-2px_0_0_#94a3b8]"
+                        >
+                          ชื่อตู้
+                        </th>
+                        <th
+                          rowSpan={2}
+                          className="sticky left-32 z-30 w-20 min-w-20 bg-slate-100 px-2 py-2 text-center text-[13px] font-semibold text-slate-500 shadow-[inset_-2px_0_0_#94a3b8]"
+                        >
+                          รายการ
+                        </th>
+                        {days.map((day) => {
+                          const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+                          const isWeekend = weekday === 0 || weekday === 6;
+                          const isToday = todayDay === day;
+                          return (
+                            <th
+                              key={day}
+                              ref={isToday ? todayColRef : undefined}
+                              colSpan={timeSlots.length}
+                              className={cn(
+                                'border-b border-l-2 border-l-slate-400 border-b-slate-200 px-1 py-2 text-center text-xs font-semibold',
+                                isToday && 'bg-orange-50 text-orange-700',
+                                !isToday && isWeekend && 'bg-slate-100/70 text-slate-400',
+                                !isToday && !isWeekend && 'text-slate-600',
+                              )}
+                            >
+                              วันที่ {day}
+                            </th>
+                          );
+                        })}
+                      </tr>
+                      <tr>
+                        {days.flatMap((day) => {
+                          const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+                          const isWeekend = weekday === 0 || weekday === 6;
+                          const isToday = todayDay === day;
+                          return timeSlots.map((time, timeIndex) => (
+                            <th
+                              key={`${day}-${time}`}
+                              className={cn(
+                                'min-w-[4.5rem] border-b border-slate-200 px-1 py-1.5 text-center text-[11px] font-medium',
+                                timeIndex === 0 ? 'border-l-2 border-l-slate-400' : 'border-l border-l-slate-200',
+                                isToday && 'bg-orange-50 text-orange-700',
+                                !isToday && isWeekend && 'bg-slate-100/70 text-slate-400',
+                                !isToday && !isWeekend && 'text-slate-500',
+                              )}
+                            >
+                              {time}
+                            </th>
+                          ));
+                        })}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cabinets.map((c, i) => {
+                        const id = cabinetSelectValue(c);
+                        const active = selectedIds.includes(id);
+                        const byDay = groupLogsByDay(c.logs ?? [], year, month);
+                        const rowClass = cn(
+                          'cursor-pointer',
+                          active ? 'bg-orange-50/50' : 'hover:bg-white/70',
+                        );
+                        const nameClass = cn(
+                          'sticky left-0 z-30 w-32 min-w-32 max-w-32 border-b-2 border-b-slate-400 px-2.5 py-3.5 align-middle text-left shadow-[inset_-2px_0_0_#94a3b8]',
+                          active ? 'bg-orange-50' : 'bg-white',
+                        );
+                        const metricClass = cn(
+                          'sticky left-32 z-30 w-20 min-w-20 px-2 py-3 text-center text-xs font-semibold shadow-[inset_-2px_0_0_#94a3b8]',
+                          active ? 'bg-orange-50' : 'bg-white',
+                        );
+                        return (
+                          <Fragment key={`${c.log_cabinet_id}-${c.app_cabinet_id ?? 'none'}`}>
+                            <tr className={rowClass} onClick={() => toggleCabinet(id)}>
+                              <td rowSpan={2} className={nameClass}>
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="line-clamp-2 break-words text-sm font-semibold leading-snug text-slate-800">
+                                    {i + 1}. {cabinetLabel(c)}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className={cn(metricClass, 'border-b border-slate-100 text-orange-600')}>อุณหภูมิ</td>
+                              {days.flatMap((day) => {
+                                const isToday = todayDay === day;
+                                return timeSlots.map((time, timeIndex) => {
+                                  const log = readingAt(byDay, day, time);
+                                  return (
+                                    <td
+                                      key={`t-${day}-${time}`}
+                                      className={cn(
+                                        'border-b border-slate-100 px-1 py-3 text-center text-sm font-semibold text-orange-600',
+                                        timeIndex === 0 ? 'border-l-2 border-l-slate-400' : 'border-l border-l-slate-100',
+                                        isToday && 'bg-orange-50/80',
+                                      )}
                                     >
-                                      <table className="w-full caption-bottom text-sm">
-                                        <thead className="sticky top-0 z-10 bg-slate-100">
-                                          <tr className="border-b border-slate-200">
-                                            <th className="h-10 px-3 text-left font-medium text-slate-600">ลำดับ</th>
-                                            <th className="h-10 px-3 text-left font-medium text-slate-600">วันที่</th>
-                                            <th className="h-10 px-3 text-left font-medium text-slate-600">เวลา</th>
-                                            <th className="h-10 px-3 text-left font-medium text-slate-600">อุณหภูมิ</th>
-                                            <th className="h-10 px-3 text-left font-medium text-slate-600">ความชื้น</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody>
-                                          {logs.map((log, logIndex) => {
-                                            const logAt = formatUtcDateTime(log.create_date);
-                                            const [logDate, logTime] = logAt.includes(' ')
-                                              ? logAt.split(/ (?=\d{1,2}:)/)
-                                              : [logAt, '—'];
-                                            return (
-                                              <tr key={log.id} className="h-9 border-b border-slate-100 last:border-0 hover:bg-slate-50">
-                                                <td className="px-3 text-slate-500">{logIndex + 1}</td>
-                                                <td className="px-3 text-slate-700">{logDate}</td>
-                                                <td className="px-3 text-slate-700">{logTime}</td>
-                                                <td className="px-3 font-medium text-orange-700">{formatTemp(log.temp_log)}</td>
-                                                <td className="px-3 font-medium text-sky-700">{formatHum(log.hum_log)}</td>
-                                              </tr>
-                                            );
-                                          })}
-                                        </tbody>
-                                      </table>
-                                    </div>
-                                    {logs.length > SUB_LOG_VISIBLE_COUNT ? (
-                                      <p className="border-t border-slate-100 bg-slate-50 px-3 py-1.5 text-xs text-slate-500">
-                                        แสดง 10 จาก {logs.length} รายการ — เลื่อนเมาส์เพื่อดูที่เหลือ
-                                      </p>
-                                    ) : null}
-                                  </div>
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </Fragment>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
+                                      {formatTemp(log?.temp_log)}
+                                    </td>
+                                  );
+                                });
+                              })}
+                            </tr>
+                            <tr className={rowClass} onClick={() => toggleCabinet(id)}>
+                              <td className={cn(metricClass, 'border-b-2 border-b-slate-400 text-sky-600')}>ความชื้น</td>
+                              {days.flatMap((day) => {
+                                const isToday = todayDay === day;
+                                return timeSlots.map((time, timeIndex) => {
+                                  const log = readingAt(byDay, day, time);
+                                  return (
+                                    <td
+                                      key={`h-${day}-${time}`}
+                                      className={cn(
+                                        'border-b-2 border-b-slate-400 px-1 py-3 text-center text-sm font-semibold text-sky-600',
+                                        timeIndex === 0 ? 'border-l-2 border-l-slate-400' : 'border-l border-l-slate-100',
+                                        isToday && 'bg-orange-50/80',
+                                      )}
+                                    >
+                                      {formatHum(log?.hum_log)}
+                                    </td>
+                                  );
+                                });
+                              })}
+                            </tr>
+                          </Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
-            <p className="text-xs text-slate-500">คลิกที่ตู้เพื่อดูบันทึกแต่ละวันเวลาและกราฟด้านล่าง กดซ้ำเพื่อปิด</p>
+            <div className="flex flex-col gap-1.5 text-xs text-slate-500 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-sm bg-orange-500" />
+                สีส้ม = อุณหภูมิ
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-sm bg-sky-500" />
+                สีฟ้า = ความชื้น
+              </span>
+              <span>คลิกที่แถวตู้เพื่อดูกราฟด้านล่าง กดซ้ำเพื่อปิด</span>
+            </div>
             {selectedCabinets.length === 0 ? (
               <p className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-500">
                 เลือกตู้จากตารางเพื่อดูกราฟอุณหภูมิและความชื้น

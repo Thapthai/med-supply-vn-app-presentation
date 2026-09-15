@@ -1,6 +1,7 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { authApi } from "@/lib/api";
+import { getAppName } from "@/lib/appAuth";
 
 const authOptions: NextAuthOptions = {
   providers: [
@@ -171,6 +172,8 @@ const authOptions: NextAuthOptions = {
         token.name = (user as any).name;
         const u = (user as any).user as Record<string, unknown> | undefined;
         token.is_admin = u?.is_admin === true;
+        // ติดชื่อแอปตอน login — ใช้กัน session ข้ามโปรเจกต์บนโดเมนเดียวกัน
+        token.appname = getAppName();
       }
 
       // Handle session update (when updateSession is called)
@@ -199,15 +202,21 @@ const authOptions: NextAuthOptions = {
 
       // Set user data
       if (token.user) {
-        (session as any).user = token.user;
+        (session as any).user = {
+          ...(token.user as object),
+          appname: token.appname,
+        };
       } else {
         // Fallback: construct user from token properties
         (session as any).user = {
           id: token.id,
           email: token.email,
           name: token.name,
+          appname: token.appname,
         };
       }
+
+      (session as any).appname = token.appname;
 
       return session;
     }

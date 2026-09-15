@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { User, Lock, Save, Eye, EyeOff } from 'lucide-react';
 import { staffUserApi } from '@/lib/api';
 import { staffRoleDisplayLabel } from '@/lib/staffRolePolicy';
+import { saveStaffUser } from '@/lib/appAuth';
 import { cn } from '@/lib/utils';
 
 const fieldInputClass = 'bg-white';
@@ -130,7 +131,7 @@ export default function SettingsPage() {
           ...staffUser,
           ...response.data,
         };
-        localStorage.setItem('staff_user', JSON.stringify(updatedUser));
+        saveStaffUser(updatedUser);
         setStaffUser(updatedUser);
 
         alert('บันทึกข้อมูลเรียบร้อยแล้ว');

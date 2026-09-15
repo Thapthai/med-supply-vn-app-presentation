@@ -16,6 +16,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { User, Settings, LogOut, ChevronDown, ZoomIn, ZoomOut } from 'lucide-react';
 import { clearStaffDepartmentScopeCache } from '@/lib/staffDepartmentScope';
+import {
+  clearStaffLocalAuth,
+  getAppName,
+  getStaffUserIfSameApp,
+  saveStaffUser,
+} from '@/lib/appAuth';
 
 interface StaffLayoutProps {
   children: ReactNode;
@@ -145,6 +151,12 @@ export default function StaffLayout({ children }: StaffLayoutProps) {
       /** staffApi อ่าน staff_token จาก localStorage — sync จาก NextAuth ก่อนลูกหน้าเรียก /staff/me */
       if (typeof window !== 'undefined') {
         const u = adminUser as Record<string, unknown>;
+        const sessionApp = (u as { appname?: string }).appname;
+        if (sessionApp && sessionApp !== getAppName()) {
+          clearStaffLocalAuth();
+          router.push('/auth/login');
+          return;
+        }
         const token = u.accessToken as string | undefined;
         if (token) {
           const prev = localStorage.getItem('staff_token');
@@ -153,19 +165,16 @@ export default function StaffLayout({ children }: StaffLayoutProps) {
         }
         const uid = u.id ?? u.staff_user_id ?? u.user_id;
         if (uid != null && Number.isFinite(Number(uid))) {
-          localStorage.setItem(
-            'staff_user',
-            JSON.stringify({
-              id: Number(uid),
-              email: u.email,
-              fname: u.fname,
-              lname: u.lname,
-              role: (u.role as string) || (u.role_code as string) || '',
-              role_id: u.role_id ?? null,
-              client_id: (u.client_id as string) || (u.clientId as string) || '',
-              client_secret: (u.client_secret as string) || (u.clientSecret as string) || '',
-            }),
-          );
+          saveStaffUser({
+            id: Number(uid),
+            email: u.email,
+            fname: u.fname,
+            lname: u.lname,
+            role: (u.role as string) || (u.role_code as string) || '',
+            role_id: u.role_id ?? null,
+            client_id: (u.client_id as string) || (u.clientId as string) || '',
+            client_secret: (u.client_secret as string) || (u.clientSecret as string) || '',
+          });
         }
       }
       if (isAdminUser) {
@@ -181,18 +190,20 @@ export default function StaffLayout({ children }: StaffLayoutProps) {
     }
 
     const token = localStorage.getItem('staff_token');
-    const user = localStorage.getItem('staff_user');
+    const user = getStaffUserIfSameApp();
 
     if (!token || !user) {
+      clearStaffLocalAuth();
       router.push('/auth/login');
       return;
     }
 
     try {
       setIsAdmin(false);
-      setStaffUser(JSON.parse(user));
+      setStaffUser(user);
     } catch (error) {
       console.error('Error parsing staff user:', error);
+      clearStaffLocalAuth();
       router.push('/auth/login');
     } finally {
       setLoading(false);
@@ -204,8 +215,7 @@ export default function StaffLayout({ children }: StaffLayoutProps) {
       router.push('/auth/logout');
       return;
     }
-    localStorage.removeItem('staff_token');
-    localStorage.removeItem('staff_user');
+    clearStaffLocalAuth();
     await signOut({ redirect: false });
     router.push('/auth/login');
   };

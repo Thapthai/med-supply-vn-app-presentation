@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { DateInput } from '@/components/DateInput';
 import {
   Table,
   TableBody,
@@ -149,19 +149,18 @@ export function DailyCabinetStockArchivesPanel({ api }: { api: DailyCabinetStock
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">สำรองย้อนหลัง (ระบุวันที่)</CardTitle>
-          <CardDescription>ใช้ YYYY-MM-DD เพื่อสร้างหรืออัปเดตไฟล์ของวันนั้น</CardDescription>
+          <CardDescription>เลือกวันที่เพื่อสร้างหรืออัปเดตไฟล์ของวันนั้น</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-end gap-2">
           <div className="space-y-1">
             <label className="text-xs text-gray-500" htmlFor="backfill-date">
               วันที่
             </label>
-            <Input
+            <DateInput
               id="backfill-date"
-              type="date"
               className="w-[200px]"
               value={backfillDate}
-              onChange={(e) => setBackfillDate(e.target.value)}
+              onChange={setBackfillDate}
             />
           </div>
           <Button type="button" variant="secondary" onClick={() => void handleRunBackfill()} disabled={running}>

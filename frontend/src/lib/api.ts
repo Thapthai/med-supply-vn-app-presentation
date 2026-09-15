@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getSession } from 'next-auth/react';
 import { createCabinetListGetAll, createCabinetTempHumApi, createCabinetUsersApi } from '@/lib/cabinet-http-clients';
+import { clearStaffLocalAuth, getAppName, hasStaffAuthForThisApp } from '@/lib/appAuth';
 import type { ApiResponse, PaginatedResponse, ItemsStats } from '@/types/common';
 import type { AuthResponse, User, RegisterDto, LoginDto } from '@/types/auth';
 import type { Item, CreateItemDto, UpdateItemDto, GetItemsQuery, ItemMasterUploadResult } from '@/types/item';
@@ -40,25 +41,40 @@ api.interceptors.request.use(async (config) => {
     const url = config.url || '';
 
     if (staffUsersManagementPath(url)) {
-      const session = (await getSession()) as { accessToken?: string } | null;
-      if (session?.accessToken) {
+      const session = (await getSession()) as {
+        accessToken?: string;
+        appname?: string;
+        user?: { appname?: string };
+      } | null;
+      const sessionApp = session?.appname ?? session?.user?.appname;
+      if (session?.accessToken && sessionApp === getAppName()) {
         config.headers.Authorization = `Bearer ${session.accessToken}`;
       }
     } else if (staffPortalApiPath(url)) {
-      const session = (await getSession()) as { accessToken?: string } | null;
-      if (session?.accessToken) {
+      const session = (await getSession()) as {
+        accessToken?: string;
+        appname?: string;
+        user?: { appname?: string };
+      } | null;
+      const sessionApp = session?.appname ?? session?.user?.appname;
+      if (session?.accessToken && sessionApp === getAppName()) {
         config.headers.Authorization = `Bearer ${session.accessToken}`;
       } else {
-        const staffToken = localStorage.getItem('staff_token');
+        const staffToken =
+          hasStaffAuthForThisApp() ? localStorage.getItem('staff_token') : null;
         if (staffToken) {
           config.headers.Authorization = `Bearer ${staffToken}`;
         }
       }
     } else {
-      const session = await getSession();
-      if (session && (session as any).accessToken) {
-        const token = (session as any).accessToken;
-        config.headers.Authorization = `Bearer ${token}`;
+      const session = (await getSession()) as {
+        accessToken?: string;
+        appname?: string;
+        user?: { appname?: string };
+      } | null;
+      const sessionApp = session?.appname ?? session?.user?.appname;
+      if (session?.accessToken && sessionApp === getAppName()) {
+        config.headers.Authorization = `Bearer ${session.accessToken}`;
       } else {
         console.warn('⚠️ No access token found in session');
       }
@@ -77,8 +93,7 @@ api.interceptors.response.use(
       const isStaffPortal = staffPortalApiPath(reqUrl);
 
       if (isStaffUsers || isStaffPortal) {
-        localStorage.removeItem('staff_token');
-        localStorage.removeItem('staff_user');
+        clearStaffLocalAuth();
 
         const currentPath = window.location.pathname;
         if (currentPath.includes('/staff/') || currentPath.includes('/admin')) {

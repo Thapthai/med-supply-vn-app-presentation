@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getSession } from 'next-auth/react';
+import { getStaffUserIfSameApp, hasStaffAuthForThisApp, getAppName } from '@/lib/appAuth';
 
 // Create axios instance for staff API (ควรใช้ base เดียวกับ lib/api.ts)
 const staffApi = axios.create({
@@ -12,10 +13,20 @@ const staffApi = axios.create({
 
 // Request interceptor to add client_id and client_secret for staff endpoints
 staffApi.interceptors.request.use(async (config) => { 
-    let staffToken = typeof window !== 'undefined' ? localStorage.getItem('staff_token') : null;
+    let staffToken =
+      typeof window !== 'undefined' && hasStaffAuthForThisApp()
+        ? localStorage.getItem('staff_token')
+        : null;
     if (!staffToken && typeof window !== 'undefined') {
-        const session = (await getSession()) as { accessToken?: string } | null;
-        if (session?.accessToken) staffToken = session.accessToken;
+        const session = (await getSession()) as {
+          accessToken?: string;
+          appname?: string;
+          user?: { appname?: string };
+        } | null;
+        const sessionApp = session?.appname ?? session?.user?.appname;
+        if (session?.accessToken && sessionApp === getAppName()) {
+          staffToken = session.accessToken;
+        }
     }
     if (staffToken) {
         config.headers.Authorization = `Bearer ${staffToken}`;
@@ -25,9 +36,8 @@ staffApi.interceptors.request.use(async (config) => {
     let clientId = '';
     let clientSecret = '';
     try {
-        const staffUser = localStorage.getItem('staff_user');
-        if (staffUser) {
-            const parsed = JSON.parse(staffUser) as { client_id?: string; clientId?: string; client_secret?: string; clientSecret?: string };
+        const parsed = getStaffUserIfSameApp<{ client_id?: string; clientId?: string; client_secret?: string; clientSecret?: string }>();
+        if (parsed) {
             clientId = parsed.client_id || parsed.clientId || '';
             clientSecret = parsed.client_secret || parsed.clientSecret || '';
         }

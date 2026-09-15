@@ -1,6 +1,7 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getAppName } from "@/lib/appAuth";
 
 function stripBasePath(pathname: string, basePath: string): string {
   if (!basePath) return pathname;
@@ -13,6 +14,12 @@ function isAdminToken(token: { is_admin?: boolean; user?: { is_admin?: boolean }
   if (!token) return false;
   if (token.is_admin === true) return true;
   return token.user?.is_admin === true;
+}
+
+function isTokenForThisApp(token: { appname?: string } | null | undefined): boolean {
+  if (!token) return false;
+  // token เก่าที่ยังไม่มี appname → ไม่ยอมให้ใช้ (บังคับ login ใหม่)
+  return token.appname === getAppName();
 }
 
 export default withAuth(
@@ -59,7 +66,8 @@ export default withAuth(
           (p) => path === p || path.startsWith(`${p}/`),
         );
 
-        return needsAuth ? !!token : true;
+        if (!needsAuth) return true;
+        return isTokenForThisApp(token as { appname?: string } | null);
       },
     },
     pages: {
