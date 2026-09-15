@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileSpreadsheet, FileText, Loader2, Thermometer } from 'lucide-react';
@@ -192,6 +192,18 @@ function buildTimeSeries(
     }));
 }
 
+function useIsMobile(query = '(max-width: 639px)') {
+  const [matches, setMatches] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const apply = () => setMatches(mq.matches);
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, [query]);
+  return matches;
+}
+
 function DailyMetricChart({
   points,
   year,
@@ -206,6 +218,7 @@ function DailyMetricChart({
   title: string;
 }) {
   const [hoverDay, setHoverDay] = useState<number | null>(null);
+  const isMobile = useIsMobile();
   const dayCount = daysInMonth(year, month);
   const series = useMemo(() => buildTimeSeries(points, year, month, metric), [points, year, month, metric]);
 
@@ -235,13 +248,15 @@ function DailyMetricChart({
         s.points.map((p) => yAt(p.value)),
       ),
     }));
-    const xLabels = Array.from({ length: dayCount }, (_, i) => i + 1);
+    const xLabels = Array.from({ length: dayCount }, (_, i) => i + 1).filter((day) =>
+      isMobile ? day === 1 || day === dayCount || day % 5 === 0 : true,
+    );
     return { width, height, padL, padR, padT, innerW, innerH, domain, xAt, yAt, lines, xLabels };
-  }, [series, dayCount]);
+  }, [series, dayCount, isMobile]);
 
   if (series.length === 0) return null;
 
-  const onMove = (event: MouseEvent<SVGSVGElement>) => {
+  const onMove = (event: PointerEvent<SVGSVGElement>) => {
     const svg = event.currentTarget;
     const rect = svg.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * layout.width;
@@ -270,19 +285,18 @@ function DailyMetricChart({
           })
           .filter((row): row is { time: string; color: string; value: number } => row != null);
   const tooltipLeft =
-    day == null ? 50 : Math.min(Math.max((layout.xAt(day) / layout.width) * 100, 16), 84);
+    day == null ? 50 : Math.min(Math.max((layout.xAt(day) / layout.width) * 100, isMobile ? 28 : 16), isMobile ? 72 : 84);
 
   return (
-    <div className="relative rounded-2xl border border-slate-200 bg-white px-5 pb-6 pt-5">
-      <p className="mb-1 text-center text-base font-semibold text-slate-800">{title}</p>
-   
-      <div className="flex gap-4">
+    <div className="relative rounded-2xl border border-slate-200 bg-white px-3 pb-4 pt-4 sm:px-5 sm:pb-6 sm:pt-5">
+      <p className="mb-2 text-center text-sm font-semibold leading-snug text-slate-800 sm:mb-1 sm:text-base">{title}</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
         <svg
           viewBox={`0 0 ${layout.width} ${layout.height}`}
-          className="h-[400px] min-w-0 flex-1"
+          className="h-[220px] w-full min-w-0 touch-pan-y sm:h-[320px] sm:flex-1 lg:h-[400px]"
           preserveAspectRatio="xMidYMid meet"
-          onMouseMove={onMove}
-          onMouseLeave={() => setHoverDay(null)}
+          onPointerMove={onMove}
+          onPointerLeave={() => setHoverDay(null)}
           role="img"
           aria-label={title}
         >
@@ -370,10 +384,10 @@ function DailyMetricChart({
             วันที่
           </text>
         </svg>
-        <div className="flex w-24 shrink-0 flex-col items-start justify-center gap-2.5">
+        <div className="flex flex-row flex-wrap items-center gap-x-3 gap-y-1.5 sm:w-24 sm:shrink-0 sm:flex-col sm:items-start sm:justify-center sm:gap-2.5">
           <p className="text-xs font-semibold text-slate-500">เวลา</p>
           {layout.lines.map((s) => (
-            <span key={s.time} className="inline-flex items-center gap-2 text-sm text-slate-700">
+            <span key={s.time} className="inline-flex items-center gap-2 text-xs text-slate-700 sm:text-sm">
               <span className="h-3 w-3 rounded-[3px]" style={{ backgroundColor: s.color }} />
               {s.time}
             </span>
@@ -382,7 +396,7 @@ function DailyMetricChart({
       </div>
       {day != null && tooltipRows.length > 0 && (
         <div
-          className="pointer-events-none absolute top-10 z-10 -translate-x-1/2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs shadow-md"
+          className="pointer-events-none absolute top-8 z-10 w-max max-w-[calc(100%-1.5rem)] -translate-x-1/2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs shadow-md sm:top-10"
           style={{ left: `${tooltipLeft}%` }}
         >
           <div className="mb-1 font-semibold text-slate-700">วันที่ {day}</div>
@@ -461,7 +475,7 @@ function CabinetChartBlock({
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 gap-1.5 text-xs"
+              className="h-8 w-full gap-1.5 text-xs sm:w-auto"
               disabled={chartPdfLoading}
               onClick={async () => {
                 try {
@@ -590,18 +604,18 @@ export default function CabinetTempHumChartCardV2() {
   };
 
   return (
-    <Card className="gap-0 overflow-visible rounded-xl border-slate-200/80 py-0 shadow-sm">
-      <CardHeader className="flex flex-col gap-3 space-y-0 border-b border-slate-100 bg-slate-50/50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <CardTitle className="flex items-center gap-2 text-slate-800">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-100">
+    <Card className="gap-0 overflow-hidden rounded-xl border-slate-200/80 py-0 shadow-sm">
+      <CardHeader className="flex flex-col gap-3 space-y-0 border-b border-slate-100 bg-slate-50/50 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4">
+        <CardTitle className="flex min-w-0 items-center gap-2 text-sm text-slate-800 sm:text-base">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-100">
             <Thermometer className="h-4 w-4 text-orange-600" />
           </span>
-          อุณหภูมิและความชื้นในตู้
+          <span className="leading-snug">อุณหภูมิและความชื้นในตู้</span>
         </CardTitle>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
           <input
             type="month"
-            className="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-700 shadow-xs"
+            className="h-8 min-w-0 flex-1 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-700 shadow-xs sm:w-auto sm:flex-none"
             value={`${year}-${String(month).padStart(2, '0')}`}
             onChange={(e) => {
               const [y, m] = e.target.value.split('-').map(Number);
@@ -615,7 +629,7 @@ export default function CabinetTempHumChartCardV2() {
             type="button"
             variant="outline"
             size="sm"
-            className="h-8 gap-1.5 text-xs"
+            className="h-8 flex-1 gap-1.5 text-xs sm:flex-none"
             disabled={exportLoading != null}
             onClick={() => void exportExcel()}
           >
@@ -626,7 +640,7 @@ export default function CabinetTempHumChartCardV2() {
             type="button"
             variant="outline"
             size="sm"
-            className="h-8 gap-1.5 text-xs"
+            className="h-8 flex-1 gap-1.5 text-xs sm:flex-none"
             disabled={exportLoading != null}
             onClick={() => void exportPdf()}
           >
@@ -635,7 +649,7 @@ export default function CabinetTempHumChartCardV2() {
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="px-5 pb-8 pt-5">
+      <CardContent className="px-3 pb-6 pt-4 sm:px-5 sm:pb-8 sm:pt-5">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
@@ -649,21 +663,25 @@ export default function CabinetTempHumChartCardV2() {
               {cabinets.length === 0 ? (
                 <p className="py-10 text-center text-slate-500">ไม่มีข้อมูลใน {monthLabel(year, month)}</p>
               ) : (
-                <div ref={calendarScrollRef} className="overflow-x-auto px-0.5 pb-2">
+                <div ref={calendarScrollRef} className="relative overflow-x-auto overscroll-x-contain px-0.5 pb-2 [-webkit-overflow-scrolling:touch]">
+                  <p className="sticky left-0 mb-2 px-2 text-center text-[11px] text-slate-400 sm:hidden">
+                    เลื่อนซ้าย–ขวา เพื่อดูวันที่อื่น
+                  </p>
                   <table className="min-w-full border-separate border-spacing-0 text-sm">
                     <thead>
                       <tr>
                         <th
                           rowSpan={2}
-                          className="sticky left-0 z-30 w-32 min-w-32 max-w-32 bg-slate-100 px-2.5 py-2 text-left text-[13px] font-semibold text-slate-500 shadow-[inset_-2px_0_0_#94a3b8]"
+                          className="sticky left-0 z-30 w-20 min-w-20 max-w-20 bg-slate-100 px-1.5 py-2 text-left text-[11px] font-semibold text-slate-500 shadow-[inset_-2px_0_0_#94a3b8] sm:w-32 sm:min-w-32 sm:max-w-32 sm:px-2.5 sm:text-[13px]"
                         >
                           ชื่อตู้
                         </th>
                         <th
                           rowSpan={2}
-                          className="sticky left-32 z-30 w-20 min-w-20 bg-slate-100 px-2 py-2 text-center text-[13px] font-semibold text-slate-500 shadow-[inset_-2px_0_0_#94a3b8]"
+                          className="sticky left-20 z-30 w-11 min-w-11 bg-slate-100 px-1 py-2 text-center text-[11px] font-semibold text-slate-500 shadow-[inset_-2px_0_0_#94a3b8] sm:left-32 sm:w-20 sm:min-w-20 sm:px-2 sm:text-[13px]"
                         >
-                          รายการ
+                          <span className="sm:hidden">ชนิด</span>
+                          <span className="hidden sm:inline">รายการ</span>
                         </th>
                         {days.map((day) => {
                           const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
@@ -675,13 +693,14 @@ export default function CabinetTempHumChartCardV2() {
                               ref={isToday ? todayColRef : undefined}
                               colSpan={timeSlots.length}
                               className={cn(
-                                'border-b border-l-2 border-l-slate-400 border-b-slate-200 px-1 py-2 text-center text-xs font-semibold',
+                                'border-b border-l-2 border-l-slate-400 border-b-slate-200 px-1 py-2 text-center text-[11px] font-semibold sm:text-xs',
                                 isToday && 'bg-orange-50 text-orange-700',
                                 !isToday && isWeekend && 'bg-slate-100/70 text-slate-400',
                                 !isToday && !isWeekend && 'text-slate-600',
                               )}
                             >
-                              วันที่ {day}
+                              <span className="sm:hidden">{day}</span>
+                              <span className="hidden sm:inline">วันที่ {day}</span>
                             </th>
                           );
                         })}
@@ -695,7 +714,7 @@ export default function CabinetTempHumChartCardV2() {
                             <th
                               key={`${day}-${time}`}
                               className={cn(
-                                'min-w-[4.5rem] border-b border-slate-200 px-1 py-1.5 text-center text-[11px] font-medium',
+                                'min-w-[3.25rem] border-b border-slate-200 px-1 py-1.5 text-center text-[10px] font-medium whitespace-nowrap sm:min-w-[4.5rem] sm:text-[11px]',
                                 timeIndex === 0 ? 'border-l-2 border-l-slate-400' : 'border-l border-l-slate-200',
                                 isToday && 'bg-orange-50 text-orange-700',
                                 !isToday && isWeekend && 'bg-slate-100/70 text-slate-400',
@@ -718,11 +737,11 @@ export default function CabinetTempHumChartCardV2() {
                           active ? 'bg-orange-50/50' : 'hover:bg-white/70',
                         );
                         const nameClass = cn(
-                          'sticky left-0 z-30 w-32 min-w-32 max-w-32 border-b-2 border-b-slate-400 px-2.5 py-3.5 align-middle text-left shadow-[inset_-2px_0_0_#94a3b8]',
+                          'sticky left-0 z-30 w-20 min-w-20 max-w-20 border-b-2 border-b-slate-400 px-1.5 py-2 align-middle text-left shadow-[inset_-2px_0_0_#94a3b8] sm:w-32 sm:min-w-32 sm:max-w-32 sm:px-2.5 sm:py-3.5',
                           active ? 'bg-orange-50' : 'bg-white',
                         );
                         const metricClass = cn(
-                          'sticky left-32 z-30 w-20 min-w-20 px-2 py-3 text-center text-xs font-semibold shadow-[inset_-2px_0_0_#94a3b8]',
+                          'sticky left-20 z-30 w-11 min-w-11 px-1 py-2 text-center text-[11px] font-semibold shadow-[inset_-2px_0_0_#94a3b8] sm:left-32 sm:w-20 sm:min-w-20 sm:px-2 sm:py-3 sm:text-xs',
                           active ? 'bg-orange-50' : 'bg-white',
                         );
                         return (
@@ -730,12 +749,15 @@ export default function CabinetTempHumChartCardV2() {
                             <tr className={rowClass} onClick={() => toggleCabinet(id)}>
                               <td rowSpan={2} className={nameClass}>
                                 <div className="flex flex-col gap-0.5">
-                                  <span className="line-clamp-2 break-words text-sm font-semibold leading-snug text-slate-800">
+                                  <span className="line-clamp-2 break-words text-[11px] font-semibold leading-snug text-slate-800 sm:text-sm">
                                     {i + 1}. {cabinetLabel(c)}
                                   </span>
                                 </div>
                               </td>
-                              <td className={cn(metricClass, 'border-b border-slate-100 text-orange-600')}>อุณหภูมิ</td>
+                              <td className={cn(metricClass, 'border-b border-slate-100 text-orange-600')}>
+                                <span className="sm:hidden">°C</span>
+                                <span className="hidden sm:inline">อุณหภูมิ</span>
+                              </td>
                               {days.flatMap((day) => {
                                 const isToday = todayDay === day;
                                 return timeSlots.map((time, timeIndex) => {
@@ -744,7 +766,7 @@ export default function CabinetTempHumChartCardV2() {
                                     <td
                                       key={`t-${day}-${time}`}
                                       className={cn(
-                                        'border-b border-slate-100 px-1 py-3 text-center text-sm font-semibold text-orange-600',
+                                        'border-b border-slate-100 px-1 py-1.5 text-center text-xs font-semibold text-orange-600 whitespace-nowrap sm:py-3 sm:text-sm',
                                         timeIndex === 0 ? 'border-l-2 border-l-slate-400' : 'border-l border-l-slate-100',
                                         isToday && 'bg-orange-50/80',
                                       )}
@@ -756,7 +778,10 @@ export default function CabinetTempHumChartCardV2() {
                               })}
                             </tr>
                             <tr className={rowClass} onClick={() => toggleCabinet(id)}>
-                              <td className={cn(metricClass, 'border-b-2 border-b-slate-400 text-sky-600')}>ความชื้น</td>
+                              <td className={cn(metricClass, 'border-b-2 border-b-slate-400 text-sky-600')}>
+                                <span className="sm:hidden">%</span>
+                                <span className="hidden sm:inline">ความชื้น</span>
+                              </td>
                               {days.flatMap((day) => {
                                 const isToday = todayDay === day;
                                 return timeSlots.map((time, timeIndex) => {
@@ -765,7 +790,7 @@ export default function CabinetTempHumChartCardV2() {
                                     <td
                                       key={`h-${day}-${time}`}
                                       className={cn(
-                                        'border-b-2 border-b-slate-400 px-1 py-3 text-center text-sm font-semibold text-sky-600',
+                                        'border-b-2 border-b-slate-400 px-1 py-1.5 text-center text-xs font-semibold text-sky-600 whitespace-nowrap sm:py-3 sm:text-sm',
                                         timeIndex === 0 ? 'border-l-2 border-l-slate-400' : 'border-l border-l-slate-100',
                                         isToday && 'bg-orange-50/80',
                                       )}

@@ -197,9 +197,9 @@ function TempHumLineChart({
   const tooltipLeft = Math.min(Math.max((layout.xs[hi] / layout.width) * 100, 18), 82);
 
   return (
-    <div className="relative rounded-2xl border border-slate-200 bg-white px-4 pb-8 pt-5">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm font-semibold text-slate-800">{title}</p>
+    <div className="relative rounded-2xl border border-slate-200 bg-white px-3 pb-6 pt-4 sm:px-4 sm:pb-8 sm:pt-5">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3">
+        <p className="text-sm font-semibold leading-snug text-slate-800">{title}</p>
         <div className="flex items-center gap-4 text-xs text-slate-600">
           <span className="inline-flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-sm bg-orange-500" />
@@ -213,7 +213,7 @@ function TempHumLineChart({
       </div>
       <svg
         viewBox={`0 0 ${layout.width} ${layout.height}`}
-        className="h-[280px] w-full"
+        className="h-[200px] w-full sm:h-[280px]"
         preserveAspectRatio="xMidYMid meet"
         onMouseMove={onMove}
         onMouseLeave={() => setHoverIndex(null)}
@@ -420,17 +420,17 @@ export default function CabinetTempHumChartCard() {
 
   return (
     <Card className="gap-0 overflow-visible rounded-xl border-slate-200/80 py-0 shadow-sm">
-      <CardHeader className="flex flex-col gap-3 space-y-0 border-b border-slate-100 bg-slate-50/50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <CardTitle className="flex items-center gap-2 text-slate-800">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-100">
+      <CardHeader className="flex flex-col gap-3 space-y-0 border-b border-slate-100 bg-slate-50/50 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4">
+        <CardTitle className="flex min-w-0 items-center gap-2 text-sm text-slate-800 sm:text-base">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-100">
             <Thermometer className="h-4 w-4 text-orange-600" />
           </span>
-          อุณหภูมิและความชื้นในตู้
+          <span className="leading-snug">อุณหภูมิและความชื้นในตู้</span>
         </CardTitle>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           <input
             type="month"
-            className="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-700 shadow-xs"
+            className="h-8 min-w-0 flex-1 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-700 shadow-xs sm:w-auto sm:flex-none"
             value={`${year}-${String(month).padStart(2, '0')}`}
             onChange={(e) => {
               const [y, m] = e.target.value.split('-').map(Number);
@@ -444,7 +444,7 @@ export default function CabinetTempHumChartCard() {
             type="button"
             variant="outline"
             size="sm"
-            className="h-8 gap-1.5 text-xs"
+            className="h-8 flex-1 gap-1.5 text-xs sm:flex-none"
             disabled={exportLoading != null}
             onClick={() => void exportExcel()}
           >
@@ -455,7 +455,7 @@ export default function CabinetTempHumChartCard() {
             type="button"
             variant="outline"
             size="sm"
-            className="h-8 gap-1.5 text-xs"
+            className="h-8 flex-1 gap-1.5 text-xs sm:flex-none"
             disabled={exportLoading != null}
             onClick={() => void exportPdf()}
           >
@@ -464,7 +464,7 @@ export default function CabinetTempHumChartCard() {
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="px-5 pb-8 pt-5">
+      <CardContent className="px-3 pb-6 pt-4 sm:px-5 sm:pb-8 sm:pt-5">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
@@ -472,6 +472,7 @@ export default function CabinetTempHumChartCard() {
         ) : (
           <div className="flex flex-col gap-6">
             <div className="overflow-hidden rounded-xl border border-slate-200">
+              <div className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
               <Table>
                 <TableHeader>
                   <TableRow className="border-b border-slate-200 bg-slate-100/80 hover:bg-slate-100/80">
@@ -588,6 +589,7 @@ export default function CabinetTempHumChartCard() {
                   )}
                 </TableBody>
               </Table>
+              </div>
             </div>
             <p className="text-xs text-slate-500">คลิกที่ตู้เพื่อดูบันทึกแต่ละวันเวลาและกราฟด้านล่าง กดซ้ำเพื่อปิด</p>
             {selectedCabinets.length === 0 ? (
