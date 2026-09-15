@@ -44,6 +44,7 @@ import { ItemBorrowReportPdfService } from './services/item-borrow-report-pdf.se
 import { ItemMasterUploadService } from './services/item-master-upload.service';
 import { CabinetTempHumReportExcelService } from './services/cabinet-temp-hum-report-excel.service';
 import { CabinetTempHumReportPdfService } from './services/cabinet-temp-hum-report-pdf.service';
+import { CabinetTempHumChartPdfService } from './services/cabinet-temp-hum-chart-pdf.service';
 @Module({
   imports: [PrismaModule, ItemModule, MedicalSuppliesModule, WeighingModule, CabinetModule],
   controllers: [ReportServiceController],
@@ -86,6 +87,7 @@ import { CabinetTempHumReportPdfService } from './services/cabinet-temp-hum-repo
     ItemBorrowReportPdfService,
     CabinetTempHumReportExcelService,
     CabinetTempHumReportPdfService,
+    CabinetTempHumChartPdfService,
     ItemMasterUploadService,
   ],
   exports: [ReportServiceService, ItemMasterUploadService],

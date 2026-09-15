@@ -1678,6 +1678,33 @@ export const reportsApi = {
     window.URL.revokeObjectURL(url);
   },
 
+  /** กราฟอุณหภูมิ/ความชื้นของตู้ที่เลือก — Backend POST /reports/cabinet-temp-hum/chart-pdf */
+  downloadCabinetTempHumChartPdf: async (params: {
+    year?: number;
+    month?: number;
+    cabinet_id: number;
+  }): Promise<void> => {
+    const response = await api.post('/reports/cabinet-temp-hum/chart-pdf', {
+      year: params.year,
+      month: params.month,
+      cabinet_id: params.cabinet_id,
+    });
+    const res = response.data as { success?: boolean; error?: string; data?: { buffer?: string; filename?: string; contentType?: string } };
+    if (!res?.success || !res?.data?.buffer) throw new Error(res?.error || 'ไม่สามารถสร้างไฟล์ได้');
+    const binary = atob(res.data.buffer);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: res.data.contentType || 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', res.data.filename || `cabinet_temp_hum_chart.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
   /** รายงานอุณหภูมิ/ความชื้นในตู้ — Backend POST /reports/cabinet-temp-hum/pdf */
   downloadCabinetTempHumPdf: async (params?: { year?: number; month?: number }): Promise<void> => {
     const response = await api.post('/reports/cabinet-temp-hum/pdf', {

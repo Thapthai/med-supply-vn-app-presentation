@@ -710,4 +710,16 @@ export class ReportServiceController {
       return { success: false, error: error?.message };
     }
   }
+
+  @Post('cabinet-temp-hum/chart-pdf')
+  async generateCabinetTempHumChartPdf(
+    @Body() data: { year?: number; month?: number; cabinet_id?: number },
+  ) {
+    try {
+      const result = await this.reportServiceService.generateCabinetTempHumChartPdf(data);
+      return toFileResponse(result.buffer, result.filename, PDF_CONTENT);
+    } catch (error: any) {
+      return { success: false, error: error?.message };
+    }
+  }
 }

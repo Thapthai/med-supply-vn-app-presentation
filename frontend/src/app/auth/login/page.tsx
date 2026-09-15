@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -10,6 +10,7 @@ import { loginSchema, type LoginFormData } from '@/lib/validations';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mail, Lock, User, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
@@ -17,6 +18,44 @@ import { signInWithGoogle } from '@/lib/firebase';
 import TwoFactorModal from '@/components/TwoFactorModal';
 import { authApi } from '@/lib/api';
 import { ASSETS } from '@/lib/assets';
+import { getAppName } from '@/lib/appAuth';
+
+const rememberCredsKey = () => `login_remember_creds_${getAppName()}`;
+const legacyRememberEmailKey = () => `login_remember_email_${getAppName()}`;
+
+function encodeRememberedCreds(email: string, password: string) {
+  return btoa(unescape(encodeURIComponent(JSON.stringify({ email, password }))));
+}
+
+function readRememberedCreds(): { email: string; password: string } | null {
+  if (typeof window === 'undefined') return null;
+  const raw = localStorage.getItem(rememberCredsKey());
+  if (raw) {
+    try {
+      const parsed = JSON.parse(decodeURIComponent(escape(atob(raw)))) as {
+        email?: string;
+        password?: string;
+      };
+      if (parsed.email && parsed.password) {
+        return { email: parsed.email, password: parsed.password };
+      }
+    } catch {
+      localStorage.removeItem(rememberCredsKey());
+    }
+  }
+  const legacyEmail = localStorage.getItem(legacyRememberEmailKey())?.trim() ?? '';
+  return legacyEmail ? { email: legacyEmail, password: '' } : null;
+}
+
+function persistRememberedCreds(email: string, password: string, remember: boolean) {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(legacyRememberEmailKey());
+  if (remember && email && password) {
+    localStorage.setItem(rememberCredsKey(), encodeRememberedCreds(email.trim(), password));
+    return;
+  }
+  localStorage.removeItem(rememberCredsKey());
+}
 
 export default function LoginPage() {
   const [error, setError] = useState<string>('');
@@ -28,15 +67,26 @@ export default function LoginPage() {
   const [show2FAModal, setShow2FAModal] = useState(false);
   const [tempToken, setTempToken] = useState<string>('');
   const [twoFactorLoading, setTwoFactorLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const router = useRouter();
 
   const {
     register,
     handleSubmit,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
+
+  useEffect(() => {
+    const saved = readRememberedCreds();
+    if (!saved) return;
+    setRememberMe(true);
+    setValue('email', saved.email, { shouldValidate: false });
+    if (saved.password) setValue('password', saved.password, { shouldValidate: false });
+  }, [setValue]);
 
   // Email/Password Login
   const onSubmit = async (data: LoginFormData) => {
@@ -88,6 +138,7 @@ export default function LoginPage() {
           toast.error(errorMessage);
         }
       } else {
+        persistRememberedCreds(data.email, data.password, rememberMe);
         toast.success('เข้าสู่ระบบสำเร็จ');
         router.refresh();
         const session = await getSession();
@@ -127,6 +178,7 @@ export default function LoginPage() {
         });
 
         if (result?.ok) {
+          persistRememberedCreds(getValues('email') || user.email, getValues('password'), rememberMe);
           setShow2FAModal(false);
           toast.success('เข้าสู่ระบบสำเร็จ');
           router.refresh();
@@ -332,6 +384,19 @@ export default function LoginPage() {
                   </p>
                 )}
               </div>
+
+              <label htmlFor="remember-me" className="flex cursor-pointer items-center gap-2.5 select-none">
+                <Checkbox
+                  id="remember-me"
+                  checked={rememberMe}
+                  onCheckedChange={(checked) => {
+                    const on = checked === true;
+                    setRememberMe(on);
+                    if (!on) persistRememberedCreds('', '', false);
+                  }}
+                />
+                <span className="text-sm text-gray-700">จดจำอีเมลและรหัสผ่าน</span>
+              </label>
 
               {error && (
                 <div className="text-sm text-red-600 text-center bg-red-50/80 border-2 border-red-200 p-4 rounded-xl flex items-center justify-center space-x-2 animate-shake shadow-lg shadow-red-100">

@@ -78,6 +78,7 @@ import {
   CabinetTempHumReportData,
 } from './services/cabinet-temp-hum-report-excel.service';
 import { CabinetTempHumReportPdfService } from './services/cabinet-temp-hum-report-pdf.service';
+import { CabinetTempHumChartPdfService } from './services/cabinet-temp-hum-chart-pdf.service';
 import { formatReportDateOnlyUtc, formatReportDateTimeUtc } from './utils/date-timeformat';
 
 @Injectable()
@@ -124,6 +125,7 @@ export class ReportServiceService {
     private readonly cabinetTempHumService: CabinetTempHumService,
     private readonly cabinetTempHumReportExcelService: CabinetTempHumReportExcelService,
     private readonly cabinetTempHumReportPdfService: CabinetTempHumReportPdfService,
+    private readonly cabinetTempHumChartPdfService: CabinetTempHumChartPdfService,
   ) {}
 
   /** ชื่อแผนกบนรายงาน — logic เดียวกับ frontend ItemsTable.getItemDepartmentDisplay */
@@ -3423,16 +3425,17 @@ export class ReportServiceService {
       month: 'long',
       timeZone: 'Asia/Bangkok',
     });
-    const formatLogTime = (at: Date | string | null | undefined) =>
-      at != null
-        ? new Date(at).toLocaleTimeString('th-TH', {
-            timeZone: 'UTC',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false,
-          })
-        : '-';
+    const toUtcDate = (at: Date | string | null | undefined) => {
+      if (at == null) return null;
+      const d = new Date(at);
+      return Number.isNaN(d.getTime()) ? null : d;
+    };
+    const formatLogTime = (at: Date | string | null | undefined) => {
+      const d = toUtcDate(at);
+      if (!d) return '-';
+      return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+    };
+    const utcDay = (at: Date | string | null | undefined) => toUtcDate(at)?.getUTCDate();
     const totalLogs = overview.cabinets.reduce((sum, c) => sum + (c.log_count ?? c.logs?.length ?? 0), 0);
     return {
       filters: { year, month, month_label: monthLabel },
@@ -3452,6 +3455,7 @@ export class ReportServiceService {
           hum: c.latest_hum != null ? c.latest_hum.toFixed(1) : '-',
           subRows: (c.logs ?? []).map((log, logIndex) => ({
             seq: logIndex + 1,
+            day: utcDay(log.create_date),
             log_date: formatReportDateOnlyUtc(log.create_date),
             log_time: formatLogTime(log.create_date),
             temp: log.temp_log != null ? Number(log.temp_log).toFixed(1) : '-',
@@ -3474,6 +3478,48 @@ export class ReportServiceService {
     } catch (error: any) {
       const errorMessage = error?.message || error?.toString() || 'Unknown error';
       throw new Error(`Failed to generate Cabinet Temp Hum Excel report: ${errorMessage}`);
+    }
+  }
+
+  async generateCabinetTempHumChartPdf(params: {
+    year?: number;
+    month?: number;
+    cabinet_id?: number;
+  }): Promise<{ buffer: Buffer; filename: string }> {
+    try {
+      if (params.cabinet_id == null) {
+        throw new Error('กรุณาเลือกตู้ก่อนดาวน์โหลดกราฟ');
+      }
+      const now = new Date();
+      const year = params.year ?? now.getFullYear();
+      const month = params.month ?? now.getMonth() + 1;
+      const chart = await this.cabinetTempHumService.getChart({
+        cabinet_id: params.cabinet_id,
+        year,
+        month,
+        limit: 2000,
+      });
+      const cabinetName =
+        chart.selected?.cabinet_name?.trim() ||
+        chart.selected?.cabinet_code?.trim() ||
+        `ตู้ #${chart.selected?.log_cabinet_id ?? params.cabinet_id}`;
+      const monthLabel = new Date(year, month - 1, 1).toLocaleDateString('th-TH', {
+        year: 'numeric',
+        month: 'long',
+        timeZone: 'Asia/Bangkok',
+      });
+      const buffer = await this.cabinetTempHumChartPdfService.generateReport({
+        cabinet_name: cabinetName,
+        year,
+        month,
+        month_label: monthLabel,
+        points: chart.points ?? [],
+      });
+      const ym = `${year}${String(month).padStart(2, '0')}`;
+      return { buffer, filename: `cabinet_temp_hum_chart_${params.cabinet_id}_${ym}.pdf` };
+    } catch (error: any) {
+      const errorMessage = error?.message || error?.toString() || 'Unknown error';
+      throw new Error(`Failed to generate Cabinet Temp Hum Chart PDF: ${errorMessage}`);
     }
   }
 

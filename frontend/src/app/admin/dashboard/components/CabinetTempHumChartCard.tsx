@@ -413,6 +413,7 @@ function CabinetChartBlock({
 }) {
   const [data, setData] = useState<CabinetTempHumChartData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [chartPdfLoading, setChartPdfLoading] = useState(false);
   const cabinetId = cabinetSelectValue(cabinet);
 
   useEffect(() => {
@@ -424,6 +425,7 @@ function CabinetChartBlock({
           cabinet_id: cabinetId,
           year,
           month,
+          limit: 2000,
         });
         if (!cancelled && response.success && response.data) {
           setData(response.data);
@@ -454,6 +456,32 @@ function CabinetChartBlock({
         </p>
       ) : (
         <div className="flex flex-col gap-4">
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 text-xs"
+              disabled={chartPdfLoading}
+              onClick={async () => {
+                try {
+                  setChartPdfLoading(true);
+                  await reportsApi.downloadCabinetTempHumChartPdf({
+                    year,
+                    month,
+                    cabinet_id: cabinetId,
+                  });
+                } catch (error) {
+                  console.error('Failed to export cabinet temp hum chart pdf:', error);
+                } finally {
+                  setChartPdfLoading(false);
+                }
+              }}
+            >
+              {chartPdfLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
+              {chartPdfLoading ? 'กำลังโหลด...' : 'PDF กราฟ'}
+            </Button>
+          </div>
           <DailyMetricChart
             points={data.points}
             year={year}
