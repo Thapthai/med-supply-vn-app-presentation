@@ -1,14 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { staffItemsApi } from '@/lib/staffApi/itemsApi';
 import { staffMedicalSuppliesApi } from '@/lib/staffApi/medicalSuppliesApi';
 import { staffCabinetDepartmentApi } from '@/lib/staffApi/cabinetApi';
-import type { ItemWithExpiry } from './components/ItemsWithExpirySidebar';
+import {
+  ExpirySummaryCard,
+  ExpiryListCard,
+  splitExpiryLists,
+  type ItemWithExpiry,
+} from './components/ItemsWithExpirySidebar';
+import { AlertCircle, CalendarClock, Loader2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import DashboardMappingsTable, { type CabinetDepartment } from './components/DashboardMappingsTable';
 import DispensedVsUsageChartCard from './components/DispensedVsUsageChartCard';
 import CabinetTempHumChartCard from './components/CabinetTempHumChartCard';
-import ItemsWithExpirySidebar from './components/ItemsWithExpirySidebar';
 
 export default function DashboardPage() {
   const [mappings, setMappings] = useState<CabinetDepartment[]>([]);
@@ -29,6 +35,7 @@ export default function DashboardPage() {
     difference: number;
   } | null>(null);
   const [loadingDispensedVsUsage, setLoadingDispensedVsUsage] = useState(false);
+  const { expired, near7 } = useMemo(() => splitExpiryLists(itemsWithExpiry), [itemsWithExpiry]);
 
   // Fetch stats from backend
   useEffect(() => {
@@ -131,28 +138,67 @@ export default function DashboardPage() {
         loadingDispensedVsUsage={loadingDispensedVsUsage}
       /> */}
 
-      {/* แถว 1: สรุปการเชื่อมโยง (เล็ก) + รายการเชื่อมโยง (ตาราง) | Card อุปกรณ์ใกล้หมดอายุ ความสูงเท่ากัน */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:items-stretch">
-        <div className="lg:col-span-2 flex flex-col gap-4 min-h-0">
-            <DispensedVsUsageChartCard
-              mappingSummary={{
-                total: mappings.length,
-                cabinets: new Set(mappings.map((m) => m.cabinet_id)).size,
-                departments: new Set(mappings.map((m) => m.department_id)).size,
-              }}
-              loadingMappings={loadingMappings}
-            />
-            <CabinetTempHumChartCard />
-            <DashboardMappingsTable mappings={mappings} loading={loadingMappings} />
-        </div>
-        <div className="lg:col-span-1 h-full min-h-0 flex flex-col">
-          <ItemsWithExpirySidebar
-            itemsWithExpiry={itemsWithExpiry}
+      <div className="flex flex-col gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+          <DispensedVsUsageChartCard
+            mappingSummary={{
+              total: mappings.length,
+              cabinets: new Set(mappings.map((m) => m.cabinet_id)).size,
+              departments: new Set(mappings.map((m) => m.department_id)).size,
+            }}
+            loadingMappings={loadingMappings}
+          />
+          <ExpirySummaryCard
             expiredCount={expiredCount}
             nearExpire7Days={nearExpire7Days}
             loading={loadingStats}
           />
         </div>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
+          <div className="lg:col-span-2 min-h-0 h-full">
+            <DashboardMappingsTable mappings={mappings} loading={loadingMappings} />
+          </div>
+          {loadingStats ? (
+            <>
+              <Card className="h-full min-h-0">
+                <CardContent className="h-full flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+                </CardContent>
+              </Card>
+              <Card className="h-full min-h-0">
+                <CardContent className="h-full flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <>
+              <ExpiryListCard
+                icon={
+                  <>
+                    <AlertCircle className="h-4 w-4 text-red-600" />
+                    <span>รายการหมดอายุ</span>
+                  </>
+                }
+                items={expired}
+                emptyLabel="ไม่มีรายการหมดอายุ"
+                listKey="expired"
+              />
+              <ExpiryListCard
+                icon={
+                  <>
+                    <CalendarClock className="h-4 w-4 text-amber-600" />
+                    <span>รายการใกล้หมดอายุ 7 วัน</span>
+                  </>
+                }
+                items={near7}
+                emptyLabel="ไม่มีรายการใกล้หมดอายุภายใน 7 วัน"
+                listKey="near"
+              />
+            </>
+          )}
+        </div>
+        <CabinetTempHumChartCard />
       </div>
     </>
   );
