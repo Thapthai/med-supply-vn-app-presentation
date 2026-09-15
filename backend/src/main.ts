@@ -26,6 +26,8 @@ async function bootstrap() {
       'http://127.0.0.1:4100',
       'http://10.11.9.84:3100',
       'http://10.11.9.84:4100',
+      'http://10.1.1.10:7205',
+      'http://10.1.1.10:7105',
       'https://phc.dyndns.biz',
       'https://poseintelligence.co.th',
       'https://www.poseintelligence.co.th',
