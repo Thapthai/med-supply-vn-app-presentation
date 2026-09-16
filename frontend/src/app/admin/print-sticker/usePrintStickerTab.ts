@@ -425,27 +425,53 @@ export function usePrintStickerTab() {
     setSelectedLines((prev) => prev.filter((l) => !onPage.has(l.itemcode)));
   };
 
+  const upsertSelectedLine = useCallback(
+    (itemcode: string, patch: Partial<SelectedLine>) => {
+      setSelectedLines((prev) => {
+        const idx = prev.findIndex((l) => l.itemcode === itemcode);
+        if (idx >= 0) {
+          return prev.map((l) => (l.itemcode === itemcode ? { ...l, ...patch } : l));
+        }
+        const row = items.find((i) => i.itemcode === itemcode);
+        if (!row) return prev;
+        const cap = printableCapForRow(row);
+        const base = buildLineFromRow(row, 1, cap);
+        return [...prev, { ...base, ...patch }];
+      });
+    },
+    [items, buildLineFromRow],
+  );
+
   const setCopiesFor = (itemcode: string, raw: number | null) => {
-    setSelectedLines((prev) =>
-      prev.map((l) => {
+    setSelectedLines((prev) => {
+      const line = prev.find((l) => l.itemcode === itemcode);
+      if (!line) {
+        const row = items.find((i) => i.itemcode === itemcode);
+        if (!row) return prev;
+        const cap = printableCapForRow(row);
+        const copies = raw == null ? null : clampCopies(raw, cap);
+        return [...prev, { ...buildLineFromRow(row, 1, cap), copies }];
+      }
+      return prev.map((l) => {
         if (l.itemcode !== itemcode) return l;
         if (raw == null) return { ...l, copies: null };
         return { ...l, copies: clampCopies(raw, l.refillCap) };
-      }),
-    );
+      });
+    });
   };
 
   const setExpireDateFor = (itemcode: string, ymd: string) => {
-    setSelectedLines((prev) =>
-      prev.map((l) => (l.itemcode === itemcode ? { ...l, expireDate: ymd } : l)),
-    );
+    const trimmed = ymd.trim();
+    if (!trimmed) {
+      setSelectedLines((prev) => prev.filter((l) => l.itemcode !== itemcode));
+      return;
+    }
+    upsertSelectedLine(itemcode, { expireDate: trimmed });
   };
 
   const setLotNoFor = (itemcode: string, lotNo: string) => {
     const v = lotNo.slice(0, 50);
-    setSelectedLines((prev) =>
-      prev.map((l) => (l.itemcode === itemcode ? { ...l, lotNo: v } : l)),
-    );
+    upsertSelectedLine(itemcode, { lotNo: v });
   };
 
   const removeLine = (itemcode: string) => {
@@ -523,17 +549,18 @@ export function usePrintStickerTab() {
       return null;
     }
 
-    if (selectedLines.length === 0) {
-      toast.error('เลือกอย่างน้อย 1 รายการ');
+    const linesWithExpire = selectedLines.filter((l) => (l.expireDate ?? '').trim());
+    if (linesWithExpire.length === 0) {
+      toast.error('กรอกวันหมดอายุอย่างน้อย 1 รายการที่จะพิมพ์');
       return null;
     }
-    if (selectedLines.length > MAX_PRINT) {
-      toast.error(`เลือกได้ไม่เกิน ${MAX_PRINT} รายการต่อครั้ง`);
+    if (linesWithExpire.length > MAX_PRINT) {
+      toast.error(`พิมพ์ได้ไม่เกิน ${MAX_PRINT} รายการต่อครั้ง`);
       return null;
     }
 
     const today = localYmd();
-    const invalidExpire = selectedLines.find((l) => {
+    const invalidExpire = linesWithExpire.find((l) => {
       const copies = clampCopies(l.copies, l.refillCap);
       if (copies <= 0) return false;
       const exp = (l.expireDate ?? '').trim();
@@ -544,7 +571,7 @@ export function usePrintStickerTab() {
       return null;
     }
 
-    const linesWithCopies = selectedLines
+    const linesWithCopies = linesWithExpire
       .map((l) => {
         const copies = clampCopies(l.copies, l.refillCap);
         const exp = (l.expireDate ?? '').trim();

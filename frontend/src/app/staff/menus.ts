@@ -139,6 +139,13 @@ export const staffMenuItems = [
                 description: 'เปรียบเทียบการเบิกกับการใช้งาน — Division เริ่มที่ทั้งหมด แคบลงได้',
                 icon: FileBarChart,
             },
+
+            {
+                name: 'พิมพ์สติ๊กเกอร์',
+                href: '/staff/print-sticker',
+                icon: Printer,
+                description: 'พิมพ์สติ๊กเกอร์ผ่านเครื่อง SATO (SBPL)',
+            },
         ],
     },
 

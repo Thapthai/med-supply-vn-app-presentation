@@ -1,15 +1,6 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import ProtectedRoute from '@/components/ProtectedRoute';
-import AppLayout from '@/components/AppLayout';
-import PrintStickerTab from '@/app/admin/management/items/components/print-sticker-tab/PrintStickerTab';
-
-export default function AdminPrintStickerPage() {
-  return (
-    <ProtectedRoute>
-      <AppLayout fullWidth>
-        <PrintStickerTab />
-      </AppLayout>
-    </ProtectedRoute>
-  );
+/** เดิมอยู่ใต้ management — ย้ายไป `/admin/print-sticker` */
+export default function LegacyAdminPrintStickerPage() {
+  redirect('/admin/print-sticker');
 }

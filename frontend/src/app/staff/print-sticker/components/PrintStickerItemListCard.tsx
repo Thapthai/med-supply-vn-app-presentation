@@ -20,7 +20,7 @@ import {
 import { cn } from '@/lib/utils';
 import { generatePageNumbers, tomorrowLocalYmd } from '../utils';
 import type { SelectedLine } from '../types';
-import { printableCapForRow } from '@/app/admin/print-sticker/helpers';
+import { printableCapForRow } from '@/app/staff/print-sticker/helpers';
 
 const COL_COUNT = 8;
 

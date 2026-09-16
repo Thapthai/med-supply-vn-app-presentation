@@ -149,6 +149,12 @@ export const adminMenuItems: StaffMenuItem[] = [
         description: 'เปรียบเทียบการเบิกกับการใช้งานตามเวชภัณฑ์',
         icon: FileBarChart,
       },
+      {
+        name: 'พิมพ์สติ๊กเกอร์',
+        href: '/admin/print-sticker',
+        icon: Printer,
+        description: 'พิมพ์สติ๊กเกอร์ผ่านเครื่อง SATO (SBPL)',
+      },
     ],
   },
   {
@@ -213,13 +219,6 @@ export const adminMenuItems: StaffMenuItem[] = [
       //   icon: Ruler,
       //   description: 'หน่วยนับสำหรับผูกกับรายการ Item',
       // },
-      // {
-      //   name: 'พิมพ์สติ๊กเกอร์',
-      //   href: '/admin/management/print-sticker',
-      //   icon: Printer,
-      //   description: 'พิมพ์สติ๊กเกอร์ผ่านเครื่อง SATO (SBPL)',
-      // },
-
       // {
       //   name: 'จัดการพนักงาน',
       //   href: '/admin/management/employee',

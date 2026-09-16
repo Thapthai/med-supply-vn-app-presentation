@@ -1,13 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Boxes, Ruler, Printer } from 'lucide-react';
+import { Boxes, Ruler } from 'lucide-react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import ItemTab from './components/item-tab/ItemTab';
 import UnitTab from './components/unit-tab/UnitTab';
-import PrintStickerTab from './components/print-sticker-tab/PrintStickerTab';
 
 const TABS = [
   {
@@ -21,12 +20,6 @@ const TABS = [
     label: 'จัดการหน่วยนับ (Unit)',
     icon: Ruler,
     iconClass: 'bg-violet-100 text-violet-700',
-  },
-  {
-    value: 'print-sticker',
-    label: 'พิมพ์สติ๊กเกอร์',
-    icon: Printer,
-    iconClass: 'bg-rose-100 text-rose-700',
   },
 ] as const;
 
@@ -43,7 +36,7 @@ export default function StaffItemMasterManagementPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">จัดการอุปกรณ์</h1>
           <p className="mt-0.5 text-sm text-slate-600">
-            จัดการ Item (Master), หน่วยนับ (Unit) และพิมพ์สติ๊กเกอร์
+            จัดการ Item (Master) และหน่วยนับ (Unit)
           </p>
         </div>
       </div>
@@ -51,7 +44,7 @@ export default function StaffItemMasterManagementPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <Card className="border-slate-200 shadow-sm">
           <CardContent className="pt-6">
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               {TABS.map((tab) => {
                 const Icon = tab.icon;
                 const active = activeTab === tab.value;
@@ -93,10 +86,6 @@ export default function StaffItemMasterManagementPage() {
 
         <TabsContent value="unit">
           <UnitTab />
-        </TabsContent>
-
-        <TabsContent value="print-sticker">
-          <PrintStickerTab />
         </TabsContent>
       </Tabs>
     </div>

@@ -42,11 +42,7 @@ export default function PrintStickerTab() {
         onKeywordInputChange={s.setKeywordInput}
         onSearch={s.handleSearch}
         onClearKeyword={s.handleClearKeyword}
-        onSelectAllOnPage={s.selectAllOnPage}
-        onClearSelectionOnPage={s.clearSelectionOnPage}
         onPageChange={s.handlePageChange}
-        selectedItemcodes={s.selectedItemcodes}
-        onToggleRow={s.toggleRow}
         selectedLines={s.selectedLines}
         onSetCopies={s.setCopiesFor}
         onExpireDateChange={s.setExpireDateFor}

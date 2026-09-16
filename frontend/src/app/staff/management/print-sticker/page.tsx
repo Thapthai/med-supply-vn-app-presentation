@@ -1,7 +1,6 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import PrintStickerTab from '@/app/staff/management/items/components/print-sticker-tab/PrintStickerTab';
-
-export default function StaffPrintStickerPage() {
-  return <PrintStickerTab />;
+/** เดิมอยู่ใต้ management — ย้ายไป `/staff/print-sticker` */
+export default function LegacyStaffPrintStickerPage() {
+  redirect('/staff/print-sticker');
 }
