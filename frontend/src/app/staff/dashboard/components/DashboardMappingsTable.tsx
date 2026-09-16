@@ -179,7 +179,7 @@ export default function DashboardMappingsTable({ mappings, loading }: DashboardM
       </Card>
 
       {selectedRow && (
-        <CabinetDetailsCard selectedRow={selectedRow} onClose={() => setSelectedRow(null)} />
+        <CabinetDetailsCard selectedRow={selectedRow} onClose={() => setSelectedRow(null)} asModal />
       )}
     </>
   );

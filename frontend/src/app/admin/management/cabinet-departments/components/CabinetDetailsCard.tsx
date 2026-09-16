@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, Package } from "lucide-react";
 import { cabinetDepartmentApi } from "@/lib/api";
 import { toast } from "sonner";
@@ -45,6 +46,7 @@ interface ItemStock {
 interface CabinetDetailsCardProps {
   selectedRow: CabinetDepartment;
   onClose: () => void;
+  asModal?: boolean;
 }
 
 /** ตรงกับ admin/management/items */
@@ -73,7 +75,7 @@ function generatePageNumbers(currentPage: number, totalPages: number): (number |
   return pages;
 }
 
-export default function CabinetDetailsCard({ selectedRow, onClose }: CabinetDetailsCardProps) {
+export default function CabinetDetailsCard({ selectedRow, onClose, asModal = false }: CabinetDetailsCardProps) {
   const [itemStocks, setItemStocks] = useState<ItemStock[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -114,25 +116,14 @@ export default function CabinetDetailsCard({ selectedRow, onClose }: CabinetDeta
   const handlePageChange = (nextPage: number) => {
     const next = Math.min(Math.max(1, nextPage), totalPages);
     void loadItemStocks(next);
-    if (typeof window !== "undefined") {
+    if (!asModal && typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
-  return (
-    <Card className="mt-6">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            <span>รายละเอียดตู้ {selectedRow.cabinet?.cabinet_name || "-"}</span>
-          </div>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            ✕
-          </Button>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+  const title = `รายละเอียดตู้ ${selectedRow.cabinet?.cabinet_name || "-"}`;
+  const body = (
+    <>
         {/* Basic Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 pb-6 border-b">
           <div className="space-y-3">
@@ -299,7 +290,41 @@ export default function CabinetDetailsCard({ selectedRow, onClose }: CabinetDeta
             <div className="text-center py-8 text-gray-500">ไม่พบอุปกรณ์ในตู้นี้</div>
           )}
         </div>
-      </CardContent>
+    </>
+  );
+
+  if (asModal) {
+    return (
+      <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+        <DialogContent className="flex max-h-[90vh] w-[calc(100%-1.5rem)] max-w-4xl flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl">
+          <DialogHeader className="shrink-0 border-b px-5 py-4 pr-12 sm:px-6">
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Package className="h-5 w-5 shrink-0" />
+              {title}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6 sm:py-5">
+            {body}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            <span>{title}</span>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            ✕
+          </Button>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>{body}</CardContent>
     </Card>
   );
 }

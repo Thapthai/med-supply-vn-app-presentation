@@ -48,7 +48,7 @@ function formatTemp(n: number | null | undefined) {
 
 function formatHum(n: number | null | undefined) {
   if (n == null || Number.isNaN(n)) return '—';
-  return `${n.toFixed(1)}%`;
+  return `${n.toFixed(1)} RH`;
 }
 
 function monthLabel(year: number, month: number) {
@@ -227,7 +227,7 @@ function DailyMetricChart({
     const height = 400;
     const padL = 58;
     const padR = 20;
-    const padT = 24;
+    const padT = 32;
     const padB = 48;
     const values = series.flatMap((s) => s.points.map((p) => p.value));
     const domain = values.length
@@ -272,7 +272,7 @@ function DailyMetricChart({
     setHoverDay(nearest);
   };
 
-  const unit = metric === 'temp' ? '°C' : '%';
+  const unit = metric === 'temp' ? '°C' : 'RH';
   const axisColor = metric === 'temp' ? '#c2410c' : '#0369a1';
   const day = hoverDay;
   const tooltipRows =
@@ -301,15 +301,14 @@ function DailyMetricChart({
           aria-label={title}
         >
           <text
-            x={16}
-            y={layout.padT + layout.innerH / 2}
-            textAnchor="middle"
+            x={layout.padL - 10}
+            y={layout.padT - 8}
+            textAnchor="end"
             fill={axisColor}
             fontSize="13"
             fontWeight="600"
-            transform={`rotate(-90 16 ${layout.padT + layout.innerH / 2})`}
           >
-            {metric === 'temp' ? '°C' : '%'}
+            {unit}
           </text>
           {layout.domain.ticks.map((tick) => {
             const y = layout.yAt(tick);
@@ -508,7 +507,7 @@ function CabinetChartBlock({
             year={year}
             month={month}
             metric="hum"
-            title={`ความชื้น ${cabinetLabel(cabinet)} · เดือน ${monthLabel(year, month)}`}
+            title={`ความชื้นสัมพัทธ์ ${cabinetLabel(cabinet)} · เดือน ${monthLabel(year, month)}`}
           />
         </div>
       )}
@@ -656,32 +655,31 @@ export default function CabinetTempHumChartCardV2() {
           </div>
         ) : (
           <div className="flex flex-col gap-6">
-            <div className="overflow-hidden rounded-xl bg-slate-50/60">
+            <div className="overflow-hidden rounded-xl border-2 border-white bg-slate-50/60">
               <div className="px-4 py-3 text-center text-sm font-semibold tracking-wide text-slate-600">
                 เดือน {monthLabel(year, month)}
               </div>
               {cabinets.length === 0 ? (
                 <p className="py-10 text-center text-slate-500">ไม่มีข้อมูลใน {monthLabel(year, month)}</p>
               ) : (
-                <div ref={calendarScrollRef} className="relative overflow-x-auto overscroll-x-contain px-0.5 pb-2 [-webkit-overflow-scrolling:touch]">
-                  <p className="sticky left-0 mb-2 px-2 text-center text-[11px] text-slate-400 sm:hidden">
+                <div ref={calendarScrollRef} className="relative overflow-x-auto overscroll-x-contain border-t border-slate-200 [-webkit-overflow-scrolling:touch]">
+                  <p className="px-3 py-2 text-center text-[11px] text-slate-400 sm:hidden">
                     เลื่อนซ้าย–ขวา เพื่อดูวันที่อื่น
                   </p>
-                  <table className="min-w-full border-separate border-spacing-0 text-sm">
+                  <table className="w-max min-w-full border-separate border-spacing-0 text-sm">
                     <thead>
                       <tr>
                         <th
                           rowSpan={2}
-                          className="sticky left-0 z-30 w-20 min-w-20 max-w-20 bg-slate-100 px-1.5 py-2 text-left text-[11px] font-semibold text-slate-500 shadow-[inset_-2px_0_0_#94a3b8] sm:w-32 sm:min-w-32 sm:max-w-32 sm:px-2.5 sm:text-[13px]"
+                          className="sticky left-0 z-30 w-36 min-w-36 max-w-36 bg-slate-100 px-2 py-2 text-left text-[11px] font-semibold text-slate-500 sm:w-44 sm:min-w-44 sm:max-w-44 sm:px-2.5 sm:text-[13px]"
                         >
                           ชื่อตู้
                         </th>
                         <th
                           rowSpan={2}
-                          className="sticky left-20 z-30 w-11 min-w-11 bg-slate-100 px-1 py-2 text-center text-[11px] font-semibold text-slate-500 shadow-[inset_-2px_0_0_#94a3b8] sm:left-32 sm:w-20 sm:min-w-20 sm:px-2 sm:text-[13px]"
+                          className="sticky left-36 z-30 w-32 min-w-32 max-w-32 bg-slate-100 px-1.5 py-2 text-center text-[11px] font-semibold text-slate-500 shadow-[inset_-2px_0_0_#94a3b8] sm:left-44 sm:w-36 sm:min-w-36 sm:max-w-36 sm:text-[13px]"
                         >
-                          <span className="sm:hidden">ชนิด</span>
-                          <span className="hidden sm:inline">รายการ</span>
+                          รายการ
                         </th>
                         {days.map((day) => {
                           const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
@@ -737,11 +735,11 @@ export default function CabinetTempHumChartCardV2() {
                           active ? 'bg-orange-50/50' : 'hover:bg-white/70',
                         );
                         const nameClass = cn(
-                          'sticky left-0 z-30 w-20 min-w-20 max-w-20 border-b-2 border-b-slate-400 px-1.5 py-2 align-middle text-left shadow-[inset_-2px_0_0_#94a3b8] sm:w-32 sm:min-w-32 sm:max-w-32 sm:px-2.5 sm:py-3.5',
+                          'sticky left-0 z-30 w-36 min-w-36 max-w-36 border-b-2 border-b-slate-400 px-2 py-2 align-middle text-left sm:w-44 sm:min-w-44 sm:max-w-44 sm:px-2.5 sm:py-3',
                           active ? 'bg-orange-50' : 'bg-white',
                         );
                         const metricClass = cn(
-                          'sticky left-20 z-30 w-11 min-w-11 px-1 py-2 text-center text-[11px] font-semibold shadow-[inset_-2px_0_0_#94a3b8] sm:left-32 sm:w-20 sm:min-w-20 sm:px-2 sm:py-3 sm:text-xs',
+                          'sticky left-36 z-30 w-32 min-w-32 max-w-32 px-1.5 py-2 text-center text-[11px] font-semibold whitespace-nowrap shadow-[inset_-2px_0_0_#94a3b8] sm:left-44 sm:w-36 sm:min-w-36 sm:max-w-36 sm:text-xs',
                           active ? 'bg-orange-50' : 'bg-white',
                         );
                         return (
@@ -755,8 +753,7 @@ export default function CabinetTempHumChartCardV2() {
                                 </div>
                               </td>
                               <td className={cn(metricClass, 'border-b border-slate-100 text-orange-600')}>
-                                <span className="sm:hidden">°C</span>
-                                <span className="hidden sm:inline">อุณหภูมิ</span>
+                                อุณหภูมิ
                               </td>
                               {days.flatMap((day) => {
                                 const isToday = todayDay === day;
@@ -779,8 +776,7 @@ export default function CabinetTempHumChartCardV2() {
                             </tr>
                             <tr className={rowClass} onClick={() => toggleCabinet(id)}>
                               <td className={cn(metricClass, 'border-b-2 border-b-slate-400 text-sky-600')}>
-                                <span className="sm:hidden">%</span>
-                                <span className="hidden sm:inline">ความชื้น</span>
+                                ความชื้นสัมพัทธ์
                               </td>
                               {days.flatMap((day) => {
                                 const isToday = todayDay === day;
@@ -816,7 +812,7 @@ export default function CabinetTempHumChartCardV2() {
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="h-2.5 w-2.5 rounded-sm bg-sky-500" />
-                สีฟ้า = ความชื้น
+                สีฟ้า = ความชื้นสัมพัทธ์
               </span>
               <span>คลิกที่แถวตู้เพื่อดูกราฟด้านล่าง กดซ้ำเพื่อปิด</span>
             </div>
