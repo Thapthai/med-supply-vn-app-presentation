@@ -287,7 +287,7 @@ export default function ReturnHistoryFilter({
                 id="staff-history-start-date"
                 value={dateFrom}
                 onChange={onDateFromChange}
-                placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                placeholder="วว/ดด/ปปปป (ค.ศ.)"
                 className={cn('h-10 shadow-sm', fieldInputClass)}
               />
             </div>
@@ -299,7 +299,7 @@ export default function ReturnHistoryFilter({
                 id="staff-history-end-date"
                 value={dateTo}
                 onChange={onDateToChange}
-                placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                placeholder="วว/ดด/ปปปป (ค.ศ.)"
                 className={cn('h-10 shadow-sm', fieldInputClass)}
               />
             </div>

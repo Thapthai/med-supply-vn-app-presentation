@@ -223,7 +223,7 @@ export default function WillReturnFilterCard({
                 id="will-return-start-date"
                 value={startDate}
                 onChange={onStartDateChange}
-                placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                placeholder="วว/ดด/ปปปป (ค.ศ.)"
                 className={cn('h-10 shadow-sm', fieldInputClass)}
               />
             </div>
@@ -235,7 +235,7 @@ export default function WillReturnFilterCard({
                 id="will-return-end-date"
                 value={endDate}
                 onChange={onEndDateChange}
-                placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                placeholder="วว/ดด/ปปปป (ค.ศ.)"
                 className={cn('h-10 shadow-sm', fieldInputClass)}
               />
             </div>

@@ -147,7 +147,7 @@ export function MappingVendingTab() {
                   setMappingStartDate('');
                   setMappingEndDate('');
                 }}
-                placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                placeholder="วว/ดด/ปปปป (ค.ศ.)"
               />
               <p className="text-xs text-gray-500">หรือระบุช่วงวันที่ด้านล่าง</p>
             </div>
@@ -160,7 +160,7 @@ export function MappingVendingTab() {
                   setMappingStartDate(value);
                   setMappingPrintDate('');
                 }}
-                placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                placeholder="วว/ดด/ปปปป (ค.ศ.)"
                 disabled={!!mappingPrintDate}
               />
             </div>
@@ -173,7 +173,7 @@ export function MappingVendingTab() {
                   setMappingEndDate(value);
                   setMappingPrintDate('');
                 }}
-                placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                placeholder="วว/ดด/ปปปป (ค.ศ.)"
                 disabled={!!mappingPrintDate}
               />
             </div>

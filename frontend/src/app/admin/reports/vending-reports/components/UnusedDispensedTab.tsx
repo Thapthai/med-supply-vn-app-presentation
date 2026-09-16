@@ -130,7 +130,7 @@ export function UnusedDispensedTab() {
               id="unused-date"
               value={unusedDate}
               onChange={setUnusedDate}
-              placeholder="วว/ดด/ปปปป (พ.ศ.)"
+              placeholder="วว/ดด/ปปปป (ค.ศ.)"
             />
             <p className="text-xs text-gray-500">ถ้าไม่ระบุจะใช้วันปัจจุบัน</p>
           </div>

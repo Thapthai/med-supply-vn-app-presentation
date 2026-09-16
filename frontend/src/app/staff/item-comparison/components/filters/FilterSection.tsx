@@ -303,7 +303,7 @@ export function FilterSection({
                 id="staff-comparison-start-date"
                 value={filters.startDate}
                 onChange={(v) => onFilterChange('startDate', v)}
-                placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                placeholder="วว/ดด/ปปปป (ค.ศ.)"
                 className={cn('h-10 shadow-sm', fieldInputClass)}
               />
             </div>
@@ -315,7 +315,7 @@ export function FilterSection({
                 id="staff-comparison-end-date"
                 value={filters.endDate}
                 onChange={(v) => onFilterChange('endDate', v)}
-                placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                placeholder="วว/ดด/ปปปป (ค.ศ.)"
                 className={cn('h-10 shadow-sm', fieldInputClass)}
               />
             </div>

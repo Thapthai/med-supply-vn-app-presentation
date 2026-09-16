@@ -99,7 +99,7 @@ export default function CancelBillReportPage() {
                     id="start-date"
                     value={startDate}
                     onChange={setStartDate}
-                    placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                    placeholder="วว/ดด/ปปปป (ค.ศ.)"
                   />
                 </div>
                 <div className="space-y-2">
@@ -108,7 +108,7 @@ export default function CancelBillReportPage() {
                     id="end-date"
                     value={endDate}
                     onChange={setEndDate}
-                    placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                    placeholder="วว/ดด/ปปปป (ค.ศ.)"
                   />
                 </div>
               </div>

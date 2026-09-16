@@ -86,14 +86,14 @@ export default function FilterSection({
       <CardContent>
         <div className="space-y-6">
 
-          {/* Row 1: Date Range (รูปแบบ วว/ดด/ปปปป พ.ศ.) */}
+          {/* Row 1: Date Range (รูปแบบ วว/ดด/ปปปป ค.ศ.) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">วันที่เริ่มต้น</label>
               <DatePickerBE
                 value={filters.startDate}
                 onChange={(v) => onFilterChange('startDate', v)}
-                placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                placeholder="วว/ดด/ปปปป (ค.ศ.)"
               />
             </div>
             <div className="space-y-2">
@@ -101,7 +101,7 @@ export default function FilterSection({
               <DatePickerBE
                 value={filters.endDate}
                 onChange={(v) => onFilterChange('endDate', v)}
-                placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                placeholder="วว/ดด/ปปปป (ค.ศ.)"
               />
             </div>
           </div>

@@ -136,7 +136,7 @@ export function UnmappedDispensedTab() {
                 id="unmapped-start-date"
                 value={unmappedStartDate}
                 onChange={setUnmappedStartDate}
-                placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                placeholder="วว/ดด/ปปปป (ค.ศ.)"
               />
             </div>
             <div className="space-y-2">
@@ -145,7 +145,7 @@ export function UnmappedDispensedTab() {
                 id="unmapped-end-date"
                 value={unmappedEndDate}
                 onChange={setUnmappedEndDate}
-                placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                placeholder="วว/ดด/ปปปป (ค.ศ.)"
               />
             </div>
             <div className="space-y-2">

@@ -262,7 +262,7 @@ export default function WeighingDispensePage() {
                   <DatePickerBE
                     value={dateFrom}
                     onChange={setDateFrom}
-                    placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                    placeholder="วว/ดด/ปปปป (ค.ศ.)"
                     className="w-full bg-white border-gray-200"
                   />
                 </div>
@@ -271,7 +271,7 @@ export default function WeighingDispensePage() {
                   <DatePickerBE
                     value={dateTo}
                     onChange={setDateTo}
-                    placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                    placeholder="วว/ดด/ปปปป (ค.ศ.)"
                     className="w-full bg-white border-gray-200"
                   />
                 </div>

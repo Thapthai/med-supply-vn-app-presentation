@@ -206,7 +206,7 @@ export default function CancelBillDialog({
                   id="old-print-date"
                   value={oldPrintDate}
                   onChange={setOldPrintDate}
-                  placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                  placeholder="วว/ดด/ปปปป (ค.ศ.)"
                 />
               </div>
               <div className="space-y-2">
@@ -215,7 +215,7 @@ export default function CancelBillDialog({
                   id="new-print-date"
                   value={newPrintDate}
                   onChange={setNewPrintDate}
-                  placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                  placeholder="วว/ดด/ปปปป (ค.ศ.)"
                 />
               </div>
             </div>

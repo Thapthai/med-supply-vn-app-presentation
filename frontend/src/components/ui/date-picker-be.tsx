@@ -2,13 +2,11 @@
 
 import * as React from 'react';
 import { createPortal } from 'react-dom';
-import { formatCEToBEDMY, parseBEDMYToCE } from '@/lib/datePickerBE';
+import { formatCEToDMY, parseDMYToCE } from '@/lib/datePickerBE';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const BE_OFFSET = 543;
 
 interface DatePickerBEProps {
   /** ค่า YYYY-MM-DD (ค.ศ.) */
@@ -29,7 +27,7 @@ interface DatePickerBEProps {
 export function DatePickerBE({
   value,
   onChange,
-  placeholder = 'วว/ดด/ปปปป (พ.ศ.)',
+  placeholder = 'วว/ดด/ปปปป (ค.ศ.)',
   className,
   id,
   disabled,
@@ -37,7 +35,7 @@ export function DatePickerBE({
   minDate,
   invalid = false,
 }: DatePickerBEProps) {
-  const [inputText, setInputText] = React.useState(() => formatCEToBEDMY(value));
+  const [inputText, setInputText] = React.useState(() => formatCEToDMY(value));
   const [open, setOpen] = React.useState(false);
   const [viewDate, setViewDate] = React.useState(() => {
     if (value) {
@@ -88,7 +86,7 @@ export function DatePickerBE({
   }, [popoverPortal, open, updatePortalPlacement]);
 
   React.useEffect(() => {
-    setInputText(formatCEToBEDMY(value));
+    setInputText(formatCEToDMY(value));
   }, [value]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,12 +97,12 @@ export function DatePickerBE({
   const isBeforeMin = (ce: string) => Boolean(minDate && ce < minDate);
 
   const handleBlur = () => {
-    const ce = parseBEDMYToCE(inputText);
+    const ce = parseDMYToCE(inputText);
     if (ce && !isBeforeMin(ce)) {
       onChange(ce);
-      setInputText(formatCEToBEDMY(ce));
+      setInputText(formatCEToDMY(ce));
     } else if (value) {
-      setInputText(formatCEToBEDMY(value));
+      setInputText(formatCEToDMY(value));
     } else {
       setInputText('');
     }
@@ -117,14 +115,12 @@ export function DatePickerBE({
     const ce = `${yy}-${mm}-${dd}`;
     if (isBeforeMin(ce)) return;
     onChange(ce);
-    setInputText(formatCEToBEDMY(ce));
+    setInputText(formatCEToDMY(ce));
     setOpen(false);
   };
 
   const viewYear = viewDate.getFullYear();
   const viewMonth = viewDate.getMonth();
-  const viewYearBE = viewYear + BE_OFFSET;
-
   const firstDay = new Date(viewYear, viewMonth, 1);
   const lastDay = new Date(viewYear, viewMonth + 1, 0);
   const startPad = firstDay.getDay();
@@ -176,7 +172,7 @@ export function DatePickerBE({
           ‹
         </Button>
         <span className="text-sm font-medium tabular-nums">
-          {monthNames[viewMonth]} {viewYearBE}
+          {monthNames[viewMonth]} {viewYear}
         </span>
         <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={handleNextMonth}>
           ›

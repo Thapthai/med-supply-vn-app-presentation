@@ -277,7 +277,7 @@ export default function MedicalSuppliesPage() {
                   id="startDate"
                   value={formFilters.startDate}
                   onChange={(v) => setFormFilters({ ...formFilters, startDate: v })}
-                  placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                  placeholder="วว/ดด/ปปปป (ค.ศ.)"
                 />
               </div>
               <div className="space-y-2 min-w-0">
@@ -286,7 +286,7 @@ export default function MedicalSuppliesPage() {
                   id="endDate"
                   value={formFilters.endDate}
                   onChange={(v) => setFormFilters({ ...formFilters, endDate: v })}
-                  placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                  placeholder="วว/ดด/ปปปป (ค.ศ.)"
                 />
               </div>
             </div>

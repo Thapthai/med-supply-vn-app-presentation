@@ -125,7 +125,7 @@ export default function ReturnReportPage() {
                     id="history-date-from"
                     value={returnHistoryDateFrom}
                     onChange={setReturnHistoryDateFrom}
-                    placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                    placeholder="วว/ดด/ปปปป (ค.ศ.)"
                   />
                 </div>
                 <div className="space-y-2">
@@ -134,7 +134,7 @@ export default function ReturnReportPage() {
                     id="history-date-to"
                     value={returnHistoryDateTo}
                     onChange={setReturnHistoryDateTo}
-                    placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                    placeholder="วว/ดด/ปปปป (ค.ศ.)"
                   />
                 </div>
                 <div className="space-y-2">

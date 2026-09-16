@@ -267,7 +267,7 @@ export default function MedicalSuppliesSearchFilters({
                 id="startDate"
                 value={formFilters.startDate}
                 onChange={(v) => patch({ startDate: v })}
-                placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                placeholder="วว/ดด/ปปปป (ค.ศ.)"
                 className="h-10 shadow-sm bg-white"
               />
             </div>
@@ -279,7 +279,7 @@ export default function MedicalSuppliesSearchFilters({
                 id="endDate"
                 value={formFilters.endDate}
                 onChange={(v) => patch({ endDate: v })}
-                placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                placeholder="วว/ดด/ปปปป (ค.ศ.)"
                 className="h-10 shadow-sm bg-white"
               />
             </div>

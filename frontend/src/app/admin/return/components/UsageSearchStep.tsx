@@ -72,7 +72,7 @@ export default function UsageSearchStep({
             id="start-date"
             value={startDate}
             onChange={onStartDateChange}
-            placeholder="วว/ดด/ปปปป (พ.ศ.)"
+            placeholder="วว/ดด/ปปปป (ค.ศ.)"
             className="rounded-lg border-slate-200"
           />
         </div>
@@ -82,7 +82,7 @@ export default function UsageSearchStep({
             id="end-date"
             value={endDate}
             onChange={onEndDateChange}
-            placeholder="วว/ดด/ปปปป (พ.ศ.)"
+            placeholder="วว/ดด/ปปปป (ค.ศ.)"
             className="rounded-lg border-slate-200"
           />
         </div>

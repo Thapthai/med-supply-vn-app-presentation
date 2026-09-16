@@ -14,7 +14,7 @@ export type DateInputProps = {
   popoverPortal?: boolean;
 };
 
-/** ช่องเลือกวันที่พ.ศ. กลางของแอป — ค่าในระบบเป็น YYYY-MM-DD (ค.ศ.) */
+/** ช่องเลือกวันที่ (ค.ศ.) กลางของแอป — ค่าในระบบเป็น YYYY-MM-DD (ค.ศ.) */
 export function DateInput(props: DateInputProps) {
   return <DatePickerBE {...props} />;
 }

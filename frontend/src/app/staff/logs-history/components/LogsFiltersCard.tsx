@@ -120,7 +120,7 @@ export function LogsFiltersCard({
               id="staff-logs-filter-start-date"
               value={formFilters.startDate}
               onChange={(v) => setFormFilters((p) => ({ ...p, startDate: v }))}
-              placeholder="วว/ดด/ปปปป (พ.ศ.)"
+              placeholder="วว/ดด/ปปปป (ค.ศ.)"
               className={cn('h-10 shadow-sm', fieldInputClass)}
             />
           </div>
@@ -133,7 +133,7 @@ export function LogsFiltersCard({
               id="staff-logs-filter-end-date"
               value={formFilters.endDate}
               onChange={(v) => setFormFilters((p) => ({ ...p, endDate: v }))}
-              placeholder="วว/ดด/ปปปป (พ.ศ.)"
+              placeholder="วว/ดด/ปปปป (ค.ศ.)"
               className={cn('h-10 shadow-sm', fieldInputClass)}
             />
           </div>

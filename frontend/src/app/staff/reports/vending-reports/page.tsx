@@ -255,7 +255,7 @@ export default function VendingReportsPage() {
                         setMappingStartDate('');
                         setMappingEndDate('');
                       }}
-                      placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                      placeholder="วว/ดด/ปปปป (ค.ศ.)"
                     />
                     <p className="text-xs text-gray-500">หรือระบุช่วงวันที่ด้านล่าง</p>
                   </div>
@@ -268,7 +268,7 @@ export default function VendingReportsPage() {
                         setMappingStartDate(value);
                         setMappingPrintDate('');
                       }}
-                      placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                      placeholder="วว/ดด/ปปปป (ค.ศ.)"
                       disabled={!!mappingPrintDate}
                     />
                   </div>
@@ -281,7 +281,7 @@ export default function VendingReportsPage() {
                         setMappingEndDate(value);
                         setMappingPrintDate('');
                       }}
-                      placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                      placeholder="วว/ดด/ปปปป (ค.ศ.)"
                       disabled={!!mappingPrintDate}
                     />
                   </div>
@@ -465,7 +465,7 @@ export default function VendingReportsPage() {
                       id="unmapped-start-date"
                       value={unmappedStartDate}
                       onChange={setUnmappedStartDate}
-                      placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                      placeholder="วว/ดด/ปปปป (ค.ศ.)"
                     />
                   </div>
                   <div className="space-y-2">
@@ -474,7 +474,7 @@ export default function VendingReportsPage() {
                       id="unmapped-end-date"
                       value={unmappedEndDate}
                       onChange={setUnmappedEndDate}
-                      placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                      placeholder="วว/ดด/ปปปป (ค.ศ.)"
                     />
                   </div>
                   <div className="space-y-2">
@@ -629,7 +629,7 @@ export default function VendingReportsPage() {
                     id="unused-date"
                     value={unusedDate}
                     onChange={setUnusedDate}
-                    placeholder="วว/ดด/ปปปป (พ.ศ.)"
+                    placeholder="วว/ดด/ปปปป (ค.ศ.)"
                   />
                   <p className="text-xs text-gray-500">ถ้าไม่ระบุจะใช้วันปัจจุบัน</p>
                 </div>
