@@ -75,7 +75,7 @@ export type PrintStickerTabState = {
   cabinetPairSelected: boolean;
   selectedLines: SelectedLine[];
   preparing: boolean;
-  setCopiesFor: (itemcode: string, raw: number) => void;
+  setCopiesFor: (itemcode: string, raw: number | null) => void;
   setExpireDateFor: (itemcode: string, ymd: string) => void;
   setLotNoFor: (itemcode: string, lotNo: string) => void;
   removeLine: (itemcode: string) => void;

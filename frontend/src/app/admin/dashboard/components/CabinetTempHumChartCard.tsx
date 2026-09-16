@@ -818,7 +818,7 @@ export default function CabinetTempHumChartCardV2() {
             </div>
             {selectedCabinets.length === 0 ? (
               <p className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-500">
-                เลือกตู้จากตารางเพื่อดูกราฟอุณหภูมิและความชื้น
+                เลือกตู้จากตารางเพื่อดูกราฟอุณหภูมิและความชื้นสัมพัทธ์
               </p>
             ) : (
               <div className="flex flex-col gap-5 pb-2">

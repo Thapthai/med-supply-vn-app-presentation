@@ -20,6 +20,10 @@ interface DatePickerBEProps {
   disabled?: boolean;
   /** เปิดปฏิทินเป็น fixed + portal ไป body (ใช้ใน table/overflow — ไม่โดนตัดขอบกล่อง) */
   popoverPortal?: boolean;
+  /** วันที่ขั้นต่ำ YYYY-MM-DD (ค.ศ.) — เลือกหรือพิมพ์ก่อนวันนี้ไม่ได้ */
+  minDate?: string;
+  /** ขอบแดงเมื่อยังไม่ได้กรอกหรือค่าไม่ผ่าน */
+  invalid?: boolean;
 }
 
 export function DatePickerBE({
@@ -30,6 +34,8 @@ export function DatePickerBE({
   id,
   disabled,
   popoverPortal = false,
+  minDate,
+  invalid = false,
 }: DatePickerBEProps) {
   const [inputText, setInputText] = React.useState(() => formatCEToBEDMY(value));
   const [open, setOpen] = React.useState(false);
@@ -90,9 +96,11 @@ export function DatePickerBE({
     setInputText(v);
   };
 
+  const isBeforeMin = (ce: string) => Boolean(minDate && ce < minDate);
+
   const handleBlur = () => {
     const ce = parseBEDMYToCE(inputText);
-    if (ce) {
+    if (ce && !isBeforeMin(ce)) {
       onChange(ce);
       setInputText(formatCEToBEDMY(ce));
     } else if (value) {
@@ -107,6 +115,7 @@ export function DatePickerBE({
     const mm = String(month).padStart(2, '0');
     const dd = String(day).padStart(2, '0');
     const ce = `${yy}-${mm}-${dd}`;
+    if (isBeforeMin(ce)) return;
     onChange(ce);
     setInputText(formatCEToBEDMY(ce));
     setOpen(false);
@@ -179,25 +188,28 @@ export function DatePickerBE({
             {w}
           </div>
         ))}
-        {days.map((d, i) =>
-          d === null ? (
-            <div key={`e-${i}`} />
-          ) : (
+        {days.map((d, i) => {
+          if (d === null) return <div key={`e-${i}`} />;
+          const cellYmd = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+          const tooEarly = isBeforeMin(cellYmd);
+          const selected = value === cellYmd;
+          return (
             <button
               key={d}
               type="button"
+              disabled={tooEarly}
               className={cn(
-                'h-8 w-8 rounded hover:bg-blue-100',
-                value === `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'text-gray-800'
+                'h-8 w-8 rounded',
+                tooEarly && 'cursor-not-allowed text-gray-300 hover:bg-transparent',
+                !tooEarly && selected && 'bg-blue-600 text-white hover:bg-blue-700',
+                !tooEarly && !selected && 'text-gray-800 hover:bg-blue-100',
               )}
               onClick={() => handleSelectDay(viewYear, viewMonth + 1, d)}
             >
               {d}
             </button>
-          )
-        )}
+          );
+        })}
       </div>
     </div>
   );
@@ -209,7 +221,13 @@ export function DatePickerBE({
   const isTall = className?.includes('h-10');
 
   return (
-    <div ref={containerRef} className="relative flex w-full items-stretch">
+    <div
+      ref={containerRef}
+      className={cn(
+        'relative flex w-full items-stretch rounded-md',
+        invalid && 'ring-1 ring-rose-200/70',
+      )}
+    >
       <Input
         id={id}
         type="text"
@@ -219,9 +237,12 @@ export function DatePickerBE({
         onChange={handleInputChange}
         onBlur={handleBlur}
         disabled={disabled}
+        aria-invalid={invalid}
         className={cn(
           'min-w-0 flex-1 rounded-r-none border-r-0 font-medium shadow-none',
           isTall ? 'h-10' : 'h-9',
+          disabled && 'bg-slate-50 text-slate-400',
+          invalid && 'border-rose-200 bg-white focus-visible:border-rose-300 focus-visible:ring-rose-100',
           className,
         )}
         autoComplete="off"
@@ -233,6 +254,8 @@ export function DatePickerBE({
         className={cn(
           'shrink-0 rounded-l-none px-0',
           isTall ? 'h-10 w-10' : 'h-9 w-9',
+          disabled && 'bg-slate-50 text-slate-400',
+          invalid && 'border-rose-200 bg-white text-rose-400 hover:bg-white hover:text-rose-500',
         )}
         onClick={() => setOpen((o) => !o)}
         disabled={disabled}

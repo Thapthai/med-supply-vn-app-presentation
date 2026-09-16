@@ -21,14 +21,14 @@ import type { SelectedLine } from '../types';
 import { cn } from '@/lib/utils';
 
 const fieldInputClass = 'bg-white';
-import { clampCopies } from '../utils';
+import { clampCopies, tomorrowLocalYmd } from '../utils';
 import ItemNameWithUnit from '@/components/ItemNameWithUnit';
 import type { Item } from '@/types/item';
 
 type PrintStickerOrderCardProps = {
   selectedLines: SelectedLine[];
   preparing: boolean;
-  onSetCopies: (itemcode: string, raw: number) => void;
+  onSetCopies: (itemcode: string, raw: number | null) => void;
   onExpireDateChange: (itemcode: string, ymd: string) => void;
   onLotNoChange: (itemcode: string, lotNo: string) => void;
   onRemoveLine: (itemcode: string) => void;
@@ -104,7 +104,7 @@ export function PrintStickerOrderCard({
                               subUnit: line.subUnit,
                             } as Item
                           }
-                          qtyMain={line.copies}
+                          qtyMain={line.copies ?? 0}
                         />
                       </TableCell>
                       <TableCell className="align-middle py-2">
@@ -124,6 +124,8 @@ export function PrintStickerOrderCard({
                             id={`expire-${line.itemcode}`}
                             className="items-center"
                             popoverPortal
+                            minDate={tomorrowLocalYmd()}
+                            invalid={!(line.expireDate || '').trim()}
                             value={line.expireDate || ''}
                             onChange={(v) => onExpireDateChange(line.itemcode, v)}
                             placeholder="วว/ดด/ปปปป (พ.ศ.)"
@@ -140,14 +142,19 @@ export function PrintStickerOrderCard({
                           <Input
                             type="number"
                             inputMode="numeric"
-                            min={line.refillCap <= 0 ? 0 : 1}
-                            max={Math.max(line.refillCap, 1)}
+                            min={0}
+                            max={Math.max(line.refillCap, 0)}
                             className={cn('h-8 w-[4rem] text-center font-mono text-sm', fieldInputClass)}
-                            value={line.refillCap <= 0 ? 0 : line.copies}
+                            value={line.refillCap <= 0 || line.copies == null ? '' : line.copies}
                             disabled={inputDisabled}
                             onChange={(e) => {
-                              const n = parseInt(e.target.value, 10);
-                              onSetCopies(line.itemcode, Number.isFinite(n) ? n : 1);
+                              const raw = e.target.value;
+                              if (raw === '' || raw === '-') {
+                                onSetCopies(line.itemcode, null);
+                                return;
+                              }
+                              const n = parseInt(raw, 10);
+                              onSetCopies(line.itemcode, Number.isFinite(n) ? n : null);
                             }}
                             onClick={(e) => e.stopPropagation()}
                           />

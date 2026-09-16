@@ -1,10 +1,8 @@
 'use client';
 
 import { PrintStickerItemListCard } from '@/app/admin/management/print-sticker/components/PrintStickerItemListCard';
-import { PrintStickerOrderCard } from '@/app/admin/management/print-sticker/components/PrintStickerOrderCard';
 import PrintStickerFilterCard from './components/PrintStickerFilterCard';
 import PrintStickerHeader from './components/PrintStickerHeader';
-import PrintStickerPreparedCard from './components/PrintStickerPreparedCard';
 import { usePrintStickerTab } from './usePrintStickerTab';
 
 export default function PrintStickerTab() {
@@ -21,7 +19,6 @@ export default function PrintStickerTab() {
         onDepartmentIdChange={s.setDepartmentId}
         cabinetId={s.cabinetId}
         onCabinetIdChange={s.setCabinetId}
-        cabinetStockId={s.cabinetStockId}
         departmentSelectOptions={s.departmentSelectOptions}
         cabOptions={s.cabOptions}
         loadingDepartments={s.loadingDepartments}
@@ -44,37 +41,23 @@ export default function PrintStickerTab() {
         keywordInput={s.keywordInput}
         onKeywordInputChange={s.setKeywordInput}
         onSearch={s.handleSearch}
-        onRefresh={s.fetchCabinetItems}
+        onClearKeyword={s.handleClearKeyword}
         onSelectAllOnPage={s.selectAllOnPage}
         onClearSelectionOnPage={s.clearSelectionOnPage}
         onPageChange={s.handlePageChange}
         selectedItemcodes={s.selectedItemcodes}
         onToggleRow={s.toggleRow}
-        variant={s.cabinetPairSelected ? 'cabinet' : 'master'}
-        hidePagination={s.hidePagination}
-      />
-
-      <PrintStickerOrderCard
         selectedLines={s.selectedLines}
-        preparing={s.preparing}
-        emptyHint={s.orderEmptyHint}
         onSetCopies={s.setCopiesFor}
         onExpireDateChange={s.setExpireDateFor}
         onLotNoChange={s.setLotNoFor}
-        onRemoveLine={s.removeLine}
-        onClearAll={s.clearSelectedLines}
-        onPrepare={s.handlePrepare}
-      />
-
-      <PrintStickerPreparedCard
-        preparedRows={s.preparedRows}
-        selectedPreparedRowIds={s.selectedPreparedRowIds}
-        onSelectedPreparedRowIdsChange={s.setSelectedPreparedRowIds}
-        deletingPrepared={s.deletingPrepared}
+        onPrintSelected={s.handlePrepareAndPrint}
         printing={s.printing}
         preparing={s.preparing}
-        onDeletePrepared={s.handleDeletePrepared}
-        onPrint={s.handlePrint}
+        mode={s.mode}
+        cabinetLabel={s.cabOptions.find((c) => c.value === s.cabinetId)?.label}
+        variant={s.cabinetPairSelected ? 'cabinet' : 'master'}
+        hidePagination={s.hidePagination}
       />
     </div>
   );

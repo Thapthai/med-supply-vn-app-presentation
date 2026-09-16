@@ -14,7 +14,6 @@ type Props = {
   onDepartmentIdChange: (id: string) => void;
   cabinetId: string;
   onCabinetIdChange: (id: string) => void;
-  cabinetStockId: number | null;
   departmentSelectOptions: SelectOption[];
   cabOptions: SelectOption[];
   loadingDepartments: boolean;
@@ -35,7 +34,6 @@ export default function PrintStickerFilterCard({
   onDepartmentIdChange,
   cabinetId,
   onCabinetIdChange,
-  cabinetStockId,
   departmentSelectOptions,
   cabOptions,
   loadingDepartments,
@@ -67,6 +65,7 @@ export default function PrintStickerFilterCard({
             </span>
             <span className="min-w-0 space-y-0.5">
               <span className="block text-lg font-medium text-slate-900">Auto</span>
+              <span className="block text-xs text-slate-500">พิมพ์รายการที่ต่ำกว่า Minimum</span>
             </span>
           </button>
           <button
@@ -84,6 +83,7 @@ export default function PrintStickerFilterCard({
             </span>
             <span className="min-w-0 space-y-0.5">
               <span className="block text-lg font-medium text-slate-900">Manual</span>
+              <span className="block text-xs text-slate-500">เลือกรายการเองสำหรับพิมพ์สติ๊กเกอร์</span>
             </span>
           </button>
         </div>
@@ -99,7 +99,7 @@ export default function PrintStickerFilterCard({
               {mode === 'auto' ? 'ระบุ Division และตู้' : 'กรองตู้'}
             </p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
             <SearchableSelect
               label="Division"
               placeholder={mode === 'manual' ? 'ไม่เลือก = โหลด Item ใช้งาน' : 'เลือก Division'}
@@ -127,38 +127,21 @@ export default function PrintStickerFilterCard({
               loading={loadingCabinets}
               onSearch={(kw) => (departmentId ? onSearchCabinets(kw) : undefined)}
             />
+            <Button
+              type="button"
+              className="h-10 shrink-0 gap-2"
+              disabled={reloadDisabled}
+              onClick={onReload}
+            >
+              <RefreshCw className={cn('h-4 w-4', loadingList && 'animate-spin')} />
+              {reloadButtonLabel}
+            </Button>
           </div>
-          {(mode === 'auto' || cabinetId) && (
-            <div className="mt-3 rounded-md bg-background/80 px-3 py-2 text-xs text-muted-foreground">
-              {cabinetStockId != null ? (
-                <span>
-                  ตู้:{' '}
-                  <span className="font-mono font-medium text-slate-800">{cabinetStockId}</span>
-                </span>
-              ) : cabinetId ? (
-                <span className="text-amber-800">กำลังโหลด Stock ID...</span>
-              ) : mode === 'auto' ? (
-                <span>เลือกตู้เมื่อเลือก Division แล้ว</span>
-              ) : null}
-            </div>
-          )}
           {manualFilterIncomplete && (
             <p className="mt-2 text-xs font-medium text-amber-900">
               เลือก Division อยู่ — เลือกตู้เพื่อโหลดรายการในตู้ หรือค้นหา Item ทั้งระบบได้โดยไม่ต้องเลือกตู้
             </p>
           )}
-        </div>
-
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200/70 pt-4">
-          <Button
-            type="button"
-            className="h-10 shrink-0 gap-2"
-            disabled={reloadDisabled}
-            onClick={onReload}
-          >
-            <RefreshCw className={cn('h-4 w-4', loadingList && 'animate-spin')} />
-            {reloadButtonLabel}
-          </Button>
         </div>
       </CardContent>
     </Card>

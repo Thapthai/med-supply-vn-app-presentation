@@ -11,8 +11,13 @@ import {
   PAGE_SIZE,
 } from '@/app/admin/management/print-sticker/constants';
 import type { SelectedLine } from '@/app/admin/management/print-sticker/types';
-import { clampCopies } from '@/app/admin/management/print-sticker/utils';
-import { mapCabinetFromMapping, manualRefillCap } from './helpers';
+import { clampCopies, localYmd } from '@/app/admin/management/print-sticker/utils';
+import {
+  applyPrintedCopiesToItems,
+  mapCabinetFromMapping,
+  mergeRemainingPrintCap,
+  printableCapForRow,
+} from './helpers';
 import type {
   CabinetDepartmentMapping,
   CabinetOpt,
@@ -53,8 +58,10 @@ export function usePrintStickerTab() {
 
   const displayItems = useMemo(() => {
     if (mode !== 'auto') return items;
-    return items.filter((i) => (i.refill_qty ?? 0) > 0);
-  }, [items, mode]);
+    return items.filter(
+      (i) => (i.refill_qty ?? 0) > 0 || selectedItemcodes.has(i.itemcode),
+    );
+  }, [items, mode, selectedItemcodes]);
 
   const listTotal = mode === 'auto' ? displayItems.length : total;
   const listTotalPages = mode === 'auto' ? 1 : totalPages;
@@ -180,11 +187,21 @@ export function usePrintStickerTab() {
     [],
   );
 
-  const fetchCabinetItems = useCallback(async () => {
+  const fetchCabinetItems = useCallback(async (opts?: {
+    skipAutoSelect?: boolean;
+    silent?: boolean;
+    remainingByCode?: Map<string, number>;
+  }) => {
+    const finishList = (list: Item[]) =>
+      opts?.remainingByCode?.size ? mergeRemainingPrintCap(list, opts.remainingByCode) : list;
+    const setLoading = (v: boolean) => {
+      if (!opts?.silent) setLoadingList(v);
+    };
+
     // Manual — ยังไม่เลือกตู้: โหลดรายการ Item master (ค้นหาได้โดยไม่ต้องเลือกตู้)
     if (mode === 'manual' && !cabinetId) {
       try {
-        setLoadingList(true);
+        setLoading(true);
         const res = (await itemsApi.getMasterList({
           page,
           limit: PAGE_SIZE,
@@ -206,7 +223,7 @@ export function usePrintStickerTab() {
           setTotalPages(1);
           return;
         }
-        const list = Array.isArray(res?.data) ? res.data : [];
+        const list = finishList(Array.isArray(res?.data) ? res.data : []);
         const t = res?.total ?? list.length;
         setItems(list);
         setTotal(t);
@@ -217,7 +234,7 @@ export function usePrintStickerTab() {
         setTotal(0);
         setTotalPages(1);
       } finally {
-        setLoadingList(false);
+        setLoading(false);
       }
       return;
     }
@@ -237,7 +254,7 @@ export function usePrintStickerTab() {
     // — ไม่ใช้ endpoint slot เพราะของในตู้อาจไม่มีใน itemslotincabinet
     if (mode === 'manual') {
       try {
-        setLoadingList(true);
+        setLoading(true);
         const res = (await itemsApi.getAll({
           page,
           limit: PAGE_SIZE,
@@ -263,7 +280,7 @@ export function usePrintStickerTab() {
           return;
         }
 
-        const list = Array.isArray(res?.data) ? res.data : [];
+        const list = finishList(Array.isArray(res?.data) ? res.data : []);
         const t = res?.total ?? list.length;
         setItems(list);
         setTotal(t);
@@ -274,13 +291,13 @@ export function usePrintStickerTab() {
         setTotal(0);
         setTotalPages(1);
       } finally {
-        setLoadingList(false);
+        setLoading(false);
       }
       return;
     }
 
     try {
-      setLoadingList(true);
+      setLoading(true);
       const res = (await itemsApi.getCabinetSlotItems({
         page: 1,
         limit: AUTO_FETCH_LIMIT,
@@ -329,27 +346,30 @@ export function usePrintStickerTab() {
         }
       }
 
+      list = finishList(list);
       setItems(list);
       setTotal(list.filter((i) => Number(i.refill_qty ?? 0) > 0).length);
       setTotalPages(1);
 
-      const need = list.filter((i) => Number(i.refill_qty ?? 0) > 0);
-      setSelectedLines(
-        need.map((row) =>
-          buildLineFromRow(
-            row,
-            Math.max(1, Number(row.refill_qty ?? 0)),
-            Math.max(0, Number(row.refill_qty ?? 0)),
+      if (!opts?.skipAutoSelect) {
+        const need = list.filter((i) => Number(i.refill_qty ?? 0) > 0);
+        setSelectedLines(
+          need.map((row) =>
+            buildLineFromRow(
+              row,
+              Math.max(1, Number(row.refill_qty ?? 0)),
+              Math.max(0, Number(row.refill_qty ?? 0)),
+            ),
           ),
-        ),
-      );
+        );
+      }
     } catch {
       toast.error('โหลดรายการไม่สำเร็จ');
       setItems([]);
       setTotal(0);
       setTotalPages(1);
     } finally {
-      setLoadingList(false);
+      setLoading(false);
     }
   }, [departmentId, cabinetId, mode, page, activeKeyword, buildLineFromRow]);
 
@@ -366,48 +386,35 @@ export function usePrintStickerTab() {
 
   const toggleRow = (row: Item) => {
     const code = row.itemcode;
-    if (mode === 'auto') {
-      const ref = Math.max(0, Number(row.refill_qty ?? 0));
-      if (ref <= 0) return;
-      setSelectedLines((prev) => {
-        const i = prev.findIndex((l) => l.itemcode === code);
-        if (i >= 0) return prev.filter((l) => l.itemcode !== code);
-        return [
-          ...prev,
-          buildLineFromRow(row, Math.max(1, ref), ref),
-        ];
-      });
-      return;
-    }
-
-    const cap = manualRefillCap(row);
+    const cap = printableCapForRow(row);
     setSelectedLines((prev) => {
       const i = prev.findIndex((l) => l.itemcode === code);
       if (i >= 0) return prev.filter((l) => l.itemcode !== code);
-      return [...prev, buildLineFromRow(row, 1, cap)];
+      if (cap <= 0) return prev;
+      return [
+        ...prev,
+        buildLineFromRow(row, mode === 'auto' ? Math.max(1, cap) : 1, cap),
+      ];
     });
   };
 
   const selectAllOnPage = () => {
-    const capFor = mode === 'auto' ? (r: Item) => Math.max(0, Number(r.refill_qty ?? 0)) : manualRefillCap;
+    const capFor = printableCapForRow;
     setSelectedLines((prev) => {
       const have = new Set(prev.map((l) => l.itemcode));
       const next = [...prev];
       for (const row of displayItems) {
-        const ref = mode === 'auto' ? Number(row.refill_qty ?? 0) : 0;
-        if (mode === 'auto' && ref <= 0) continue;
-        if (!have.has(row.itemcode)) {
-          const cap = capFor(row);
-          if (cap <= 0) continue;
-          have.add(row.itemcode);
-          next.push(
-            buildLineFromRow(
-              row,
-              mode === 'auto' ? Math.max(1, ref) : 1,
-              cap,
-            ),
-          );
-        }
+        if (have.has(row.itemcode)) continue;
+        const cap = capFor(row);
+        if (cap <= 0) continue;
+        have.add(row.itemcode);
+        next.push(
+          buildLineFromRow(
+            row,
+            mode === 'auto' ? Math.max(1, cap) : 1,
+            cap,
+          ),
+        );
       }
       return next;
     });
@@ -418,10 +425,11 @@ export function usePrintStickerTab() {
     setSelectedLines((prev) => prev.filter((l) => !onPage.has(l.itemcode)));
   };
 
-  const setCopiesFor = (itemcode: string, raw: number) => {
+  const setCopiesFor = (itemcode: string, raw: number | null) => {
     setSelectedLines((prev) =>
       prev.map((l) => {
         if (l.itemcode !== itemcode) return l;
+        if (raw == null) return { ...l, copies: null };
         return { ...l, copies: clampCopies(raw, l.refillCap) };
       }),
     );
@@ -444,8 +452,28 @@ export function usePrintStickerTab() {
     setSelectedLines((prev) => prev.filter((l) => l.itemcode !== itemcode));
   };
 
+  useEffect(() => {
+    const next = keywordInput.trim();
+    if (next === '') {
+      setActiveKeyword('');
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setActiveKeyword(next);
+      setPage(1);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [keywordInput]);
+
   const handleSearch = () => {
-    setActiveKeyword(keywordInput);
+    const next = keywordInput.trim();
+    setActiveKeyword(next);
+    setPage(1);
+  };
+
+  const handleClearKeyword = () => {
+    setKeywordInput('');
+    setActiveKeyword('');
     setPage(1);
   };
 
@@ -501,6 +529,18 @@ export function usePrintStickerTab() {
     }
     if (selectedLines.length > MAX_PRINT) {
       toast.error(`เลือกได้ไม่เกิน ${MAX_PRINT} รายการต่อครั้ง`);
+      return null;
+    }
+
+    const today = localYmd();
+    const invalidExpire = selectedLines.find((l) => {
+      const copies = clampCopies(l.copies, l.refillCap);
+      if (copies <= 0) return false;
+      const exp = (l.expireDate ?? '').trim();
+      return !exp || exp <= today;
+    });
+    if (invalidExpire) {
+      toast.error(`วันหมดอายุของ ${invalidExpire.itemcode} ต้องมากกว่าวันนี้`);
       return null;
     }
 
@@ -615,6 +655,91 @@ export function usePrintStickerTab() {
     }
   };
 
+  const handlePrepareAndPrint = async () => {
+    const built = buildLinesWithCopies();
+    if (!built) return;
+
+    try {
+      setPreparing(true);
+      const stockRes = await itemStockApi.createForPrintByStock({
+        ...(built.department_id ? { department_id: built.department_id } : {}),
+        lines: built.lines.map(
+          ({ itemcode, stock_id, copies, expire_date, lot_no }) => ({
+            itemcode,
+            stock_id,
+            copies,
+            ...(expire_date ? { expire_date } : {}),
+            ...(lot_no ? { lot_no } : {}),
+          }),
+        ),
+      });
+
+      if (stockRes?.success === false) {
+        const msg =
+          typeof stockRes.message === 'string'
+            ? stockRes.message
+            : stockRes.error ?? 'บันทึก stock ไม่สำเร็จ';
+        toast.error(msg);
+        return;
+      }
+
+      const createdRows = (stockRes?.data?.rows ?? []).map((r) => ({
+        RowID: Number(r.RowID),
+        ItemCode: r.ItemCode ?? null,
+        RfidCode: r.RfidCode ?? null,
+      }));
+
+      const grouped = new Map<string, number>();
+      for (const row of createdRows) {
+        const code = row.ItemCode?.trim();
+        if (!code) continue;
+        grouped.set(code, (grouped.get(code) ?? 0) + 1);
+      }
+      const payloadItems = [...grouped.entries()].map(([itemcode, copies]) => ({ itemcode, copies }));
+      if (payloadItems.length === 0) {
+        toast.error('บันทึกแล้วแต่ไม่มี itemcode ที่พิมพ์ได้');
+        return;
+      }
+
+      setPrinting(true);
+      const res = await stickerPrintApi.printLabelItems({ items: payloadItems });
+      toast.success(res.message, {
+        description: `${res.lineCount} แถว · ${res.count} แผ่น · ${res.totalBytesSent} bytes → ${res.host}:${res.port} · ${res.template} · ${new Date(res.printedAt).toLocaleString('th-TH')}`,
+      });
+
+      const remainingByCode = new Map<string, number>();
+      for (const line of selectedLines) {
+        const printed = grouped.get(line.itemcode) ?? 0;
+        remainingByCode.set(line.itemcode, Math.max(0, line.refillCap - printed));
+      }
+
+      setItems((prev) => applyPrintedCopiesToItems(prev, grouped));
+      setSelectedLines((prev) =>
+        prev.map((l) => {
+          const remaining = remainingByCode.get(l.itemcode) ?? Math.max(0, l.refillCap);
+          return { ...l, refillCap: remaining, copies: remaining };
+        }),
+      );
+      setPreparedRows([]);
+      setSelectedPreparedRowIds([]);
+      void fetchCabinetItems({
+        skipAutoSelect: true,
+        silent: true,
+        remainingByCode,
+      });
+    } catch (e: unknown) {
+      const msg =
+        (e as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message ??
+        (e as Error)?.message ??
+        'พิมพ์สติกเกอร์ไม่สำเร็จ';
+      const text = Array.isArray(msg) ? msg.join(', ') : String(msg);
+      toast.error(text);
+    } finally {
+      setPreparing(false);
+      setPrinting(false);
+    }
+  };
+
   const handlePrint = async () => {
     if (preparedRows.length === 0) {
       toast.error('ยังไม่มีรายการที่บันทึกไว้สำหรับพิมพ์');
@@ -668,9 +793,11 @@ export function usePrintStickerTab() {
 
   const reloadButtonLabel = loadingList
     ? 'กำลังโหลด…'
-    : manualShowsAllItems
-      ? 'โหลดรายการ Item'
-      : 'โหลดรายการจากตู้';
+    : mode === 'auto'
+      ? 'โหลดรายการต่ำกว่า Minimum'
+      : manualShowsAllItems
+        ? 'โหลดรายการ Item'
+        : 'โหลดรายการจากตู้';
 
   const orderEmptyHint =
     mode === 'auto'
@@ -704,6 +831,7 @@ export function usePrintStickerTab() {
     keywordInput,
     setKeywordInput,
     handleSearch,
+    handleClearKeyword,
     handlePageChange,
     selectedItemcodes,
     toggleRow,
@@ -718,6 +846,7 @@ export function usePrintStickerTab() {
     removeLine,
     clearSelectedLines: () => setSelectedLines([]),
     handlePrepare,
+    handlePrepareAndPrint,
     preparedRows,
     selectedPreparedRowIds,
     setSelectedPreparedRowIds,

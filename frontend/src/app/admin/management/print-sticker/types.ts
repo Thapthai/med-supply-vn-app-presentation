@@ -1,7 +1,7 @@
 export type SelectedLine = {
   itemcode: string;
   itemname: string;
-  copies: number;
+  copies: number | null;
   /** stock_id ของตู้ (เช่น 1,2,3) */
   stockId?: string;
   /** backward compatible for staff page (legacy flow) */

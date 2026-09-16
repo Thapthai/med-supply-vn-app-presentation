@@ -1,12 +1,26 @@
 import type { Item } from '@/types/item';
 import { MAX_COPIES_PER_ITEM, MAX_COPIES_WHEN_NO_REFILL } from './constants';
 
-/** จำกัดจำนวนแผ่นให้อยู่ใน 1..maxCap (cap เป็น 0 คืน 0) */
-export function clampCopies(raw: number, maxCap: number): number {
+export function localYmd(d = new Date()): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+export function tomorrowLocalYmd(): string {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 1);
+  return localYmd(d);
+}
+
+/** จำกัดจำนวนแผ่นให้อยู่ใน 0..maxCap (ว่าง/ไม่ใช่ตัวเลข = 0) */
+export function clampCopies(raw: number | null | undefined, maxCap: number): number {
   const cap = Math.max(0, Math.floor(maxCap));
   if (cap <= 0) return 0;
-  if (!Number.isFinite(raw)) return 1;
-  return Math.min(cap, Math.max(1, Math.floor(raw)));
+  if (raw == null || !Number.isFinite(raw)) return 0;
+  return Math.min(cap, Math.max(0, Math.floor(raw)));
 }
 
 /**

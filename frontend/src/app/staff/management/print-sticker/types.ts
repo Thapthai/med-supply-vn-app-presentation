@@ -1,7 +1,7 @@
 export type SelectedLine = {
   itemcode: string;
   itemname: string;
-  copies: number;
+  copies: number | null;
   stockId?: string;
   refillCap: number;
   expireDate: string;

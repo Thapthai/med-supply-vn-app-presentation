@@ -30,7 +30,7 @@ import {
   PAGE_SIZE,
 } from '@/app/staff/management/print-sticker/constants';
 import type { SelectedLine } from '@/app/staff/management/print-sticker/types';
-import { clampCopies } from '@/app/staff/management/print-sticker/utils';
+import { clampCopies, localYmd } from '@/app/staff/management/print-sticker/utils';
 
 type PreparedStockRow = { RowID: number; ItemCode?: string | null; RfidCode?: string | null };
 
@@ -314,9 +314,13 @@ export default function PrintStickerTab() {
     setSelectedLines((prev) => prev.filter((l) => !onPage.has(l.itemcode)));
   };
 
-  const setCopiesFor = (itemcode: string, raw: number) => {
+  const setCopiesFor = (itemcode: string, raw: number | null) => {
     setSelectedLines((prev) =>
-      prev.map((l) => (l.itemcode === itemcode ? { ...l, copies: clampCopies(raw, l.refillCap) } : l)),
+      prev.map((l) => {
+        if (l.itemcode !== itemcode) return l;
+        if (raw == null) return { ...l, copies: null };
+        return { ...l, copies: clampCopies(raw, l.refillCap) };
+      }),
     );
   };
 
@@ -359,6 +363,18 @@ export default function PrintStickerTab() {
     }
     if (selectedLines.length > MAX_PRINT) {
       toast.error(`เลือกได้ไม่เกิน ${MAX_PRINT} รายการต่อครั้ง`);
+      return null;
+    }
+
+    const today = localYmd();
+    const invalidExpire = selectedLines.find((l) => {
+      const copies = clampCopies(l.copies, l.refillCap);
+      if (copies <= 0) return false;
+      const exp = (l.expireDate ?? '').trim();
+      return !exp || exp <= today;
+    });
+    if (invalidExpire) {
+      toast.error(`วันหมดอายุของ ${invalidExpire.itemcode} ต้องมากกว่าวันนี้`);
       return null;
     }
 
