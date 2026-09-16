@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { CalendarClock, Package, Loader2, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 import { formatUtcDateTime } from '@/lib/formatThaiDateTime';
 import { cn } from '@/lib/utils';
+import { DASHBOARD_ROW2_CARD_HEIGHT_CLASS } from '@/app/admin/dashboard/dashboardRow2Layout';
 
 export interface ItemWithExpiry {
   RowID: number;
@@ -36,14 +37,6 @@ function getDaysLeft(expireDate: string | null): number | null {
   return Number.isFinite(diff) ? diff : null;
 }
 
-function formatExpiryLabel(daysLeft: number | null): string {
-  if (daysLeft === null) return '-';
-  if (daysLeft < 0) return 'หมดอายุแล้ว';
-  if (daysLeft === 0) return 'หมดอายุวันนี้';
-  if (daysLeft <= 3) return `เหลือ ${daysLeft} วัน`;
-  return `เหลือ ${daysLeft} วัน`;
-}
-
 export function splitExpiryLists(items: ItemWithExpiry[]) {
   const expired: ItemWithExpiry[] = [];
   const near7: ItemWithExpiry[] = [];
@@ -64,46 +57,36 @@ type ExpiryRowProps = {
 function ExpiryRow({ item, variant }: ExpiryRowProps) {
   const daysLeft = getDaysLeft(getExpiryRaw(item));
   const isUrgentNear = variant === 'near' && daysLeft !== null && daysLeft <= 3;
-  const isExpired = variant === 'expired';
+  const dateLabel =
+    item.วันหมดอายุ || (item.ExpireDate ? formatUtcDateTime(item.ExpireDate) : '-');
+
+  const rowClass = cn(
+    'shrink-0 rounded-lg border px-2 py-1.5 transition-shadow hover:shadow-sm',
+    variant === 'expired' && 'border-red-200/90 bg-red-50/70',
+    variant === 'near' &&
+      (isUrgentNear ? 'border-amber-300/90 bg-amber-50/80' : 'border-amber-200/80 bg-amber-50/60'),
+  );
+  const iconClass = cn(
+    'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white',
+    variant === 'expired' && 'bg-red-600',
+    variant === 'near' && (isUrgentNear ? 'bg-amber-600' : 'bg-amber-500'),
+  );
 
   return (
-    <div
-      className={`rounded-xl border p-3 transition-shadow hover:shadow-md shrink-0 ${
-        isExpired
-          ? 'border-red-200 bg-red-50/80'
-          : isUrgentNear
-            ? 'border-amber-200 bg-amber-50/80'
-            : 'border-slate-200 bg-slate-50/50'
-      }`}
-    >
-      <div className="flex items-start gap-3">
-        <div
-          className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
-            isExpired ? 'bg-red-600 text-white' : isUrgentNear ? 'bg-amber-500 text-white' : 'bg-amber-100 text-amber-700'
-          }`}
-        >
-          <Package className="h-5 w-5" />
+    <div className={rowClass}>
+      <div className="flex items-center gap-2">
+        <div className={iconClass}>
+          <Package className="h-3.5 w-3.5" />
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-slate-900 truncate" title={item.itemname ?? undefined}>
+        <div className="min-w-0 flex-1">
+          <p
+            className="truncate text-xs font-medium leading-tight text-slate-900"
+            title={item.itemname ?? undefined}
+          >
             {item.itemname || item.ItemCode || '-'}
           </p>
-          <p className="text-xs text-slate-500 mt-0.5">
-            {item.department_name || item.cabinet_name || item.ItemCode || '-'}
-          </p>
-          <div className="mt-2 flex items-center justify-between gap-2">
-            <span
-              className={`text-xs font-medium ${
-                isExpired ? 'text-red-700' : isUrgentNear ? 'text-amber-700' : 'text-slate-600'
-              }`}
-            >
-              {formatExpiryLabel(daysLeft)}
-            </span>
-            <span className="text-xs text-slate-400 shrink-0">
-              {item.วันหมดอายุ || (item.ExpireDate ? formatUtcDateTime(item.ExpireDate) : '-')}
-            </span>
-          </div>
         </div>
+        <span className="shrink-0 text-[11px] tabular-nums text-slate-500">{dateLabel}</span>
       </div>
     </div>
   );
@@ -128,27 +111,41 @@ export function ExpiryListCard({ icon, items, emptyLabel, listKey, className }: 
   const safePage = Math.min(page, totalPages);
   const startIdx = (safePage - 1) * EXPIRY_ITEMS_PER_PAGE;
   const paginated = items.slice(startIdx, startIdx + EXPIRY_ITEMS_PER_PAGE);
+  const listFillsPage = paginated.length >= EXPIRY_ITEMS_PER_PAGE;
+  /** รายการหมดอายุ: pagination ล่างการ์ดคงที่ทุกหน้า */
+  const pinPaginationToBottom = listKey === 'expired' || listFillsPage;
 
   return (
-    <Card className={cn('h-full min-h-0 flex flex-col overflow-hidden', className)}>
-      <CardHeader className="pb-3 shrink-0">
-        <CardTitle className="text-sm font-medium flex items-center gap-2">{icon}</CardTitle>
+    <Card
+      className={cn(
+        'flex h-full min-h-0 flex-col gap-0 overflow-hidden border-slate-200/80 py-0 shadow-sm',
+        DASHBOARD_ROW2_CARD_HEIGHT_CLASS,
+        className,
+      )}
+    >
+      <CardHeader className="shrink-0 border-b border-slate-100 bg-slate-50/50 px-4 py-2 sm:px-5 [.border-b]:pb-2">
+        <CardTitle className="flex items-center gap-2 text-sm font-medium text-slate-800">{icon}</CardTitle>
       </CardHeader>
-      <CardContent className="pt-0 flex-1 min-h-0 flex flex-col overflow-hidden">
+      <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-2 pt-1.5 sm:px-5">
         {items.length === 0 ? (
-          <div className="text-center py-6 text-slate-500 text-sm">
+          <div className="flex flex-1 flex-col items-center justify-center py-6 text-center text-sm text-slate-500">
             <Package className="h-8 w-8 mx-auto mb-2 text-slate-300" />
             {emptyLabel}
           </div>
         ) : (
           <>
-            <div className="space-y-2 overflow-y-auto flex-1 min-h-0 pr-1">
+            <div className="max-h-full shrink-0 space-y-1.5 overflow-y-auto pr-1">
               {paginated.map((item) => (
                 <ExpiryRow key={`${listKey}-${item.RowID}-${item.ItemCode}`} item={item} variant={listKey} />
               ))}
             </div>
-            {totalPages > 1 && (
-              <div className="shrink-0 flex items-center justify-between border-t pt-3 mt-3">
+            {totalPages > 1 ? (
+              <div
+                className={cn(
+                  'flex shrink-0 items-center justify-between border-t border-slate-100 pb-0 pt-1',
+                  pinPaginationToBottom && 'mt-auto',
+                )}
+              >
                 <span className="text-xs text-slate-500">
                   หน้า {safePage} จาก {totalPages}
                 </span>
@@ -173,7 +170,9 @@ export function ExpiryListCard({ icon, items, emptyLabel, listKey, className }: 
                   </Button>
                 </div>
               </div>
-            )}
+            ) : pinPaginationToBottom ? (
+              <div className="mt-auto min-h-0 shrink-0" aria-hidden />
+            ) : null}
           </>
         )}
       </CardContent>

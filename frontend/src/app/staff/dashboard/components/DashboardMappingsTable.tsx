@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Package } from "lucide-react";
 import CabinetDetailsCard from "@/app/staff/cabinet-departments/components/CabinetDetailsCard";
+import { DASHBOARD_ROW2_CARD_HEIGHT_CLASS } from '@/app/admin/dashboard/dashboardRow2Layout';
 
 export interface CabinetDepartment {
   id: number;
@@ -46,16 +47,18 @@ export default function DashboardMappingsTable({ mappings, loading }: DashboardM
 
   return (
     <>
-      <Card className="border-slate-200/80 shadow-sm overflow-hidden rounded-xl h-full min-h-0 flex flex-col">
-        <CardHeader className="flex shrink-0 flex-row items-start justify-between space-y-0 gap-4 border-b border-slate-100 bg-slate-50/50 pb-2">
-          <CardTitle className="text-slate-800 flex items-center gap-2">
-            <Package className="h-5 w-5 text-blue-600" />
+      <Card
+        className={`flex h-full min-h-0 flex-1 flex-col gap-0 overflow-hidden rounded-xl border-slate-200/80 py-0 shadow-sm ${DASHBOARD_ROW2_CARD_HEIGHT_CLASS}`}
+      >
+        <CardHeader className="flex shrink-0 flex-row items-center justify-between space-y-0 gap-2 border-b border-slate-100 bg-slate-50/50 px-4 py-2.5 sm:px-5 [.border-b]:pb-2.5">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-slate-800">
+            <Package className="h-4 w-4 text-blue-600" />
             รายการเชื่อมโยง ({mappings.length})
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 min-h-0 overflow-auto px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
+        <CardContent className="flex min-h-0 flex-1 flex-col justify-start px-4 pb-1.5 pt-2 sm:px-5">
           {loading ? (
-            <div className="flex items-center justify-center py-12">
+            <div className="flex flex-1 items-center justify-center py-12">
               <div className="text-center">
                 <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
                 <p className="mt-2 text-sm text-gray-600">กำลังโหลด...</p>
@@ -63,7 +66,7 @@ export default function DashboardMappingsTable({ mappings, loading }: DashboardM
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto rounded-b-xl">
+              <div className="max-h-full shrink-0 overflow-x-auto overflow-y-auto rounded-b-xl">
                 <Table>
                   <TableHeader>
                     <TableRow className="border-b border-slate-200 bg-slate-100/80 hover:bg-slate-100/80">

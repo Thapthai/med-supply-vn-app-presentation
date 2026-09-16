@@ -15,6 +15,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import DashboardMappingsTable, { type CabinetDepartment } from './components/DashboardMappingsTable';
 import DispensedVsUsageChartCard from './components/DispensedVsUsageChartCard';
 import CabinetTempHumChartCard from './components/CabinetTempHumChartCard';
+import { DASHBOARD_ROW2_CARD_HEIGHT_CLASS } from '@/app/admin/dashboard/dashboardRow2Layout';
 
 export default function DashboardPage() {
   const [mappings, setMappings] = useState<CabinetDepartment[]>([]);
@@ -154,47 +155,55 @@ export default function DashboardPage() {
             loading={loadingStats}
           />
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
-          <div className="lg:col-span-2 min-h-0 h-full">
+        <div
+          className={`grid grid-cols-1 gap-6 items-stretch lg:grid-cols-4 lg:items-stretch ${DASHBOARD_ROW2_CARD_HEIGHT_CLASS}`}
+        >
+          <div className={`flex min-h-0 h-full flex-col lg:col-span-2 ${DASHBOARD_ROW2_CARD_HEIGHT_CLASS}`}>
             <DashboardMappingsTable mappings={mappings} loading={loadingMappings} />
           </div>
           {loadingStats ? (
             <>
-              <Card className="h-full min-h-0">
-                <CardContent className="h-full flex items-center justify-center py-8">
+              <Card className={`flex h-full min-h-0 flex-col gap-0 py-0 ${DASHBOARD_ROW2_CARD_HEIGHT_CLASS}`}>
+                <CardContent className="flex flex-1 items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
                 </CardContent>
               </Card>
-              <Card className="h-full min-h-0">
-                <CardContent className="h-full flex items-center justify-center py-8">
+              <Card className={`flex h-full min-h-0 flex-col gap-0 py-0 ${DASHBOARD_ROW2_CARD_HEIGHT_CLASS}`}>
+                <CardContent className="flex flex-1 items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
                 </CardContent>
               </Card>
             </>
           ) : (
             <>
-              <ExpiryListCard
-                icon={
-                  <>
-                    <AlertCircle className="h-4 w-4 text-red-600" />
-                    <span>รายการหมดอายุ</span>
-                  </>
-                }
-                items={expired}
-                emptyLabel="ไม่มีรายการหมดอายุ"
-                listKey="expired"
-              />
-              <ExpiryListCard
-                icon={
-                  <>
-                    <CalendarClock className="h-4 w-4 text-amber-600" />
-                    <span>รายการใกล้หมดอายุ 7 วัน</span>
-                  </>
-                }
-                items={near7}
-                emptyLabel="ไม่มีรายการใกล้หมดอายุภายใน 7 วัน"
-                listKey="near"
-              />
+              <div className={`flex min-h-0 h-full flex-col ${DASHBOARD_ROW2_CARD_HEIGHT_CLASS}`}>
+                <ExpiryListCard
+                  icon={
+                    <>
+                      <AlertCircle className="h-4 w-4 text-red-600" />
+                      <span>รายการหมดอายุ</span>
+                    </>
+                  }
+                  items={expired}
+                  emptyLabel="ไม่มีรายการหมดอายุ"
+                  listKey="expired"
+                  className="flex-1"
+                />
+              </div>
+              <div className={`flex min-h-0 h-full flex-col ${DASHBOARD_ROW2_CARD_HEIGHT_CLASS}`}>
+                <ExpiryListCard
+                  icon={
+                    <>
+                      <CalendarClock className="h-4 w-4 text-amber-600" />
+                      <span>รายการใกล้หมดอายุ 7 วัน</span>
+                    </>
+                  }
+                  items={near7}
+                  emptyLabel="ไม่มีรายการใกล้หมดอายุภายใน 7 วัน"
+                  listKey="near"
+                  className="flex-1"
+                />
+              </div>
             </>
           )}
         </div>
