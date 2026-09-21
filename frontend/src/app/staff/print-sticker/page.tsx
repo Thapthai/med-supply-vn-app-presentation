@@ -81,8 +81,15 @@ export default function StaffPrintStickerPage() {
     () => ({
       listHistory: staffStickerPrintApi.listHistory,
       getDepartments: async (keyword) => {
-        const data = await fetchStaffDepartmentsForFilter({ keyword, limit: 80 });
-        return { success: true, data };
+        const rows = await fetchStaffDepartmentsForFilter({ keyword, limit: 80 });
+        return {
+          success: true,
+          data: rows.map((d) => ({
+            ID: d.ID,
+            DepName: d.DepName ?? undefined,
+            DepName2: d.DepName2 ?? undefined,
+          })),
+        };
       },
       getCabinetMappings: ({ departmentId, keyword }) =>
         staffCabinetDepartmentApi.getAll({
