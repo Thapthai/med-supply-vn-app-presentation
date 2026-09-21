@@ -113,19 +113,8 @@ export function formatPrintDateTimeForReport(
   const parts: string[] = [];
   if (datePart) {
     if (/^\d{4}-\d{2}-\d{2}/.test(datePart)) {
-      const d = new Date(datePart.includes('T') ? datePart : `${datePart}T00:00:00.000Z`);
-      if (!Number.isNaN(d.getTime())) {
-        parts.push(
-          d.toLocaleDateString('th-TH', {
-            timeZone: 'UTC',
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-          }),
-        );
-      } else {
-        parts.push(datePart);
-      }
+      const [y, m, day] = datePart.slice(0, 10).split('-');
+      parts.push(y && m && day ? `${day}/${m}/${y}` : datePart);
     } else {
       parts.push(datePart);
     }

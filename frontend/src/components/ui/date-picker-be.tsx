@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { createPortal } from 'react-dom';
-import { formatCEToDMY, parseDMYToCE } from '@/lib/datePickerBE';
+import { formatCEToDMY, maskDigitsToDMY, parseDMYToCE } from '@/lib/datePickerBE';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { CalendarIcon } from 'lucide-react';
@@ -27,7 +27,7 @@ interface DatePickerBEProps {
 export function DatePickerBE({
   value,
   onChange,
-  placeholder = 'วว/ดด/ปปปป (ค.ศ.)',
+  placeholder = 'เลือกวันที่',
   className,
   id,
   disabled,
@@ -89,12 +89,19 @@ export function DatePickerBE({
     setInputText(formatCEToDMY(value));
   }, [value]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value;
-    setInputText(v);
-  };
-
   const isBeforeMin = (ce: string) => Boolean(minDate && ce < minDate);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const masked = maskDigitsToDMY(e.target.value);
+    setInputText(masked);
+    const digits = masked.replace(/\D/g, '');
+    if (digits.length === 8) {
+      const ce = parseDMYToCE(masked);
+      if (ce && !isBeforeMin(ce)) onChange(ce);
+    } else if (!masked) {
+      onChange('');
+    }
+  };
 
   const handleBlur = () => {
     const ce = parseDMYToCE(inputText);

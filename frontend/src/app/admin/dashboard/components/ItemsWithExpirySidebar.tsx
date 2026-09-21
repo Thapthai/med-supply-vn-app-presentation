@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect, type ReactNode } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CalendarClock, Package, Loader2, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
-import { formatUtcDateTime } from '@/lib/formatThaiDateTime';
+import { formatUtcDateTime, formatYyyyMmDdThaiUtc } from '@/lib/formatThaiDateTime';
 import { cn } from '@/lib/utils';
 import { DASHBOARD_ROW2_CARD_HEIGHT_CLASS } from '@/app/admin/dashboard/dashboardRow2Layout';
 
@@ -57,8 +57,11 @@ type ExpiryRowProps = {
 function ExpiryRow({ item, variant }: ExpiryRowProps) {
   const daysLeft = getDaysLeft(getExpiryRaw(item));
   const isUrgentNear = variant === 'near' && daysLeft !== null && daysLeft <= 3;
-  const dateLabel =
-    item.วันหมดอายุ || (item.ExpireDate ? formatUtcDateTime(item.ExpireDate) : '-');
+  const dateLabel = item.วันหมดอายุ
+    ? formatYyyyMmDdThaiUtc(item.วันหมดอายุ)
+    : item.ExpireDate
+      ? formatUtcDateTime(item.ExpireDate, { hour: undefined, minute: undefined })
+      : '-';
 
   const rowClass = cn(
     'shrink-0 rounded-lg border px-2 py-1.5 transition-shadow hover:shadow-sm',

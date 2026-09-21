@@ -6,6 +6,7 @@ import {
   CabinetTempHumReportRow,
 } from './cabinet-temp-hum-report-excel.service';
 import { resolveReportLogoPath, getReportThaiFontPaths } from '../config/report.config';
+import { formatReportDateOnly } from '../utils/date-timeformat';
 
 function daysInMonth(year: number, month: number) {
   return new Date(Date.UTC(year, month, 0)).getUTCDate();
@@ -105,12 +106,7 @@ export class CabinetTempHumReportPdfService {
     }
 
     const logoBuffer = this.getLogoBuffer();
-    const reportDate = new Date().toLocaleDateString('th-TH', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'Asia/Bangkok',
-    });
+    const reportDate = formatReportDateOnly(new Date());
 
     return new Promise((resolve, reject) => {
       doc.on('end', () => resolve(Buffer.concat(chunks)));

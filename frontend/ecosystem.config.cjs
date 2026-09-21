@@ -51,6 +51,7 @@ const fileEnv = {
 const passthroughKeys = [
   'NEXTAUTH_URL',
   'NEXTAUTH_SECRET',
+  'AUTH_TRUST_HOST',
   'NEXT_PUBLIC_BASE_PATH',
   'NEXT_PUBLIC_API_URL',
   'BACKEND_API_URL',

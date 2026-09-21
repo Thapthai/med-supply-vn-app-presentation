@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import type { RfidStockLine } from '../items-stock-shared';
 import {
   formatExpireRelativeLabel,
-  formatYmd,
+  formatYmdDisplay,
   itemsStockStatusKeyLabelTh,
   rfidLineBadge,
 } from '../items-stock-shared';
@@ -168,7 +168,7 @@ export function RfidTagLinesPanel({
               <p className="break-all font-mono text-xs leading-relaxed text-gray-900">{line.rfidCode}</p>
               <div className="mt-2 flex items-center justify-between gap-2">
                 <div className={cn('text-sm tabular-nums', expCls)}>
-                  <span>{formatYmd(line.expireDate)}</span>
+                  <span>{formatYmdDisplay(line.expireDate)}</span>
                   {rel ? <span className={cn('ml-1 text-xs font-normal', relCls)}>({rel})</span> : null}
                 </div>
                 <span

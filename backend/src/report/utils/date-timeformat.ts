@@ -1,24 +1,34 @@
 /**
- * แสดงวันเวลาแบบไทย เช่น 2026-03-20T08:38:04.559Z → "20 มี.ค. 2569 08:38:04"
- * - ISO ที่มี Z หรือ offset → แสดงตามเวลาใน ISO (UTC) + พ.ศ.
+ * แสดงวันเวลาในรายงานเป็น DD/MM/YYYY (ปี ค.ศ. ตรงกับค่าใน API/DB) เช่น
+ * 2026-03-20T08:38:04.559Z → "20/03/2026 08:38:04"
+ * - ISO ที่มี Z หรือ offset → แสดงตามเวลาใน ISO (UTC)
  * - สตริงวันเวลาไม่มี timezone → ถือเป็นเวลาไทย (+07:00)
  */
-const TH_DATETIME_OPTS: Intl.DateTimeFormatOptions = {
-  calendar: 'buddhist',
+const DMY_DATETIME_OPTS: Intl.DateTimeFormatOptions = {
   year: 'numeric',
-  month: 'short',
-  day: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
   hour: '2-digit',
   minute: '2-digit',
   second: '2-digit',
-  hour12: false,
+  hourCycle: 'h23',
 };
+
+function localeDateTime(d: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    ...DMY_DATETIME_OPTS,
+    timeZone,
+  }).formatToParts(d);
+  const part = (type: Intl.DateTimeFormatPartTypes): string =>
+    parts.find((p) => p.type === type)?.value ?? '';
+  return `${part('day')}/${part('month')}/${part('year')} ${part('hour')}:${part('minute')}:${part('second')}`;
+}
 
 export function formatDate(v: string | Date | null | undefined): string {
   if (v == null || v === '') return '-';
   if (v instanceof Date) {
     if (Number.isNaN(v.getTime())) return '-';
-    return v.toLocaleString('th-TH', { ...TH_DATETIME_OPTS, timeZone: 'Asia/Bangkok' });
+    return localeDateTime(v, 'Asia/Bangkok');
   }
   const s = String(v).trim();
   if (!s) return '-';
@@ -27,7 +37,7 @@ export function formatDate(v: string | Date | null | undefined): string {
   if (hasExplicitTz) {
     d = new Date(s);
     if (Number.isNaN(d.getTime())) return s;
-    return d.toLocaleString('th-TH', { ...TH_DATETIME_OPTS, timeZone: 'UTC' });
+    return localeDateTime(d, 'UTC');
   }
   if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(s)) {
     const normalized = s.includes('T') ? s : s.replace(' ', 'T');
@@ -36,21 +46,22 @@ export function formatDate(v: string | Date | null | undefined): string {
     d = new Date(s);
   }
   if (Number.isNaN(d.getTime())) return s;
-  return d.toLocaleString('th-TH', { ...TH_DATETIME_OPTS, timeZone: 'Asia/Bangkok' });
+  return localeDateTime(d, 'Asia/Bangkok');
 }
 
 /** alias สำหรับรายงาน (ชื่อสื่อความหมายเดียวกับ formatDate) */
 export const formatReportDateTime = formatDate;
 
-const TH_DATE_ONLY_OPTS: Intl.DateTimeFormatOptions = {
-  calendar: 'buddhist',
-  year: 'numeric',
-  month: 'short',
-  day: 'numeric',
-};
-
 function localeDateOnly(d: Date, timeZone: string): string {
-  return d.toLocaleDateString('th-TH', { ...TH_DATE_ONLY_OPTS, timeZone });
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone,
+  }).formatToParts(d);
+  const part = (type: Intl.DateTimeFormatPartTypes): string =>
+    parts.find((p) => p.type === type)?.value ?? '';
+  return `${part('day')}/${part('month')}/${part('year')}`;
 }
 
 /** วันที่อย่างเดียว (ไม่มีเวลา) — สำหรับ filter วันที่เริ่ม/สิ้นสุด ฯลฯ */
@@ -85,18 +96,20 @@ export function formatReportDateOnly(value?: string | Date | null): string {
   return localeDateOnly(d, 'Asia/Bangkok');
 }
 
-const BE_OFFSET = 543;
+function pad2(n: number): string {
+  return String(n).padStart(2, '0');
+}
 
 /**
- * วันที่แบบ d/m/Y (พ.ศ. = ค.ศ. + 543) — ตรงกับ frontend formatCEToBEDMY
+ * วันที่แบบ DD/MM/YYYY (ค.ศ.) — ตรงกับ frontend formatCEToDMY
  * รองรับ YYYY-MM-DD จาก API และ Date object
  */
-export function formatReportDateSlashBE(value?: string | Date | null): string {
+export function formatReportDateSlashDMY(value?: string | Date | null): string {
   if (value == null || value === '') return '-';
   if (value instanceof Date) {
     if (Number.isNaN(value.getTime())) return '-';
     const iso = value.toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
-    return formatReportDateSlashBE(iso);
+    return formatReportDateSlashDMY(iso);
   }
   const s = String(value).trim();
   if (!s) return '-';
@@ -107,7 +120,7 @@ export function formatReportDateSlashBE(value?: string | Date | null): string {
     const month = parseInt(m!, 10);
     const day = parseInt(d!, 10);
     if (Number.isNaN(yearCE) || Number.isNaN(month) || Number.isNaN(day)) return s;
-    return `${day}/${month}/${yearCE + BE_OFFSET}`;
+    return `${pad2(day)}/${pad2(month)}/${yearCE}`;
   }
   const slashMatch = /^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})/.exec(s);
   if (slashMatch) {
@@ -115,17 +128,20 @@ export function formatReportDateSlashBE(value?: string | Date | null): string {
     const day = parseInt(d!, 10);
     const month = parseInt(m!, 10);
     let year = parseInt(y!, 10);
-    if (year <= 99) year = 2500 + year;
-    else if (year >= 1900 && year < 2400) year += BE_OFFSET;
+    if (year <= 99) year = 2000 + year;
+    else if (year >= 2400) year -= 543;
     if (Number.isNaN(day) || Number.isNaN(month) || Number.isNaN(year)) return s;
-    return `${day}/${month}/${year}`;
+    return `${pad2(day)}/${pad2(month)}/${year}`;
   }
   const parsed = new Date(s);
   if (!Number.isNaN(parsed.getTime())) {
-    return formatReportDateSlashBE(parsed);
+    return formatReportDateSlashDMY(parsed);
   }
   return s;
 }
+
+/** @deprecated ชื่อเดิมสมัยแสดงปี พ.ศ. — ตอนนี้คืนค่า DD/MM/YYYY (ค.ศ.) */
+export const formatReportDateSlashBE = formatReportDateSlashDMY;
 
 // --- แยกจากของเดิม: ค่า `Date` / DB เก็บเป็น UTC ให้แสดงตาม UTC (ไม่เลื่อนเป็น Asia/Bangkok) ---
 
@@ -164,7 +180,7 @@ export function formatReportDateTimeUtc(
   if (v == null || v === '') return '-';
   const d = parseInputForUtcDisplay(v as string | Date);
   if (d == null) return typeof v === 'string' ? v : '-';
-  return d.toLocaleString('th-TH', { ...TH_DATETIME_OPTS, timeZone: 'UTC' });
+  return localeDateTime(d, 'UTC');
 }
 
 /**

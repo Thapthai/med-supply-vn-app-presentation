@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
 import { applyExcelStandardTitleHeader } from '../utils/excel-report-header.util';
-import { formatReportDateSlashBE, formatReportDateTimeUtc } from '../utils/date-timeformat';
+import { formatReportDateOnly, formatReportDateSlashBE, formatReportDateTimeUtc } from '../utils/date-timeformat';
 import { formatQtyWithMainUnitForReport } from '../utils/format-item-qty';
 
 export interface DispensedItemRow {
@@ -84,12 +84,7 @@ export class DispensedItemsExcelService {
       properties: { defaultRowHeight: 20 },
     });
 
-    const reportDate = new Date().toLocaleDateString('th-TH', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'Asia/Bangkok',
-    });
+    const reportDate = formatReportDateOnly(new Date());
 
     applyExcelStandardTitleHeader(worksheet, workbook, {
       mergeRange: 'A1:I2',

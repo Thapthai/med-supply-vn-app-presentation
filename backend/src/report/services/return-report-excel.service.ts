@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
 import { applyExcelStandardTitleHeader } from '../utils/excel-report-header.util';
-import { formatReportDateSlashBE, formatReportDateTimeUtc } from '../utils/date-timeformat';
+import { formatReportDateOnly, formatReportDateSlashBE, formatReportDateTimeUtc } from '../utils/date-timeformat';
 
 function formatFilterDateSlashBE(v?: string | null): string {
   if (v == null || String(v).trim() === '') return 'ทั้งหมด';
@@ -94,12 +94,7 @@ export class ReturnReportExcelService {
       properties: { defaultRowHeight: 20 },
     });
 
-    const reportDate = new Date().toLocaleDateString('th-TH', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'Asia/Bangkok',
-    });
+    const reportDate = formatReportDateOnly(new Date());
 
     applyExcelStandardTitleHeader(worksheet, workbook, {
       mergeRange: 'A1:I2',

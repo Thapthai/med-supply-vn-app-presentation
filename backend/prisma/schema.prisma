@@ -47,6 +47,7 @@ model User {
   employee                    Employee?                    @relation(fields: [emp_code], references: [EmpCode])
   staffPermissionDepartments  StaffPermissionDepartment[]
   departmentDispenseDocuments DepartmentDispenseDocument[]
+  stickerPrintHistories       StickerPrintHistory[]
 
   @@map("app_users")
 }
@@ -663,6 +664,7 @@ model Department {
   staffPermissionDepartments  StaffPermissionDepartment[]
   itemDepartments             ItemDepartments[]
   departmentDispenseDocuments DepartmentDispenseDocument[]
+  stickerPrintHistories       StickerPrintHistory[]
 
   @@map("department")
 }
@@ -683,6 +685,7 @@ model cabinet {
   cabinetItemSettings     CabinetItemSetting[]
   itemSlotInCabinet       ItemSlotInCabinet[]
   cabinetSlotLocations    CabinetSlotLocation[]
+  stickerPrintHistories   StickerPrintHistory[]
 
   @@map("app_cabinets")
 }
@@ -926,6 +929,59 @@ model DepartmentDispenseDocumentLine {
   @@index([document_id])
   @@index([itemcode])
   @@map("app_department_dispense_document_lines")
+}
+
+/// ประวัติการพิมพ์สติ๊กเกอร์ (หนึ่งครั้งต่อคำสั่งพิมพ์)
+model StickerPrintHistory {
+  id                 Int      @id @default(autoincrement())
+  printed_at         DateTime @default(now()) @map("printed_at") @db.DateTime(3)
+  printed_by_user_id Int?     @map("printed_by_user_id")
+  /// printLabel | printLabel-item | printLabel-items | manual
+  source             String   @map("source") @db.VarChar(32)
+  host               String?  @map("host") @db.VarChar(128)
+  port               Int?     @map("port")
+  template           String?  @map("template") @db.VarChar(64)
+  department_id      Int?     @map("department_id")
+  cabinet_id         Int?     @map("cabinet_id")
+  /// snapshot ชื่อตอนพิมพ์ — แม้แผนก/ตู้ถูกแก้ชื่อภายหลัง
+  department_name    String?  @map("department_name") @db.VarChar(200)
+  cabinet_name       String?  @map("cabinet_name") @db.VarChar(255)
+  line_count         Int      @default(0) @map("line_count")
+  total_copies       Int      @default(0) @map("total_copies")
+  total_bytes_sent   Int      @default(0) @map("total_bytes_sent")
+  status             String   @default("SUCCESS") @map("status") @db.VarChar(16)
+  remark             String?  @map("remark") @db.VarChar(512)
+  created_at         DateTime @default(now()) @map("created_at") @db.DateTime(3)
+
+  printedBy  User?                     @relation(fields: [printed_by_user_id], references: [id], onDelete: SetNull)
+  department Department?               @relation(fields: [department_id], references: [ID], onDelete: SetNull)
+  cabinet    cabinet?                  @relation(fields: [cabinet_id], references: [id], onDelete: SetNull)
+  lines      StickerPrintHistoryLine[]
+
+  @@index([printed_at(sort: Desc)])
+  @@index([printed_by_user_id])
+  @@index([status])
+  @@index([source])
+  @@index([department_id])
+  @@index([cabinet_id])
+  @@map("app_sticker_print_histories")
+}
+
+model StickerPrintHistoryLine {
+  id          Int     @id @default(autoincrement())
+  history_id  Int     @map("history_id")
+  line_order  Int     @default(0) @map("line_order")
+  itemcode    String  @map("itemcode") @db.VarChar(25)
+  item_name   String? @map("item_name") @db.VarChar(255)
+  copies      Int     @default(1) @map("copies")
+  expire_date String? @map("expire_date") @db.VarChar(10)
+  bytes_sent  Int     @default(0) @map("bytes_sent")
+
+  history StickerPrintHistory @relation(fields: [history_id], references: [id], onDelete: Cascade)
+
+  @@index([history_id])
+  @@index([itemcode])
+  @@map("app_sticker_print_history_lines")
 }
 
 /// หน่วยนับ (เช่น ชิ้น, กล่อง) — ตาราง `unit`

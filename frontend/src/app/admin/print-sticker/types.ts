@@ -40,6 +40,47 @@ export type SelectOption = {
   subLabel?: string;
 };
 
+export type StickerPrintHistoryLine = {
+  id: number;
+  history_id: number;
+  line_order: number;
+  itemcode: string;
+  item_name?: string | null;
+  copies: number;
+  expire_date?: string | null;
+  bytes_sent: number;
+};
+
+export type StickerPrintHistoryRow = {
+  id: number;
+  printed_at: string;
+  printed_by_user_id?: number | null;
+  source: string;
+  host?: string | null;
+  port?: number | null;
+  template?: string | null;
+  line_count: number;
+  total_copies: number;
+  total_bytes_sent: number;
+  status: string;
+  remark?: string | null;
+  created_at: string;
+  printedBy?: {
+    id: number;
+    email: string;
+    fname?: string | null;
+    lname?: string | null;
+  } | null;
+  department_id?: number | null;
+  cabinet_id?: number | null;
+  department_name?: string | null;
+  cabinet_name?: string | null;
+  department?: { ID: number; DepName?: string | null; DepName2?: string | null } | null;
+  cabinet?: { id: number; cabinet_name?: string | null; cabinet_code?: string | null } | null;
+  lines: StickerPrintHistoryLine[];
+};
+
+
 export type PrintStickerTabState = {
   mode: PrintMode;
   setMode: (mode: PrintMode) => void;

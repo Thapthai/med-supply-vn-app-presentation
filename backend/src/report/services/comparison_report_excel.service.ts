@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
 import { ComparisonReportData } from '../types/comparison-report.types';
 import { applyExcelStandardTitleHeader } from '../utils/excel-report-header.util';
+import { formatReportDateTime } from '../utils/date-timeformat';
 
 export type { ComparisonReportData };
 
@@ -55,7 +56,7 @@ export class ComparisonReportExcelService {
     if (data.usage.en) patientDetails.push(['EN:', data.usage.en]);
     if (data.usage.department_code) patientDetails.push(['แผนก (Department):', data.usage.department_code]);
     if (data.usage.usage_datetime) {
-      patientDetails.push(['วันที่เบิก (Date):', new Date(data.usage.usage_datetime).toLocaleString('th-TH')]);
+      patientDetails.push(['วันที่เบิก (Date):', formatReportDateTime(data.usage.usage_datetime)]);
     }
 
     patientDetails.forEach((detail) => {
@@ -312,14 +313,7 @@ export class ComparisonReportExcelService {
     worksheet.addRow([]); // Empty row
     
     const footerRow = worksheet.addRow([
-      `สร้างรายงานเมื่อ: ${new Date().toLocaleString('th-TH', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric', 
-        hour: '2-digit', 
-        minute: '2-digit',
-        second: '2-digit'
-      })}`
+      `สร้างรายงานเมื่อ: ${formatReportDateTime(new Date())}`
     ]);
     worksheet.mergeCells(`A${footerRow.number}:I${footerRow.number}`);
     footerRow.height = 22;

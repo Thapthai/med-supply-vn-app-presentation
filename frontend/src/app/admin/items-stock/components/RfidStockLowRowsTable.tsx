@@ -9,7 +9,7 @@ import type { ItemSlotInCabinetRow, RfidStockLine } from '../items-stock-shared'
 import {
   filterRfidStockLinesForToolbar,
   formatExpireRelativeLabel,
-  formatYmd,
+  formatYmdDisplay,
   itemsStockStatusKeyLabelTh,
   rowBadge,
   rowFlags,
@@ -97,7 +97,7 @@ export default function RfidStockLowRowsTable({
                     </TableCell>
                     <TableCell className={cn('tabular-nums', nameDateClass)}>
                       <div className="flex flex-col gap-0.5">
-                        <span>{formatYmd(row.nearestExpireDate)}</span>
+                        <span>{formatYmdDisplay(row.nearestExpireDate)}</span>
                         {expireRel && (
                           <span
                             className={cn(

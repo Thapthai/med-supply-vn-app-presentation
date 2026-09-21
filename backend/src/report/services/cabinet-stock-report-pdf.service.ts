@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import { CabinetStockReportData, CabinetStockRow } from './cabinet-stock-report-excel.service';
 import { resolveCabinetStockShowRowHighlight, CABINET_STOCK_NEUTRAL_ROW_BG } from '../utils/cabinet-stock-row-highlight.util';
 import { resolveReportLogoPath, getReportThaiFontPaths } from '../config/report.config';
+import { formatReportDateOnly } from '../utils/date-timeformat';
 import {
   formatQtyWithMainUnitForReport,
   formatQtyPlainForReport,
@@ -65,12 +66,7 @@ export class CabinetStockReportPdfService {
     const logoBuffer = this.getLogoBuffer();
     const reportDate =
       data.reportDateDisplay ??
-      new Date().toLocaleDateString('th-TH', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        timeZone: 'Asia/Bangkok',
-      });
+      formatReportDateOnly(new Date());
 
     return new Promise((resolve, reject) => {
       doc.on('end', () => resolve(Buffer.concat(chunks)));

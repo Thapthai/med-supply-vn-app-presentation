@@ -3,6 +3,7 @@ import PDFDocument from 'pdfkit';
 import * as fs from 'fs';
 import { ComparisonReportData } from '../types/comparison-report.types';
 import { getReportThaiFontPaths } from '../config/report.config';
+import { formatReportDateTime } from '../utils/date-timeformat';
 
 export type { ComparisonReportData };
 
@@ -138,7 +139,7 @@ export class ComparisonReportPdfService {
          .text('วันที่:', leftColX, currentY + lineHeight * 2);
       doc.font(finalFontName)
          .fillColor('#333333')
-         .text(data.usage.usage_datetime ? new Date(data.usage.usage_datetime).toLocaleString('th-TH') : '-', leftColX + labelWidth, currentY + lineHeight * 2);
+         .text(data.usage.usage_datetime ? formatReportDateTime(data.usage.usage_datetime) : '-', leftColX + labelWidth, currentY + lineHeight * 2);
       
       doc.font(finalFontBoldName)
          .fillColor('#2C3E50')
@@ -349,7 +350,7 @@ export class ComparisonReportPdfService {
       doc.fontSize(8)
          .font(finalFontName)
          .fillColor('#7F8C8D')
-         .text(`สร้างเมื่อ: ${new Date().toLocaleString('th-TH')}`, 35, footerY, { 
+         .text(`สร้างเมื่อ: ${formatReportDateTime(new Date())}`, 35, footerY, { 
            align: 'center', 
            width: doc.page.width - 70 
          });

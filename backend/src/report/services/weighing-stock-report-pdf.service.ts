@@ -5,6 +5,7 @@ import {
   WeighingStockReportData,
 } from './weighing-stock-report-excel.service';
 import { resolveReportLogoPath, getReportThaiFontPaths } from '../config/report.config';
+import { formatReportDateOnly } from '../utils/date-timeformat';
 
 @Injectable()
 export class WeighingStockReportPdfService {
@@ -55,12 +56,7 @@ export class WeighingStockReportPdfService {
     }
 
     const logoBuffer = this.getLogoBuffer();
-    const reportDate = new Date().toLocaleDateString('th-TH', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'Asia/Bangkok',
-    });
+    const reportDate = formatReportDateOnly(new Date());
 
     return new Promise((resolve, reject) => {
       doc.on('end', () => resolve(Buffer.concat(chunks)));

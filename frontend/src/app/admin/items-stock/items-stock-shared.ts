@@ -80,6 +80,15 @@ export function formatYmd(value: string | Date | null | undefined): string {
   return `${y}-${m}-${day}`;
 }
 
+/** แสดงวันหมดอายุบนหน้าจอเป็น DD/MM/YYYY — อย่าใช้เทียบ API (ใช้ formatYmd) */
+export function formatYmdDisplay(value: string | Date | null | undefined): string {
+  const iso = formatYmd(value);
+  if (iso === '—') return '—';
+  const [y, m, day] = iso.split('-');
+  if (!y || !m || !day) return iso;
+  return `${day}/${m}/${y}`;
+}
+
 /** จำนวนวันเต็มระหว่างวันนี้กับวันหมดอายุ (ตามปฏิทิน) — บวก = ยังเหลือ, ลบ = เกินแล้ว */
 export function expireDayDeltaFromToday(value: string | Date | null | undefined): number | null {
   if (value == null) return null;

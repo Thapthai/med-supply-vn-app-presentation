@@ -166,7 +166,7 @@ export default function WeighingRefillPage() {
     const h = String(date.getUTCHours()).padStart(2, '0');
     const min = String(date.getUTCMinutes()).padStart(2, '0');
     const sec = String(date.getUTCSeconds()).padStart(2, '0');
-    return `${y}-${m}-${day} ${h}:${min}:${sec}`;
+    return `${day}/${m}/${y} ${h}:${min}:${sec}`;
   };
 
   const handleDownloadWeighingRefillExcel = async () => {

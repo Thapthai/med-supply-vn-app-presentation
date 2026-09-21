@@ -259,6 +259,8 @@ export default function ItemsPage() {
     try {
       const printRes = await stickerPrintApi.printLabelItems({
         items: [{ itemcode: item.itemcode, copies: safeCopies }],
+        department_id: deptId,
+        cabinet_id: cabId,
       });
 
       const stockRes = await itemStockApi.createForPrint({

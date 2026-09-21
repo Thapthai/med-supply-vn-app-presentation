@@ -3,7 +3,7 @@ import PDFDocument from 'pdfkit';
 import * as fs from 'fs';
 import { ItemBorrowReportData } from './item-borrow-report-excel.service';
 import { resolveReportLogoPath, getReportThaiFontPaths } from '../config/report.config';
-import { formatReportDateSlashBE, formatReportDateTimeUtc } from '../utils/date-timeformat';
+import { formatReportDateOnly, formatReportDateSlashBE, formatReportDateTimeUtc } from '../utils/date-timeformat';
 
 function formatFilterDateSlashBE(v?: string | null): string {
   if (v == null || String(v).trim() === '') return 'ทั้งหมด';
@@ -64,12 +64,7 @@ export class ItemBorrowReportPdfService {
     }
 
     const logoBuffer = this.getLogoBuffer();
-    const reportDate = new Date().toLocaleDateString('th-TH', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'Asia/Bangkok',
-    });
+    const reportDate = formatReportDateOnly(new Date());
 
     return new Promise((resolve, reject) => {
       doc.on('end', () => resolve(Buffer.concat(chunks)));

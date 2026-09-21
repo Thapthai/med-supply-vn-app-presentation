@@ -2568,6 +2568,8 @@ export const stickerPrintApi = {
 
   printLabelItems: async (body: {
     items: Array<{ itemcode: string; copies?: number; expire_date?: string }>;
+    department_id?: number;
+    cabinet_id?: number;
   }): Promise<{
     success: true;
     message: string;
@@ -2581,6 +2583,51 @@ export const stickerPrintApi = {
     items: { itemcode: string; copies: number; bytesSent: number }[];
   }> => {
     const response = await api.post('/sticker-print/printLabel-items', body);
+    return response.data;
+  },
+
+  createHistory: async (body: {
+    items: Array<{
+      itemcode: string;
+      item_name?: string;
+      copies?: number;
+      expire_date?: string;
+      bytes_sent?: number;
+    }>;
+    source?: string;
+    host?: string;
+    port?: number;
+    template?: string;
+    status?: 'SUCCESS' | 'ERROR';
+    remark?: string;
+  }) => {
+    const response = await api.post('/sticker-print/history', body);
+    return response.data;
+  },
+
+  listHistory: async (params?: {
+    itemcode?: string;
+    keyword?: string;
+    startDate?: string;
+    endDate?: string;
+    printed_by_user_id?: number;
+    source?: string;
+    status?: 'SUCCESS' | 'ERROR';
+    department_id?: number;
+    cabinet_id?: number;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    success: true;
+    data: import('@/app/admin/print-sticker/types').StickerPrintHistoryRow[];
+    meta: { total: number; page: number; limit: number; totalPages: number };
+  }> => {
+    const response = await api.get('/sticker-print/history', { params });
+    return response.data;
+  },
+
+  getHistory: async (id: number) => {
+    const response = await api.get(`/sticker-print/history/${id}`);
     return response.data;
   },
 };

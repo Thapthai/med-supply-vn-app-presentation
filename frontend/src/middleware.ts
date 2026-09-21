@@ -71,7 +71,8 @@ export default withAuth(
       },
     },
     pages: {
-      signIn: `${process.env.NEXT_PUBLIC_BASE_PATH || ""}/auth/login`,
+      // withAuth เติม basePath ให้เองตอน redirect — ใส่ที่นี่ซ้ำจะได้ /basePath/basePath/auth/login
+      signIn: "/auth/login",
     },
   },
 );

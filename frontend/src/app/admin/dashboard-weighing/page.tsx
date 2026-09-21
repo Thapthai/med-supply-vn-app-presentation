@@ -40,7 +40,7 @@ function formatDate(d: string) {
   const day = String(date.getUTCDate()).padStart(2, '0');
   const h = String(date.getUTCHours()).padStart(2, '0');
   const min = String(date.getUTCMinutes()).padStart(2, '0');
-  return `${y}-${m}-${day} ${h}:${min}`;
+  return `${day}/${m}/${y} ${h}:${min}`;
 }
 
 export default function WeighingDashboardPage() {

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
 import { EquipmentUsageReportData } from '../types/equipment-usage-report.types';
 import { applyExcelStandardTitleHeader } from '../utils/excel-report-header.util';
+import { formatReportDateOnly, formatReportDateTime } from '../utils/date-timeformat';
 
 export type { EquipmentUsageReportData };
 
@@ -51,11 +52,11 @@ export class EquipmentUsageExcelService {
     if (data.department) hospitalDetails.push(['แผนก (Department):', data.department]);
     if (data.dateFrom || data.dateTo) {
       const dateRange = data.dateFrom && data.dateTo 
-        ? `${new Date(data.dateFrom).toLocaleDateString('th-TH')} ถึง ${new Date(data.dateTo).toLocaleDateString('th-TH')}`
+        ? `${formatReportDateOnly(data.dateFrom)} ถึง ${formatReportDateOnly(data.dateTo)}`
         : data.dateFrom 
-          ? `ตั้งแต่วันที่ ${new Date(data.dateFrom).toLocaleDateString('th-TH')}`
+          ? `ตั้งแต่วันที่ ${formatReportDateOnly(data.dateFrom)}`
           : data.dateTo 
-            ? `จนถึงวันที่ ${new Date(data.dateTo).toLocaleDateString('th-TH')}`
+            ? `จนถึงวันที่ ${formatReportDateOnly(data.dateTo)}`
             : 'ทุกช่วงเวลา';
       hospitalDetails.push(['ช่วงเวลา (Date Range):', dateRange]);
     }
@@ -229,14 +230,7 @@ export class EquipmentUsageExcelService {
     worksheet.addRow([]); // Empty row
     
     const footerRow = worksheet.addRow([
-      `สร้างรายงานเมื่อ: ${new Date().toLocaleString('th-TH', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric', 
-        hour: '2-digit', 
-        minute: '2-digit',
-        second: '2-digit'
-      })}`
+      `สร้างรายงานเมื่อ: ${formatReportDateTime(new Date())}`
     ]);
     worksheet.mergeCells(`A${footerRow.number}:H${footerRow.number}`);
     footerRow.height = 22;

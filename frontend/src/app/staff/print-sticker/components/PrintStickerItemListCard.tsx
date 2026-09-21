@@ -153,8 +153,8 @@ export function PrintStickerItemListCard({
                 <TableHead className="w-[88px] text-center text-xs whitespace-nowrap">Min / Max</TableHead>
                 <TableHead className="min-w-[88px] text-xs whitespace-nowrap">Serial No.</TableHead>
                 <TableHead className="min-w-[120px] text-xs whitespace-nowrap">Lot No.</TableHead>
-                <TableHead className="min-w-[168px] text-xs whitespace-nowrap">Expire Date *</TableHead>
-                <TableHead className="w-[80px] text-center text-xs whitespace-nowrap">QTY *</TableHead>
+                <TableHead className="min-w-[168px] text-xs whitespace-nowrap">วันหมดอายุ</TableHead>
+                <TableHead className="w-[80px] text-center text-xs whitespace-nowrap">จำนวน</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -217,7 +217,7 @@ export function PrintStickerItemListCard({
                             invalid={false}
                             value={line?.expireDate || ''}
                             onChange={(v) => onExpireDateChange?.(row.itemcode, v)}
-                            placeholder="mm/dd/yyyy"
+                            placeholder="เลือกวันที่"
                           />
                         </div>
                       </TableCell>

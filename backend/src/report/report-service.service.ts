@@ -79,7 +79,7 @@ import {
 } from './services/cabinet-temp-hum-report-excel.service';
 import { CabinetTempHumReportPdfService } from './services/cabinet-temp-hum-report-pdf.service';
 import { CabinetTempHumChartPdfService } from './services/cabinet-temp-hum-chart-pdf.service';
-import { formatReportDateOnlyUtc, formatReportDateTimeUtc } from './utils/date-timeformat';
+import { formatReportDateOnly, formatReportDateOnlyUtc, formatReportDateTimeUtc } from './utils/date-timeformat';
 
 @Injectable()
 export class ReportServiceService {
@@ -189,12 +189,7 @@ export class ReportServiceService {
       isoDate && /^\d{4}-\d{2}-\d{2}$/.test(isoDate)
         ? new Date(`${isoDate}T12:00:00+07:00`)
         : new Date();
-    return d.toLocaleDateString('th-TH', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'Asia/Bangkok',
-    });
+    return formatReportDateOnly(d);
   }
 
   private cabinetStockSqlDay(isoDate?: string): Prisma.Sql {
@@ -518,7 +513,7 @@ export class ReportServiceService {
             if (usage.usage_datetime) {
               try {
                 const dateTime = new Date(usage.usage_datetime);
-                date = dateTime.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                date = formatReportDateOnly(dateTime);
                 time = dateTime.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
               } catch (e) {
                 const parts = String(usage.usage_datetime).split(' ');
@@ -620,7 +615,7 @@ export class ReportServiceService {
             if (usage.usage_datetime) {
               try {
                 const dateTime = new Date(usage.usage_datetime);
-                date = dateTime.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                date = formatReportDateOnly(dateTime);
                 time = dateTime.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
               } catch (e) {
                 const parts = String(usage.usage_datetime).split(' ');
@@ -2774,7 +2769,7 @@ export class ReportServiceService {
         const h = String(date.getUTCHours()).padStart(2, '0');
         const min = String(date.getUTCMinutes()).padStart(2, '0');
         const sec = String(date.getUTCSeconds()).padStart(2, '0');
-        return `${y}-${m}-${day} ${h}:${min}:${sec}`;
+        return `${day}/${m}/${y} ${h}:${min}:${sec}`;
       };
       const employeeName = (r: any) => {
         const emp = r?.userCabinet?.legacyUser?.employee;
@@ -2835,7 +2830,7 @@ export class ReportServiceService {
         const h = String(date.getUTCHours()).padStart(2, '0');
         const min = String(date.getUTCMinutes()).padStart(2, '0');
         const sec = String(date.getUTCSeconds()).padStart(2, '0');
-        return `${y}-${m}-${day} ${h}:${min}:${sec}`;
+        return `${day}/${m}/${y} ${h}:${min}:${sec}`;
       };
       const employeeName = (r: any) => {
         const emp = r?.userCabinet?.legacyUser?.employee;
@@ -2890,7 +2885,7 @@ export class ReportServiceService {
         const h = String(date.getUTCHours()).padStart(2, '0');
         const min = String(date.getUTCMinutes()).padStart(2, '0');
         const sec = String(date.getUTCSeconds()).padStart(2, '0');
-        return `${y}-${m}-${day} ${h}:${min}:${sec}`;
+        return `${day}/${m}/${y} ${h}:${min}:${sec}`;
       };
       const employeeName = (r: any) => {
         const emp = r?.userCabinet?.legacyUser?.employee;
@@ -2945,7 +2940,7 @@ export class ReportServiceService {
         const h = String(date.getUTCHours()).padStart(2, '0');
         const min = String(date.getUTCMinutes()).padStart(2, '0');
         const sec = String(date.getUTCSeconds()).padStart(2, '0');
-        return `${y}-${m}-${day} ${h}:${min}:${sec}`;
+        return `${day}/${m}/${y} ${h}:${min}:${sec}`;
       };
       const employeeName = (r: any) => {
         const emp = r?.userCabinet?.legacyUser?.employee;
@@ -3420,11 +3415,7 @@ export class ReportServiceService {
     const year = params.year ?? now.getFullYear();
     const month = params.month ?? now.getMonth() + 1;
     const overview = await this.cabinetTempHumService.getOverview({ year, month });
-    const monthLabel = new Date(year, month - 1, 1).toLocaleDateString('th-TH', {
-      year: 'numeric',
-      month: 'long',
-      timeZone: 'Asia/Bangkok',
-    });
+    const monthLabel = `${String(month).padStart(2, '0')}/${year}`;
     const toUtcDate = (at: Date | string | null | undefined) => {
       if (at == null) return null;
       const d = new Date(at);
@@ -3503,11 +3494,7 @@ export class ReportServiceService {
         chart.selected?.cabinet_name?.trim() ||
         chart.selected?.cabinet_code?.trim() ||
         `ตู้ #${chart.selected?.log_cabinet_id ?? params.cabinet_id}`;
-      const monthLabel = new Date(year, month - 1, 1).toLocaleDateString('th-TH', {
-        year: 'numeric',
-        month: 'long',
-        timeZone: 'Asia/Bangkok',
-      });
+      const monthLabel = `${String(month).padStart(2, '0')}/${year}`;
       const buffer = await this.cabinetTempHumChartPdfService.generateReport({
         cabinet_name: cabinetName,
         year,

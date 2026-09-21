@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { RefreshCw, Package, XCircle } from 'lucide-react';
-import { formatPrintDateTime, formatUtcDateTime } from '@/lib/formatThaiDateTime';
+import { formatPrintDateTime, formatUtcDateTime, formatYyyyMmDdThaiUtc } from '@/lib/formatThaiDateTime';
 
 interface MedicalSuppliesTableProps {
   loading: boolean;
@@ -177,7 +177,7 @@ export default function MedicalSuppliesTable({
               ทั้งหมด {totalItems} รายการ
               {filters.startDate && filters.endDate && (
                 <span className="ml-2">
-                  (วันที่ {new Date(filters.startDate).toLocaleDateString('th-TH')} - {new Date(filters.endDate).toLocaleDateString('th-TH')})
+                  (วันที่ {formatYyyyMmDdThaiUtc(filters.startDate)} - {formatYyyyMmDdThaiUtc(filters.endDate)})
                 </span>
               )}
             </CardDescription>

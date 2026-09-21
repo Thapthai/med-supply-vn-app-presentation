@@ -3,7 +3,7 @@ import PDFDocument from 'pdfkit';
 import * as fs from 'fs';
 import { ReturnReportData, getReturnReasonLabel } from './return-report-excel.service';
 import { resolveReportLogoPath, getReportThaiFontPaths } from '../config/report.config';
-import { formatReportDateSlashBE, formatReportDateTimeUtc } from '../utils/date-timeformat';
+import { formatReportDateOnly, formatReportDateSlashBE, formatReportDateTimeUtc } from '../utils/date-timeformat';
 
 export type { ReturnReportData };
 
@@ -87,12 +87,7 @@ export class ReturnReportPdfService {
     }
 
     const logoBuffer = this.getLogoBuffer();
-    const reportDate = new Date().toLocaleDateString('th-TH', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'Asia/Bangkok',
-    });
+    const reportDate = formatReportDateOnly(new Date());
 
     return new Promise((resolve, reject) => {
       doc.on('end', () => resolve(Buffer.concat(chunks)));

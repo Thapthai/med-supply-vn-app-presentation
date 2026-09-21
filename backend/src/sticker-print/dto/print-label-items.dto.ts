@@ -45,4 +45,16 @@ export class PrintLabelItemsDto {
   @ValidateNested({ each: true })
   @Type(() => PrintLabelItemLineDto)
   items!: PrintLabelItemLineDto[];
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  department_id?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  cabinet_id?: number;
 }

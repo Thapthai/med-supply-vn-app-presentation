@@ -16,6 +16,7 @@ import { ClientCredentialStrategy } from './strategies/client-credential.strateg
 import { TOTPService } from './services/totp.service';
 import { EmailOTPService } from './services/email-otp.service';
 import { FirebaseService } from './services/firebase.service';
+import { formatReportDateTime } from '../report/utils/date-timeformat';
 
 @Injectable()
 export class AuthService {
@@ -52,7 +53,7 @@ export class AuthService {
         appName: process.env.APP_NAME || 'POSE',
         loginUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
         supportEmail: process.env.SUPPORT_EMAIL || 'support@example.com',
-        createdAt: new Date().toLocaleString('th-TH'),
+        createdAt: formatReportDateTime(new Date()),
       },
     });
   }

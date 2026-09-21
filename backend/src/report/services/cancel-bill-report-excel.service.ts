@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
 import { applyExcelStandardTitleHeader } from '../utils/excel-report-header.util';
+import { formatReportDateOnly } from '../utils/date-timeformat';
 
 export interface CancelBillReportData {
   filters?: {
@@ -102,8 +103,8 @@ export class CancelBillReportExcelService {
             isFirstItem ? record.en : '',
             isFirstItem ? record.patient_hn : '',
             isFirstItem ? record.patient_name : '',
-            isFirstItem ? (record.print_date ? new Date(record.print_date).toLocaleDateString('th-TH') : '-') : '',
-            isFirstItem ? new Date(record.created_at).toLocaleDateString('th-TH') : '',
+            isFirstItem ? (record.print_date ? formatReportDateOnly(record.print_date) : '-') : '',
+            isFirstItem ? formatReportDateOnly(record.created_at) : '',
             item.item_code,
             item.item_name,
             item.qty,
@@ -131,8 +132,8 @@ export class CancelBillReportExcelService {
           record.en,
           record.patient_hn,
           record.patient_name,
-          record.print_date ? new Date(record.print_date).toLocaleDateString('th-TH') : '-',
-          new Date(record.created_at).toLocaleDateString('th-TH'),
+          record.print_date ? formatReportDateOnly(record.print_date) : '-',
+          formatReportDateOnly(record.created_at),
           '-',
           '-',
           0,

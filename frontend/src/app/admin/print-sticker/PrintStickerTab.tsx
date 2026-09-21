@@ -2,7 +2,6 @@
 
 import { PrintStickerItemListCard } from '@/app/admin/management/print-sticker/components/PrintStickerItemListCard';
 import PrintStickerFilterCard from './components/PrintStickerFilterCard';
-import PrintStickerHeader from './components/PrintStickerHeader';
 import { usePrintStickerTab } from './usePrintStickerTab';
 
 export default function PrintStickerTab() {
@@ -10,8 +9,6 @@ export default function PrintStickerTab() {
 
   return (
     <div className="flex w-full flex-col gap-6">
-      <PrintStickerHeader />
-
       <PrintStickerFilterCard
         mode={s.mode}
         onModeChange={s.setMode}

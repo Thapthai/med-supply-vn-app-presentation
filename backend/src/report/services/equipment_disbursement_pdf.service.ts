@@ -3,6 +3,7 @@ import PDFDocument from 'pdfkit';
 import * as fs from 'fs';
 import { EquipmentDisbursementReportData } from '../types/equipment-disbursement-report.types';
 import { getReportThaiFontPaths } from '../config/report.config';
+import { formatReportDateOnly, formatReportDateTime } from '../utils/date-timeformat';
 
 export type { EquipmentDisbursementReportData };
 
@@ -133,11 +134,11 @@ export class EquipmentDisbursementPdfService {
       
       if (data.dateFrom || data.dateTo) {
         const dateRangeText = data.dateFrom && data.dateTo
-          ? `ตั้งแต่วันที่ ${new Date(data.dateFrom).toLocaleDateString('th-TH')} ถึง ${new Date(data.dateTo).toLocaleDateString('th-TH')}`
+          ? `ตั้งแต่วันที่ ${formatReportDateOnly(data.dateFrom)} ถึง ${formatReportDateOnly(data.dateTo)}`
           : data.dateFrom
-            ? `ตั้งแต่วันที่ ${new Date(data.dateFrom).toLocaleDateString('th-TH')}`
+            ? `ตั้งแต่วันที่ ${formatReportDateOnly(data.dateFrom)}`
             : data.dateTo
-              ? `จนถึงวันที่ ${new Date(data.dateTo).toLocaleDateString('th-TH')}`
+              ? `จนถึงวันที่ ${formatReportDateOnly(data.dateTo)}`
               : 'ทุกช่วงเวลา';
         doc.font(finalFontBoldName)
            .fillColor('#2C3E50')
@@ -316,7 +317,7 @@ export class EquipmentDisbursementPdfService {
       doc.fontSize(8)
          .font(finalFontName)
          .fillColor('#7F8C8D')
-         .text(`สร้างเมื่อ: ${new Date().toLocaleString('th-TH')}`, 35, yPos, { 
+         .text(`สร้างเมื่อ: ${formatReportDateTime(new Date())}`, 35, yPos, { 
            align: 'center', 
            width: doc.page.width - 70 
          });

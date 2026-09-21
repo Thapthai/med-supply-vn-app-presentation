@@ -4,14 +4,23 @@
  * ถ้าไม่ตรง = ของโปรเจกต์อื่น → ล้างแล้วบังคับ login ใหม่
  */
 
-/** ชื่อแอปจาก NEXTAUTH_URL path เช่น .../smart-cabinet-presentation → smart-cabinet-presentation */
+/**
+ * ชื่อแอป เช่น smart-cabinet-presentation
+ *
+ * ใช้ NEXT_PUBLIC_BASE_PATH เป็นหลัก เพราะอ่านได้ทั้งฝั่ง server และ browser
+ * (NEXTAUTH_URL เป็น env ฝั่ง server เท่านั้น — ถ้าใช้เป็นหลักจะได้คนละค่ากันสองฝั่ง)
+ */
 export function getAppName(): string {
+  const basePath = (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/^\/+|\/+$/g, '');
+  if (basePath) return basePath;
+
   const nextAuthUrl = (process.env.NEXTAUTH_URL || '').trim().replace(/\/$/, '');
   if (nextAuthUrl) {
     try {
       const withProtocol = nextAuthUrl.includes('://') ? nextAuthUrl : `https://${nextAuthUrl}`;
       const u = new URL(withProtocol);
-      const path = u.pathname.replace(/^\/+|\/+$/g, '');
+      // NEXTAUTH_URL ของแอปที่มี basePath ลงท้ายด้วย /api/auth ตามสเปกของ NextAuth
+      const path = u.pathname.replace(/\/api\/auth\/?$/, '').replace(/^\/+|\/+$/g, '');
       if (path) return path;
       return u.host;
     } catch {
@@ -19,7 +28,7 @@ export function getAppName(): string {
       return parts[parts.length - 1] || nextAuthUrl;
     }
   }
-  return (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/^\/+|\/+$/g, '') || 'smart-cabinet-presentation';
+  return 'smart-cabinet-presentation';
 }
 
 export function clearStaffLocalAuth(): void {

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
 import { applyExcelStandardTitleHeader } from '../utils/excel-report-header.util';
+import { formatReportDateOnly } from '../utils/date-timeformat';
 
 /** รายการอุปกรณ์ในตู้ (กลุ่มตามรหัสอุปกรณ์) */
 export interface CabinetDepartmentsSubRow {
@@ -66,12 +67,7 @@ export class CabinetDepartmentsReportExcelService {
     workbook.creator = 'Report Service';
     workbook.created = new Date();
 
-    const reportDate = new Date().toLocaleDateString('th-TH', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'Asia/Bangkok',
-    });
+    const reportDate = formatReportDateOnly(new Date());
 
     const rows = data.data ?? [];
     const splitByCabinet = shouldSplitSheetsByCabinet(data) && rows.length > 0;

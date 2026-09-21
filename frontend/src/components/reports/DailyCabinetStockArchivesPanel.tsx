@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/table';
 import { toast } from 'sonner';
 import type { DailyCabinetStockArchiveRow } from '@/lib/api';
+import { formatUtcDateTime } from '@/lib/formatThaiDateTime';
 
 export type DailyCabinetStockArchivesApi = {
   listArchives: (p?: { limit?: number; offset?: number }) => Promise<DailyCabinetStockArchiveRow[]>;
@@ -223,7 +224,7 @@ export function DailyCabinetStockArchivesPanel({ api }: { api: DailyCabinetStock
                           </TableCell>
                           <TableCell className="text-right text-sm">{formatBytes(r.file_size)}</TableCell>
                           <TableCell className="text-sm text-gray-600">
-                            {r.created_at ? new Date(r.created_at).toLocaleString('th-TH') : '-'}
+                            {formatUtcDateTime(r.created_at)}
                           </TableCell>
                           <TableCell className="text-right">
                             <Button

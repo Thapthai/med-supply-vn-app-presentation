@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/table';
 import { Loader2, BookMarked, Package, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatBangkokDateTime } from '@/lib/formatThaiDateTime';
 
 type DivisionRow = {
     ID: number;
@@ -51,20 +52,9 @@ type BorrowRow = {
 
 function formatThDate(iso: string | null): string {
     if (!iso) return '—';
-    try {
-        const d = new Date(iso);
-        if (Number.isNaN(d.getTime())) return '—';
-        return d.toLocaleString('th-TH', {
-            timeZone: 'Asia/Bangkok',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-        });
-    } catch {
-        return '—';
-    }
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '—';
+    return formatBangkokDateTime(iso);
 }
 
 function oneDeptLabel(d: DivisionRow): string {

@@ -10,7 +10,7 @@ export default function PrintStickerHeader() {
       </div>
       <div>
         <h1 className="text-2xl font-bold text-slate-900">พิมพ์สติ๊กเกอร์</h1>
-        <p className="text-sm text-slate-500">เฉพาะ Division และตู้ตามสิทธิ์ของคุณ</p>
+        <p className="text-sm text-slate-500">สั่งพิมพ์ฉลาก และดูประวัติที่เคยพิมพ์ — เฉพาะ Division และตู้ตามสิทธิ์ของคุณ</p>
       </div>
     </div>
   );

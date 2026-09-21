@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
 import { applyExcelStandardTitleHeader } from '../utils/excel-report-header.util';
 import type { WeighingDispenseReportData } from './weighing-dispense-report-excel.service';
+import { formatReportDateOnly } from '../utils/date-timeformat';
 
 @Injectable()
 export class WeighingRefillReportExcelService {
@@ -14,12 +15,7 @@ export class WeighingRefillReportExcelService {
       properties: { defaultRowHeight: 20 },
     });
 
-    const reportDate = new Date().toLocaleDateString('th-TH', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'Asia/Bangkok',
-    });
+    const reportDate = formatReportDateOnly(new Date());
 
     const thinBorder = { top: { style: 'thin' as const }, left: { style: 'thin' as const }, bottom: { style: 'thin' as const }, right: { style: 'thin' as const } };
     applyExcelStandardTitleHeader(worksheet, workbook, {

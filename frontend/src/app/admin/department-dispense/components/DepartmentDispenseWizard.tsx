@@ -17,6 +17,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import SearchableSelect from '@/app/admin/management/cabinet-departments/components/SearchableSelect';
 import { departmentApi } from '@/lib/api';
+import { formatBangkokDateTime } from '@/lib/formatThaiDateTime';
 import {
   departmentDispenseApi,
   type DepartmentDispenseDocument,
@@ -44,11 +45,7 @@ function deptLabel(d: DepartmentOpt): string {
 }
 
 function formatThDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
-  } catch {
-    return iso;
-  }
+  return formatBangkokDateTime(iso);
 }
 
 export default function DepartmentDispenseWizard() {

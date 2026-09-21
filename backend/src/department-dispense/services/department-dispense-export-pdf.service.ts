@@ -3,10 +3,11 @@ import PDFDocument from 'pdfkit';
 import * as fs from 'fs';
 import { getReportThaiFontPaths, resolveReportLogoPath } from '../../report/config/report.config';
 import { DepartmentDispenseExportData } from './department-dispense-export-excel.service';
+import { formatReportDateOnly, formatReportDateTime } from '../../report/utils/date-timeformat';
 
 function formatThDateTime(iso: string): string {
   try {
-    return new Date(iso).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+    return formatReportDateTime(iso);
   } catch {
     return iso;
   }
@@ -58,12 +59,7 @@ export class DepartmentDispenseExportPdfService {
     }
 
     const logoBuffer = this.getLogoBuffer();
-    const reportDate = new Date().toLocaleDateString('th-TH', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'Asia/Bangkok',
-    });
+    const reportDate = formatReportDateOnly(new Date());
 
     return new Promise((resolve, reject) => {
       doc.on('end', () => resolve(Buffer.concat(chunks)));

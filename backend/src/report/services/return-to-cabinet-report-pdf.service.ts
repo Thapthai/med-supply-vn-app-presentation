@@ -3,7 +3,7 @@ import PDFDocument from 'pdfkit';
 import * as fs from 'fs';
 import { ReturnToCabinetReportData } from './return-to-cabinet-report-excel.service';
 import { resolveReportLogoPath, getReportThaiFontPaths } from '../config/report.config';
-import { formatReportDateSlashBE, formatReportDateTimeUtc } from '../utils/date-timeformat';
+import { formatReportDateOnly, formatReportDateSlashBE, formatReportDateTimeUtc } from '../utils/date-timeformat';
 import { formatQtyWithMainUnitForReport } from '../utils/format-item-qty';
 
 function formatFilterDateSlashBE(v?: string | null): string {
@@ -71,12 +71,7 @@ export class ReturnToCabinetReportPdfService {
     }
 
     const logoBuffer = this.getLogoBuffer();
-    const reportDate = new Date().toLocaleDateString('th-TH', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'Asia/Bangkok',
-    });
+    const reportDate = formatReportDateOnly(new Date());
 
     return new Promise((resolve, reject) => {
       doc.on('end', () => resolve(Buffer.concat(chunks)));

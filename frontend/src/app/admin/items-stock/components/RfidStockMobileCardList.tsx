@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import type { ItemSlotInCabinetRow, StockStatusFilter } from '../items-stock-shared';
 import {
   formatExpireRelativeLabel,
-  formatYmd,
+  formatYmdDisplay,
   itemsStockStatusKeyLabelTh,
   rowBadge,
   rowFlags,
@@ -44,7 +44,7 @@ export default function RfidStockMobileCardList({
         const { expired, soon, low } = rowFlags(row);
         const expireRel = formatExpireRelativeLabel(row.nearestExpireDate);
         const badge = rowBadge(row);
-        const expireText = formatYmd(row.nearestExpireDate);
+        const expireText = formatYmdDisplay(row.nearestExpireDate);
         const expireClass = expired
           ? 'text-red-600 font-medium'
           : soon

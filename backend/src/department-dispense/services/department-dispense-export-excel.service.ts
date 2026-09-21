@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
 import { applyExcelStandardTitleHeader } from '../../report/utils/excel-report-header.util';
+import { formatReportDateOnly, formatReportDateTime } from '../../report/utils/date-timeformat';
 
 export interface DepartmentDispenseExportDocument {
   doc_no: string;
@@ -22,7 +23,7 @@ export interface DepartmentDispenseExportData {
 
 function formatThDateTime(iso: string): string {
   try {
-    return new Date(iso).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+    return formatReportDateTime(iso);
   } catch {
     return iso;
   }
@@ -35,12 +36,7 @@ export class DepartmentDispenseExportExcelService {
     workbook.creator = 'Smart Cabinet';
     workbook.created = new Date();
 
-    const reportDate = new Date().toLocaleDateString('th-TH', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'Asia/Bangkok',
-    });
+    const reportDate = formatReportDateOnly(new Date());
 
     this.fillSummarySheet(workbook, data, reportDate);
     this.fillDetailSheet(workbook, data, reportDate);

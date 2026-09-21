@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Shield } from 'lucide-react';
+import { formatUtcDateTime } from '@/lib/formatThaiDateTime';
 
 interface AccountInformationProps {
   user: any;
@@ -45,7 +46,9 @@ export default function AccountInformation({ user }: AccountInformationProps) {
           <div>
             <Label className="text-sm font-medium text-gray-700">วันที่สร้างบัญชี</Label>
             <p className="mt-1 text-sm text-gray-900">
-              {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('th-TH') : '-'}
+              {user?.createdAt
+                ? formatUtcDateTime(user.createdAt, { hour: undefined, minute: undefined })
+                : '-'}
             </p>
           </div>
           <div>

@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Printer, X, Package, User, Calendar, MapPin, DollarSign } from 'lucide-react';
 import { staffMedicalSuppliesApi } from '@/lib/staffApi/medicalSuppliesApi';
 import { toast } from 'sonner';
-import { formatUtcDateTime } from '@/lib/formatThaiDateTime';
+import { formatUtcDateTime, formatYyyyMmDdThaiUtc } from '@/lib/formatThaiDateTime';
 
 interface ViewMedicalSupplyDialogProps {
   open: boolean;
@@ -165,7 +165,10 @@ export default function ViewMedicalSupplyDialog({
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <InfoItem label="สถานที่พิมพ์" value={supply.print_location} />
-                  <InfoItem label="วันที่พิมพ์" value={supply.print_date} />
+                  <InfoItem
+                    label="วันที่พิมพ์"
+                    value={supply.print_date ? formatYyyyMmDdThaiUtc(supply.print_date) : undefined}
+                  />
                   <InfoItem label="เวลาพิมพ์" value={supply.time_print_date} className="md:col-span-2" />
                 </div>
               </div>

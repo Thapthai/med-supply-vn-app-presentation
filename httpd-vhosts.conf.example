@@ -3,22 +3,19 @@
 # ลำดับสำคัญ: /api/smart-cabinet-cu/v1/ ต้องอยู่ก่อน /smart-cabinet-cu/ เพื่อไม่ให้ API ชน frontend
 
 # ให้แอปรู้ว่าเข้าผ่าน HTTPS และ host ภายนอก (ใช้กับ NextAuth / redirect)
-<LocationMatch "^/(smart-cabinet-cu|api/smart-cabinet-cu)">
-    ProxyPreserveHost On
-    RequestHeader set X-Forwarded-Proto "https"
-    RequestHeader set X-Forwarded-Host "phc.dyndns.biz"
-</LocationMatch>
+# Proxy all /smart-cabinet-presentation API paths
+	<Location "/api/smart-cabinet-presentation/v1/">
+    	ProxyPreserveHost On
+    	ProxyPass http://10.1.1.10:7105/api/smart-cabinet-presentation/v1/
+   		ProxyPassReverse http://10.1.1.10:7105/api/smart-cabinet-presentation/v1/
+	</Location>
 
-# API → Backend
-<Location "/medical-supplies-api/v1/" >
-    ProxyPreserveHost On
-    ProxyPass "http://10.11.9.84:3000/api/smart-cabinet-vn/v1/"
-    ProxyPassReverse "http://10.11.9.84:3000/api/smart-cabinet-vn/v1/"
-
-</Location>
-
-# Frontend: RewriteRule [P] จัดการทั้ง /smart-cabinet-cu และ /smart-cabinet-cu/...
-RewriteEngine On
-RewriteRule ^/smart-cabinet-cu(/.*)?$ http://10.11.9.84:4100/smart-cabinet-cu$1 [P,L]
-ProxyPassReverse /smart-cabinet-cu http://10.11.9.84:4100/smart-cabinet-cu
+	# Proxy all /smart-cabinet-presentation paths
+	RewriteRule ^/smart-cabinet-presentation(/.*)?$ http://10.1.1.10:7205/smart-cabinet-presentation$1 [P,L]
+	ProxyPassReverse /smart-cabinet-presentation http://10.1.1.10:7205/smart-cabinet-presentation
+	<LocationMatch "^/smart-cabinet-presentation">
+    		ProxyPreserveHost On
+    		RequestHeader set X-Forwarded-Proto "https"
+    		RequestHeader set X-Forwarded-Host "phc.dyndns.biz"
+	</LocationMatch>
 

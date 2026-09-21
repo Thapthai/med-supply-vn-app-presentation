@@ -3,6 +3,7 @@ import PDFDocument from 'pdfkit';
 import * as fs from 'fs';
 import { CancelBillReportData } from './cancel-bill-report-excel.service';
 import { getReportThaiFontPaths } from '../config/report.config';
+import { formatReportDateOnly, formatReportDateTime } from '../utils/date-timeformat';
 
 export type { CancelBillReportData };
 
@@ -246,16 +247,8 @@ export class CancelBillReportPdfService {
               isFirstItem ? record.en : '',
               isFirstItem ? record.patient_hn : '',
               isFirstItem ? record.patient_name : '',
-              isFirstItem ? (record.print_date ? new Date(record.print_date).toLocaleDateString('th-TH', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-              }) : '-') : '',
-              isFirstItem ? new Date(record.created_at).toLocaleDateString('th-TH', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-              }) : '',
+              isFirstItem ? (record.print_date ? formatReportDateOnly(record.print_date) : '-') : '',
+              isFirstItem ? formatReportDateOnly(record.created_at) : '',
               item.item_code,
               item.item_name,
               item.qty.toString(),
@@ -312,16 +305,8 @@ export class CancelBillReportPdfService {
             record.en,
             record.patient_hn,
             record.patient_name,
-            record.print_date ? new Date(record.print_date).toLocaleDateString('th-TH', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric',
-            }) : '-',
-            new Date(record.created_at).toLocaleDateString('th-TH', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric',
-            }),
+            record.print_date ? formatReportDateOnly(record.print_date) : '-',
+            formatReportDateOnly(record.created_at),
             '-',
             '-',
             '0',
@@ -364,7 +349,7 @@ export class CancelBillReportPdfService {
       doc.fontSize(8)
          .font(finalFontName)
          .fillColor('#7F8C8D')
-         .text(`สร้างเมื่อ: ${new Date().toLocaleString('th-TH')}`, 35, footerY, { 
+         .text(`สร้างเมื่อ: ${formatReportDateTime(new Date())}`, 35, footerY, { 
            align: 'center', 
            width: doc.page.width - 70 
          });

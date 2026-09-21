@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/table';
 import Pagination from '@/components/Pagination';
 import { cn } from '@/lib/utils';
+import { formatBangkokDateTime } from '@/lib/formatThaiDateTime';
 import {
   departmentDispenseApi,
   type DepartmentDispenseDocument,
@@ -36,11 +37,7 @@ function deptLabel(d: DepartmentOpt): string {
 }
 
 function formatThDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
-  } catch {
-    return iso;
-  }
+  return formatBangkokDateTime(iso);
 }
 
 export default function DepartmentDispenseHistoryTab() {

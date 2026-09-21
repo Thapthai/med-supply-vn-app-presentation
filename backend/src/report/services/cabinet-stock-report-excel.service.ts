@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
 import { applyExcelStandardTitleHeader } from '../utils/excel-report-header.util';
 import { resolveCabinetStockShowRowHighlight, CABINET_STOCK_NEUTRAL_ROW_BG } from '../utils/cabinet-stock-row-highlight.util';
+import { formatReportDateOnly } from '../utils/date-timeformat';
 import {
   formatQtyWithMainUnitForReport,
   formatQtyPlainForReport,
@@ -62,12 +63,7 @@ export class CabinetStockReportExcelService {
 
     const reportDate =
       data.reportDateDisplay ??
-      new Date().toLocaleDateString('th-TH', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        timeZone: 'Asia/Bangkok',
-      });
+      formatReportDateOnly(new Date());
 
     applyExcelStandardTitleHeader(worksheet, workbook, {
       mergeRange: 'A1:J2',

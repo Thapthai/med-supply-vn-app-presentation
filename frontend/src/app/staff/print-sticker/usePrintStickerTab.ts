@@ -6,6 +6,7 @@ import { staffCabinetApi } from '@/lib/staffApi/cabinetApi';
 import { staffItemsApi } from '@/lib/staffApi/itemsApi';
 import { staffItemStockApi } from '@/lib/staffApi/itemStockApi';
 import { staffStickerPrintApi } from '@/lib/staffApi/stickerPrintApi';
+import { formatBangkokDateTime } from '@/lib/formatThaiDateTime';
 import type { Item } from '@/types/item';
 import {
   AUTO_FETCH_LIMIT,
@@ -486,9 +487,13 @@ export function usePrintStickerTab() {
       }
 
       setPrinting(true);
-      const res = await staffStickerPrintApi.printLabelItems({ items: payloadItems });
+      const res = await staffStickerPrintApi.printLabelItems({
+        items: payloadItems,
+        ...(departmentId ? { department_id: parseInt(departmentId, 10) } : {}),
+        ...(cabinetId ? { cabinet_id: parseInt(cabinetId, 10) } : {}),
+      });
       toast.success(res.message, {
-        description: `${res.lineCount} แถว · ${res.count} แผ่น · ${res.totalBytesSent} bytes → ${res.host}:${res.port} · ${res.template} · ${new Date(res.printedAt).toLocaleString('th-TH')}`,
+        description: `${res.lineCount} แถว · ${res.count} แผ่น · ${res.totalBytesSent} bytes → ${res.host}:${res.port} · ${res.template} · ${formatBangkokDateTime(res.printedAt)}`,
       });
 
       const remainingByCode = new Map<string, number>();
