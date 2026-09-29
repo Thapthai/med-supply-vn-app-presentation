@@ -19,6 +19,10 @@ interface Cabinet {
   cabinet_type?: string;
   stock_id?: number;
   cabinet_status?: string;
+  temp_min?: number | string | null;
+  temp_max?: number | string | null;
+  hum_min?: number | string | null;
+  hum_max?: number | string | null;
   created_at?: string;
   updated_at?: string;
 }

@@ -106,14 +106,27 @@ function formatAxisTime(value: string) {
   return formatUtcDateTime(value, { year: undefined, month: 'short', day: 'numeric' });
 }
 
+function finiteLimit(value: number | null | undefined): number | null {
+  if (value == null || Number.isNaN(value)) return null;
+  return value;
+}
+
 function TempHumLineChart({
   points,
   title,
   gradientId,
+  tempMin,
+  tempMax,
+  humMin,
+  humMax,
 }: {
   points: StaffCabinetTempHumLogPoint[];
   title: string;
   gradientId: string;
+  tempMin?: number | null;
+  tempMax?: number | null;
+  humMin?: number | null;
+  humMax?: number | null;
 }) {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
@@ -124,8 +137,16 @@ function TempHumLineChart({
     const padR = 52;
     const padT = 28;
     const padB = 56;
-    const temps = points.map((p) => p.temp_log);
-    const hums = points.map((p) => p.hum_log);
+    const tempGuides = [
+      finiteLimit(tempMin) != null ? { key: 'min' as const, value: finiteLimit(tempMin) as number, label: 'ต่ำสุด' } : null,
+      finiteLimit(tempMax) != null ? { key: 'max' as const, value: finiteLimit(tempMax) as number, label: 'สูงสุด' } : null,
+    ].filter((guide): guide is { key: 'min' | 'max'; value: number; label: string } => guide != null);
+    const humGuides = [
+      finiteLimit(humMin) != null ? { key: 'min' as const, value: finiteLimit(humMin) as number, label: 'ต่ำสุด' } : null,
+      finiteLimit(humMax) != null ? { key: 'max' as const, value: finiteLimit(humMax) as number, label: 'สูงสุด' } : null,
+    ].filter((guide): guide is { key: 'min' | 'max'; value: number; label: string } => guide != null);
+    const temps = [...points.map((p) => p.temp_log), ...tempGuides.map((guide) => guide.value)];
+    const hums = [...points.map((p) => p.hum_log), ...humGuides.map((guide) => guide.value)];
     const tempDomain = niceDomain(Math.min(...temps), Math.max(...temps));
     const humDomain = niceDomain(Math.min(...hums), Math.max(...hums));
     const innerW = width - padL - padR;
@@ -171,8 +192,10 @@ function TempHumLineChart({
       tempDomain,
       humDomain,
       xLabels,
+      tempGuides,
+      humGuides,
     };
-  }, [points]);
+  }, [points, tempMin, tempMax, humMin, humMax]);
 
   if (points.length === 0) return null;
 
@@ -209,6 +232,18 @@ function TempHumLineChart({
             <span className="h-2.5 w-2.5 rounded-sm bg-sky-500" />
             ความชื้น
           </span>
+          {layout.tempGuides.map((guide) => (
+            <span key={`temp-${guide.key}`} className="inline-flex items-center gap-1.5">
+              <span className="h-0 w-4 border-t-2 border-dashed border-orange-600" />
+              อุณหภูมิ{guide.label} {guide.value.toFixed(1)}°C
+            </span>
+          ))}
+          {layout.humGuides.map((guide) => (
+            <span key={`hum-${guide.key}`} className="inline-flex items-center gap-1.5">
+              <span className="h-0 w-4 border-t-2 border-dashed border-sky-600" />
+              ความชื้น{guide.label} {guide.value.toFixed(1)} RH
+            </span>
+          ))}
         </div>
       </div>
       <svg
@@ -254,6 +289,48 @@ function TempHumLineChart({
             <text key={`h-${tick}`} x={layout.width - layout.padR + 10} y={y + 4} fill="#0369a1" fontSize="11">
               {tick.toFixed(1)}
             </text>
+          );
+        })}
+        {layout.tempGuides.map((guide) => {
+          const y =
+            layout.padT +
+            ((layout.tempDomain.yMax - guide.value) / (layout.tempDomain.yMax - layout.tempDomain.yMin)) * layout.innerH;
+          return (
+            <g key={`temp-guide-${guide.key}`}>
+              <line
+                x1={layout.padL}
+                x2={layout.width - layout.padR}
+                y1={y}
+                y2={y}
+                stroke="#ea580c"
+                strokeWidth="1.75"
+                strokeDasharray="8 6"
+              />
+              <text x={layout.padL + 6} y={y - 5} fill="#ea580c" fontSize="11" fontWeight="600">
+                {guide.label} {guide.value.toFixed(1)}°C
+              </text>
+            </g>
+          );
+        })}
+        {layout.humGuides.map((guide) => {
+          const y =
+            layout.padT +
+            ((layout.humDomain.yMax - guide.value) / (layout.humDomain.yMax - layout.humDomain.yMin)) * layout.innerH;
+          return (
+            <g key={`hum-guide-${guide.key}`}>
+              <line
+                x1={layout.padL}
+                x2={layout.width - layout.padR}
+                y1={y}
+                y2={y}
+                stroke="#0284c7"
+                strokeWidth="1.75"
+                strokeDasharray="8 6"
+              />
+              <text x={layout.width - layout.padR - 6} y={y - 5} textAnchor="end" fill="#0284c7" fontSize="11" fontWeight="600">
+                {guide.label} {guide.value.toFixed(1)} RH
+              </text>
+            </g>
           );
         })}
         <path d={layout.area} fill={`url(#${gradientId})`} />
@@ -350,6 +427,10 @@ function CabinetChartBlock({
           points={data.points}
           title={`${cabinetLabel(cabinet)} · ${monthLabel(year, month)}`}
           gradientId={`staffTempFill-${cabinetId}`}
+          tempMin={data.selected?.temp_min}
+          tempMax={data.selected?.temp_max}
+          humMin={data.selected?.hum_min}
+          humMax={data.selected?.hum_max}
         />
       )}
     </div>

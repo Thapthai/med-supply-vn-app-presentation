@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Edit } from 'lucide-react';
+import { climateFormError, climateInputValue, climatePayload } from '@/app/admin/management/cabinets/components/cabinetTypes';
 
 const fieldInputClass = 'bg-white';
 
@@ -16,6 +17,10 @@ interface Cabinet {
   cabinet_type?: string;
   stock_id?: number;
   cabinet_status?: string;
+  temp_min?: number | string | null;
+  temp_max?: number | string | null;
+  hum_min?: number | string | null;
+  hum_max?: number | string | null;
 }
 
 interface EditCabinetDialogProps {
@@ -36,6 +41,10 @@ export default function EditCabinetDialog({
     cabinet_name: '',
     cabinet_code: '',
     stock_id: '',
+    temp_min: '',
+    temp_max: '',
+    hum_min: '',
+    hum_max: '',
   });
 
   // Load cabinet data when dialog opens
@@ -45,6 +54,10 @@ export default function EditCabinetDialog({
         cabinet_name: cabinet.cabinet_name || '',
         cabinet_code: cabinet.cabinet_code || '',
         stock_id: cabinet.stock_id?.toString() || '',
+        temp_min: climateInputValue(cabinet.temp_min),
+        temp_max: climateInputValue(cabinet.temp_max),
+        hum_min: climateInputValue(cabinet.hum_min),
+        hum_max: climateInputValue(cabinet.hum_max),
       });
     }
   }, [open, cabinet]);
@@ -56,6 +69,10 @@ export default function EditCabinetDialog({
         cabinet_name: '',
         cabinet_code: '',
         stock_id: '',
+        temp_min: '',
+        temp_max: '',
+        hum_min: '',
+        hum_max: '',
       });
     }
   }, [open]);
@@ -64,11 +81,29 @@ export default function EditCabinetDialog({
     e.preventDefault();
     if (!cabinet) return;
 
+    const climateError = climateFormError(formData);
+    if (climateError) {
+      toast.error(climateError);
+      return;
+    }
+
     try {
       setLoading(true);
-      const data: { cabinet_name?: string; cabinet_code?: string; stock_id?: number } = {
+      const data: {
+        cabinet_name?: string;
+        cabinet_code?: string;
+        stock_id?: number;
+        temp_min: number | null;
+        temp_max: number | null;
+        hum_min: number | null;
+        hum_max: number | null;
+      } = {
         cabinet_name: formData.cabinet_name || undefined,
         cabinet_code: formData.cabinet_code || undefined,
+        temp_min: climatePayload(formData.temp_min),
+        temp_max: climatePayload(formData.temp_max),
+        hum_min: climatePayload(formData.hum_min),
+        hum_max: climatePayload(formData.hum_max),
       };
       if (formData.stock_id.trim()) {
         const sid = parseInt(formData.stock_id, 10);
@@ -140,6 +175,57 @@ export default function EditCabinetDialog({
               onChange={(e) => setFormData({ ...formData, stock_id: e.target.value })}
               className={fieldInputClass}
             />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="staff-edit-temp-min">อุณหภูมิต่ำสุด (°C)</Label>
+              <Input
+                id="staff-edit-temp-min"
+                type="number"
+                step="0.01"
+                placeholder="เช่น 2"
+                value={formData.temp_min}
+                onChange={(e) => setFormData({ ...formData, temp_min: e.target.value })}
+                className={fieldInputClass}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="staff-edit-temp-max">อุณหภูมิสูงสุด (°C)</Label>
+              <Input
+                id="staff-edit-temp-max"
+                type="number"
+                step="0.01"
+                placeholder="เช่น 8"
+                value={formData.temp_max}
+                onChange={(e) => setFormData({ ...formData, temp_max: e.target.value })}
+                className={fieldInputClass}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="staff-edit-hum-min">ความชื้นต่ำสุด (%)</Label>
+              <Input
+                id="staff-edit-hum-min"
+                type="number"
+                step="0.01"
+                placeholder="เช่น 30"
+                value={formData.hum_min}
+                onChange={(e) => setFormData({ ...formData, hum_min: e.target.value })}
+                className={fieldInputClass}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="staff-edit-hum-max">ความชื้นสูงสุด (%)</Label>
+              <Input
+                id="staff-edit-hum-max"
+                type="number"
+                step="0.01"
+                placeholder="เช่น 60"
+                value={formData.hum_max}
+                onChange={(e) => setFormData({ ...formData, hum_max: e.target.value })}
+                className={fieldInputClass}
+              />
+            </div>
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">

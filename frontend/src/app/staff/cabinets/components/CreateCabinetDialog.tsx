@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Package } from 'lucide-react';
+import { climateFormError, climatePayload } from '@/app/admin/management/cabinets/components/cabinetTypes';
 
 const fieldInputClass = 'bg-white';
 
@@ -24,6 +25,10 @@ export default function CreateCabinetDialog({
   const [formData, setFormData] = useState({
     cabinet_name: '',
     stock_id: '',
+    temp_min: '',
+    temp_max: '',
+    hum_min: '',
+    hum_max: '',
   });
 
   useEffect(() => {
@@ -31,6 +36,10 @@ export default function CreateCabinetDialog({
       setFormData({
         cabinet_name: '',
         stock_id: '',
+        temp_min: '',
+        temp_max: '',
+        hum_min: '',
+        hum_max: '',
       });
     }
   }, [open]);
@@ -38,10 +47,27 @@ export default function CreateCabinetDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    const climateError = climateFormError(formData);
+    if (climateError) {
+      toast.error(climateError);
+      return;
+    }
+
     try {
       setLoading(true);
-      const data: { cabinet_name?: string; stock_id?: number } = {
+      const data: {
+        cabinet_name?: string;
+        stock_id?: number;
+        temp_min: number | null;
+        temp_max: number | null;
+        hum_min: number | null;
+        hum_max: number | null;
+      } = {
         cabinet_name: formData.cabinet_name || undefined,
+        temp_min: climatePayload(formData.temp_min),
+        temp_max: climatePayload(formData.temp_max),
+        hum_min: climatePayload(formData.hum_min),
+        hum_max: climatePayload(formData.hum_max),
       };
       if (formData.stock_id.trim()) {
         const sid = parseInt(formData.stock_id, 10);
@@ -103,6 +129,57 @@ export default function CreateCabinetDialog({
             <p className="text-xs text-muted-foreground">
               ไม่กรอกระบบจะสร้างให้อัตโนมัติ
             </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="staff-create-temp-min">อุณหภูมิต่ำสุด (°C)</Label>
+              <Input
+                id="staff-create-temp-min"
+                type="number"
+                step="0.01"
+                placeholder="เช่น 2"
+                value={formData.temp_min}
+                onChange={(e) => setFormData({ ...formData, temp_min: e.target.value })}
+                className={fieldInputClass}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="staff-create-temp-max">อุณหภูมิสูงสุด (°C)</Label>
+              <Input
+                id="staff-create-temp-max"
+                type="number"
+                step="0.01"
+                placeholder="เช่น 8"
+                value={formData.temp_max}
+                onChange={(e) => setFormData({ ...formData, temp_max: e.target.value })}
+                className={fieldInputClass}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="staff-create-hum-min">ความชื้นต่ำสุด (%)</Label>
+              <Input
+                id="staff-create-hum-min"
+                type="number"
+                step="0.01"
+                placeholder="เช่น 30"
+                value={formData.hum_min}
+                onChange={(e) => setFormData({ ...formData, hum_min: e.target.value })}
+                className={fieldInputClass}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="staff-create-hum-max">ความชื้นสูงสุด (%)</Label>
+              <Input
+                id="staff-create-hum-max"
+                type="number"
+                step="0.01"
+                placeholder="เช่น 60"
+                value={formData.hum_max}
+                onChange={(e) => setFormData({ ...formData, hum_max: e.target.value })}
+                className={fieldInputClass}
+              />
+            </div>
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
