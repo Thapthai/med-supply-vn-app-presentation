@@ -256,7 +256,7 @@ export class CabinetTempHumReportExcelService {
             name: 'Tahoma',
             size: 11,
             bold: humOut,
-            color: { argb: humOut ? 'FF1D4ED8' : 'FF000000' },
+            color: { argb: humOut ? 'FFDC2626' : 'FF000000' },
           };
           humCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
           humCell.alignment = { horizontal: 'center', vertical: 'middle' };

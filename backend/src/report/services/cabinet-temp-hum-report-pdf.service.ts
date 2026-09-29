@@ -282,7 +282,7 @@ export class CabinetTempHumReportPdfService {
             fillRect(hx, y, timeW, rowH, bg);
             cellText(hum, hx, y, timeW, rowH, {
               size: 10,
-              color: humOut ? '#1D4ED8' : '#000000',
+              color: humOut ? '#DC2626' : '#000000',
               bold: humOut,
             });
           });
