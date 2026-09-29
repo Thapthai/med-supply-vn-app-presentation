@@ -228,7 +228,7 @@ export class CabinetTempHumReportExcelService {
         const bg = day % 2 === 0 ? 'FFF8F9FA' : 'FFFFFFFF';
         const dayCell = excelRow.getCell(1);
         dayCell.value = day;
-        dayCell.font = { name: 'Tahoma', size: 11, bold: true, color: { argb: 'FF212529' } };
+        dayCell.font = { name: 'Tahoma', size: 11, bold: true, color: { argb: 'FF000000' } };
         dayCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
         dayCell.alignment = { horizontal: 'center', vertical: 'middle' };
         dayCell.border = thinBorder;
@@ -242,9 +242,9 @@ export class CabinetTempHumReportExcelService {
             name: 'Tahoma',
             size: 11,
             bold: tempOut,
-            color: { argb: 'FFC2410C' },
+            color: { argb: tempOut ? 'FFDC2626' : 'FF000000' },
           };
-          tempCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: tempOut ? 'FFF2DCDB' : bg } };
+          tempCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
           tempCell.alignment = { horizontal: 'center', vertical: 'middle' };
           tempCell.border = thinBorder;
           if (typeof tempCell.value === 'number') tempCell.numFmt = '0.0';
@@ -256,9 +256,9 @@ export class CabinetTempHumReportExcelService {
             name: 'Tahoma',
             size: 11,
             bold: humOut,
-            color: { argb: 'FF0369A1' },
+            color: { argb: humOut ? 'FF1D4ED8' : 'FF000000' },
           };
-          humCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: humOut ? 'FFDAEEF3' : bg } };
+          humCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
           humCell.alignment = { horizontal: 'center', vertical: 'middle' };
           humCell.border = thinBorder;
           if (typeof humCell.value === 'number') humCell.numFmt = '0.0';

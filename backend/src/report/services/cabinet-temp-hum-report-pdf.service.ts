@@ -263,6 +263,7 @@ export class CabinetTempHumReportPdfService {
           cellText(String(day), margin, y, dayColW, rowH, {
             bold: true,
             size: 10,
+            color: '#000000',
           });
           timeSlots.forEach((time, i) => {
             const log = readingAt(row, day, time);
@@ -272,16 +273,16 @@ export class CabinetTempHumReportPdfService {
             const humOut = isOutsideClimateLimit(log?.hum, row.hum_min, row.hum_max);
             const tx = margin + dayColW + i * timeW;
             const hx = margin + dayColW + metricW + i * timeW;
-            fillRect(tx, y, timeW, rowH, tempOut ? '#F2DCDB' : bg);
+            fillRect(tx, y, timeW, rowH, bg);
             cellText(temp, tx, y, timeW, rowH, {
               size: 10,
-              color: '#C2410C',
+              color: tempOut ? '#DC2626' : '#000000',
               bold: tempOut,
             });
-            fillRect(hx, y, timeW, rowH, humOut ? '#DAEEF3' : bg);
+            fillRect(hx, y, timeW, rowH, bg);
             cellText(hum, hx, y, timeW, rowH, {
               size: 10,
-              color: '#0369A1',
+              color: humOut ? '#1D4ED8' : '#000000',
               bold: humOut,
             });
           });
