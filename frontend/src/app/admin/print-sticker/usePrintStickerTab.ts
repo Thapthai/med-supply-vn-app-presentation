@@ -444,19 +444,20 @@ export function usePrintStickerTab() {
   );
 
   const setCopiesFor = (itemcode: string, raw: number | null) => {
+    const nextCopies = (value: number) => Math.max(0, Math.floor(value));
     setSelectedLines((prev) => {
       const line = prev.find((l) => l.itemcode === itemcode);
       if (!line) {
         const row = items.find((i) => i.itemcode === itemcode);
         if (!row) return prev;
         const cap = printableCapForRow(row);
-        const copies = raw == null ? null : clampCopies(raw, cap);
+        const copies = raw == null ? null : nextCopies(raw);
         return [...prev, { ...buildLineFromRow(row, 1, cap), copies }];
       }
       return prev.map((l) => {
         if (l.itemcode !== itemcode) return l;
         if (raw == null) return { ...l, copies: null };
-        return { ...l, copies: clampCopies(raw, l.refillCap) };
+        return { ...l, copies: nextCopies(raw) };
       });
     });
   };
@@ -534,7 +535,7 @@ export function usePrintStickerTab() {
     subLabel: c.cabinet_code ?? undefined,
   }));
 
-  const buildLinesWithCopies = () => {
+  const buildLinesWithCopies = (printOverLimit = false) => {
     const hasFilter = Boolean(departmentId && cabinetId);
     const depNum = departmentId ? parseInt(departmentId, 10) : undefined;
 
@@ -560,9 +561,12 @@ export function usePrintStickerTab() {
       return null;
     }
 
+    const resolveCopies = (copies: number | null, refillCap: number) =>
+      printOverLimit ? Math.max(0, Math.floor(Number(copies) || 0)) : clampCopies(copies, refillCap);
+
     const today = localYmd();
     const invalidExpire = linesWithExpire.find((l) => {
-      const copies = clampCopies(l.copies, l.refillCap);
+      const copies = resolveCopies(l.copies, l.refillCap);
       if (copies <= 0) return false;
       const exp = (l.expireDate ?? '').trim();
       return !exp || exp <= today;
@@ -574,7 +578,7 @@ export function usePrintStickerTab() {
 
     const linesWithCopies = linesWithExpire
       .map((l) => {
-        const copies = clampCopies(l.copies, l.refillCap);
+        const copies = resolveCopies(l.copies, l.refillCap);
         const exp = (l.expireDate ?? '').trim();
         const lot = (l.lotNo ?? '').trim();
         return {
@@ -683,8 +687,8 @@ export function usePrintStickerTab() {
     }
   };
 
-  const handlePrepareAndPrint = async () => {
-    const built = buildLinesWithCopies();
+  const handlePrepareAndPrint = async (printOverLimit = false) => {
+    const built = buildLinesWithCopies(printOverLimit);
     if (!built) return;
 
     try {

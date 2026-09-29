@@ -51,7 +51,7 @@ type PrintStickerItemListCardProps = {
   onSetCopies?: (itemcode: string, raw: number | null) => void;
   onExpireDateChange?: (itemcode: string, ymd: string) => void;
   onLotNoChange?: (itemcode: string, lotNo: string) => void;
-  onPrintSelected?: () => void;
+  onPrintSelected?: (printOverLimit?: boolean) => void;
   printing?: boolean;
   preparing?: boolean;
   mode?: 'auto' | 'manual';
@@ -100,6 +100,7 @@ export function PrintStickerItemListCard({
     copies: l.copies ?? 0,
     expireDate: (l.expireDate ?? '').trim(),
     lotNo: (l.lotNo ?? '').trim() || undefined,
+    maxCopies: l.refillCap,
   }));
   const titlePrefix =
     mode === 'auto'
@@ -177,6 +178,7 @@ export function PrintStickerItemListCard({
                   const readyToPrint = hasExpire && (line?.copies ?? 0) > 0;
                   const qtyIn = typeof row.count_itemstock === 'number' ? row.count_itemstock : variant === 'cabinet' ? 0 : null;
                   const cap = line?.refillCap ?? printableCapForRow(row);
+                  const copiesOverMax = line?.copies != null && line.copies > cap;
                   return (
                     <TableRow
                       key={row.itemcode}
@@ -226,8 +228,12 @@ export function PrintStickerItemListCard({
                           type="number"
                           inputMode="numeric"
                           min={0}
-                          max={Math.max(cap, 0)}
-                          className="mx-auto h-8 w-[4rem] bg-white text-center font-mono text-sm"
+                          title={copiesOverMax ? `ใส่จำนวนได้แค่ ${cap}` : undefined}
+                          className={cn(
+                            'mx-auto h-8 w-[4rem] bg-white text-center font-mono text-sm',
+                            copiesOverMax &&
+                              'border-red-600 text-red-700 ring-2 ring-red-200 focus-visible:border-red-600 focus-visible:ring-red-400',
+                          )}
                           value={line?.copies == null ? '' : line.copies}
                           onChange={(e) => {
                             const raw = e.target.value;
@@ -269,10 +275,11 @@ export function PrintStickerItemListCard({
                 onOpenChange={setConfirmOpen}
                 lines={confirmLines}
                 busy={printBusy}
-                onConfirm={() => {
+                onConfirm={(printOverLimit) => {
                   setConfirmOpen(false);
-                  onPrintSelected();
+                  onPrintSelected(printOverLimit);
                 }}
+                onCopiesChange={onSetCopies}
               />
             </>
           ) : null}
