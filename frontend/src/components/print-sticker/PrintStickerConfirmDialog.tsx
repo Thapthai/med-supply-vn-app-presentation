@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/table';
 import { formatCEToDMY } from '@/lib/datePickerBE';
 import { cn } from '@/lib/utils';
+import { STICKER_H_DOTS, STICKER_V_DOTS, StickerLabelPreview } from './StickerLabelPreview';
 
 export type PrintStickerConfirmLine = {
   itemcode: string;
@@ -53,11 +54,13 @@ export function PrintStickerConfirmDialog({
 }: PrintStickerConfirmDialogProps) {
   const [qtyDraft, setQtyDraft] = useState<Record<string, string>>({});
   const [warningCodes, setWarningCodes] = useState<string[]>([]);
+  const [previewIndex, setPreviewIndex] = useState(0);
 
   useEffect(() => {
     if (!open) {
       setQtyDraft({});
       setWarningCodes([]);
+      setPreviewIndex(0);
       return;
     }
     setWarningCodes((prev) => {
@@ -82,6 +85,7 @@ export function PrintStickerConfirmDialog({
     if (line.maxCopies != null) return sum + Math.min(line.copies, line.maxCopies);
     return sum + line.copies;
   }, 0);
+  const previewLine = lines[Math.min(previewIndex, Math.max(lines.length - 1, 0))];
 
   return (
     <Dialog
@@ -90,7 +94,7 @@ export function PrintStickerConfirmDialog({
         if (!busy) onOpenChange(next);
       }}
     >
-      <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+      <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
         <div className="border-b px-6 py-4">
           <DialogHeader className="gap-3">
             <div className="flex items-start gap-3">
@@ -108,6 +112,38 @@ export function PrintStickerConfirmDialog({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+          {previewLine ? (
+            <div className="mb-4 flex flex-col items-center gap-2">
+              <p className="text-xs text-slate-500">
+                ตัวอย่างฉลาก · {STICKER_H_DOTS}×{STICKER_V_DOTS} จุด
+                {lines.length > 1 ? ` · รายการ ${Math.min(previewIndex, lines.length - 1) + 1}/${lines.length}` : ''}
+                {previewLine.copies > 1 ? ` · พิมพ์ ${previewLine.copies} แผ่น` : ''}
+              </p>
+              <StickerLabelPreview line={previewLine} />
+              {lines.length > 1 ? (
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={previewIndex <= 0}
+                    onClick={() => setPreviewIndex((index) => Math.max(0, index - 1))}
+                  >
+                    ก่อนหน้า
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={previewIndex >= lines.length - 1}
+                    onClick={() => setPreviewIndex((index) => Math.min(lines.length - 1, index + 1))}
+                  >
+                    ถัดไป
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           {warningLines.length > 0 ? (
             <div className="mb-4 rounded-lg border border-red-300 bg-red-50 p-4">
               <p className="text-sm font-semibold text-red-700">จำนวนเกินค่าสูงสุด</p>
