@@ -95,6 +95,10 @@ export type CabinetTempHumChartData = {
     app_cabinet_id: number | null;
     cabinet_name: string | null;
     cabinet_code: string | null;
+    temp_min?: number | null;
+    temp_max?: number | null;
+    hum_min?: number | null;
+    hum_max?: number | null;
   } | null;
   latest: { create_date: string; temp_log: number; hum_log: number } | null;
   stats: {

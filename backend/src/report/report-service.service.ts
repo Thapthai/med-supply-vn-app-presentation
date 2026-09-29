@@ -3444,6 +3444,10 @@ export class ReportServiceService {
           log_time: timePart,
           temp: c.latest_temp != null ? c.latest_temp.toFixed(1) : '-',
           hum: c.latest_hum != null ? c.latest_hum.toFixed(1) : '-',
+          temp_min: c.temp_min,
+          temp_max: c.temp_max,
+          hum_min: c.hum_min,
+          hum_max: c.hum_max,
           subRows: (c.logs ?? []).map((log, logIndex) => ({
             seq: logIndex + 1,
             day: utcDay(log.create_date),
@@ -3501,6 +3505,10 @@ export class ReportServiceService {
         month,
         month_label: monthLabel,
         points: chart.points ?? [],
+        temp_min: chart.selected?.temp_min,
+        temp_max: chart.selected?.temp_max,
+        hum_min: chart.selected?.hum_min,
+        hum_max: chart.selected?.hum_max,
       });
       const ym = `${year}${String(month).padStart(2, '0')}`;
       return { buffer, filename: `cabinet_temp_hum_chart_${params.cabinet_id}_${ym}.pdf` };

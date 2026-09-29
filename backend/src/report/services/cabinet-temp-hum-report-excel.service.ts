@@ -19,7 +19,43 @@ export interface CabinetTempHumReportRow {
   log_time: string;
   temp: string;
   hum: string;
+  temp_min?: number | null;
+  temp_max?: number | null;
+  hum_min?: number | null;
+  hum_max?: number | null;
   subRows?: CabinetTempHumReportSubRow[];
+}
+
+/** นอกช่วงเกณฑ์ต่ำสุด–สูงสุดของตู้ */
+export function isOutsideClimateLimit(
+  value: string | number | undefined | null,
+  min?: number | null,
+  max?: number | null,
+): boolean {
+  if (value == null || value === '' || value === '-') return false;
+  if (min == null && max == null) return false;
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n)) return false;
+  if (min != null && n < min) return true;
+  if (max != null && n > max) return true;
+  return false;
+}
+
+function formatBound(n: number): string {
+  return Number.isInteger(n) ? String(n) : String(n);
+}
+
+/** เช่น อุณหภูมิ (20 - 30 C) */
+export function climateHeaderLabel(
+  label: string,
+  min: number | null | undefined,
+  max: number | null | undefined,
+  unit: string,
+): string {
+  if (min != null && max != null) return `${label} (${formatBound(min)} - ${formatBound(max)} ${unit})`;
+  if (min != null) return `${label} (≥ ${formatBound(min)} ${unit})`;
+  if (max != null) return `${label} (≤ ${formatBound(max)} ${unit})`;
+  return label;
 }
 
 export interface CabinetTempHumReportData {
@@ -166,15 +202,15 @@ export class CabinetTempHumReportExcelService {
 
       worksheet.mergeCells(groupRow, tempStart, groupRow, tempEnd);
       const tempHeader = worksheet.getCell(groupRow, tempStart);
-      tempHeader.value = 'อุณหภูมิ';
+      tempHeader.value = climateHeaderLabel('อุณหภูมิ', row.temp_min, row.temp_max, 'C');
       styleHeaderCell(tempHeader, 'FFFDBA74', 'FF9A3412');
 
       worksheet.mergeCells(groupRow, humStart, groupRow, humEnd);
       const humHeader = worksheet.getCell(groupRow, humStart);
-      humHeader.value = 'ความชื้น';
+      humHeader.value = climateHeaderLabel('ความชื้น', row.hum_min, row.hum_max, '%');
       styleHeaderCell(humHeader, 'FF7DD3FC', 'FF075985');
       applyRangeBorder(groupRow, 1, lastCol);
-      worksheet.getRow(groupRow).height = 22;
+      worksheet.getRow(groupRow).height = 28;
 
       timeSlots.forEach((time, i) => {
         const tempCell = worksheet.getCell(timeRow, tempStart + i);
@@ -191,7 +227,7 @@ export class CabinetTempHumReportExcelService {
         const excelRow = worksheet.getRow(dataRowIndex);
         const bg = day % 2 === 0 ? 'FFF8F9FA' : 'FFFFFFFF';
         const dayCell = excelRow.getCell(1);
-        dayCell.value = day === 1 ? `${day} (วันที่)` : day;
+        dayCell.value = day;
         dayCell.font = { name: 'Tahoma', size: 11, bold: true, color: { argb: 'FF212529' } };
         dayCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
         dayCell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -199,18 +235,30 @@ export class CabinetTempHumReportExcelService {
 
         timeSlots.forEach((time, i) => {
           const log = readingAt(row, day, time);
+          const tempOut = isOutsideClimateLimit(log?.temp, row.temp_min, row.temp_max);
           const tempCell = excelRow.getCell(tempStart + i);
           tempCell.value = toExcelNumber(log?.temp);
-          tempCell.font = { name: 'Tahoma', size: 11, color: { argb: 'FFC2410C' } };
-          tempCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
+          tempCell.font = {
+            name: 'Tahoma',
+            size: 11,
+            bold: tempOut,
+            color: { argb: 'FFC2410C' },
+          };
+          tempCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: tempOut ? 'FFF2DCDB' : bg } };
           tempCell.alignment = { horizontal: 'center', vertical: 'middle' };
           tempCell.border = thinBorder;
           if (typeof tempCell.value === 'number') tempCell.numFmt = '0.0';
 
+          const humOut = isOutsideClimateLimit(log?.hum, row.hum_min, row.hum_max);
           const humCell = excelRow.getCell(humStart + i);
           humCell.value = toExcelNumber(log?.hum);
-          humCell.font = { name: 'Tahoma', size: 11, color: { argb: 'FF0369A1' } };
-          humCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
+          humCell.font = {
+            name: 'Tahoma',
+            size: 11,
+            bold: humOut,
+            color: { argb: 'FF0369A1' },
+          };
+          humCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: humOut ? 'FFDAEEF3' : bg } };
           humCell.alignment = { horizontal: 'center', vertical: 'middle' };
           humCell.border = thinBorder;
           if (typeof humCell.value === 'number') humCell.numFmt = '0.0';

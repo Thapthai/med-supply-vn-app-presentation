@@ -495,26 +495,14 @@ model SupplyItemReturnRecord {
 // Medical Supplies Usage Logs
 model MedicalSupplyUsageLog {
   id Int @id @default(autoincrement())
-
-  // Reference to the usage record (nullable for error logs)
   usage_id Int? @map("usage_id")
-
-  /// HN (เลข HN ผู้ป่วย) — แยกคอลัมน์เพื่อค้น/รายงาน
   patient_hn String? @map("patient_hn") @db.VarChar(64)
-
-  /// EN (Episode / เลขอีพีโซด)
   en String? @map("en") @db.VarChar(64)
-
-  /// ประเภท log เช่น CREATE, UPDATE, หรือชื่อ action
   log_type String? @map("log_type") @db.VarChar(64)
 
-  /// สถานะ เช่น SUCCESS, ERROR
   log_status String? @map("log_status") @db.VarChar(32)
-
-  /// คำอธิบายภาษาไทยสำหรับผู้ใช้ (action JSON เก็บรายละเอียดเทคนิคเหมือนเดิม)
   description String? @map("description") @db.VarChar(1024)
 
-  // Action data (JSON) - รายละเอียดเต็ม
   action Json @map("action") @db.Json
 
   created_at DateTime @default(dbgenerated("NOW()")) @map("created_at")
@@ -676,6 +664,12 @@ model cabinet {
   cabinet_type   String?  @map("cabinet_type") @db.VarChar(255)
   cabinet_status String?  @default("ACTIVE") @map("cabinet_status") @db.VarChar(255)
   stock_id       Int?     @unique() @map("stock_id")
+  /// เกณฑ์อุณหภูมิ (°C)
+  temp_min       Decimal? @map("temp_min") @db.Decimal(5, 2)
+  temp_max       Decimal? @map("temp_max") @db.Decimal(5, 2)
+  /// เกณฑ์ความชื้น (%)
+  hum_min        Decimal? @map("hum_min") @db.Decimal(5, 2)
+  hum_max        Decimal? @map("hum_max") @db.Decimal(5, 2)
   created_at     DateTime @default(dbgenerated("NOW()")) @map("created_at")
   updated_at     DateTime @updatedAt @map("updated_at")
 

@@ -4,6 +4,8 @@ import * as fs from 'fs';
 import {
   CabinetTempHumReportData,
   CabinetTempHumReportRow,
+  climateHeaderLabel,
+  isOutsideClimateLimit,
 } from './cabinet-temp-hum-report-excel.service';
 import { resolveReportLogoPath, getReportThaiFontPaths } from '../config/report.config';
 import { formatReportDateOnly } from '../utils/date-timeformat';
@@ -130,7 +132,7 @@ export class CabinetTempHumReportPdfService {
         const metricW = (contentWidth - dayColW) / 2;
         const timeW = metricW / timeSlots.length;
         const titleH = 22;
-        const groupH = 18;
+        const groupH = 28;
         const timeH = 16;
         const headerH = groupH + timeH;
         const rowH = 16;
@@ -224,7 +226,7 @@ export class CabinetTempHumReportPdfService {
           doc.y = margin + 26;
         };
 
-        const drawTableHeader = (y: number) => {
+        const drawTableHeader = (y: number, row: CabinetTempHumReportRow) => {
           fillRect(margin, y, dayColW, headerH, '#1A365D', '#1A365D');
           cellText('วันที่', margin, y, dayColW, headerH, {
             bold: true,
@@ -233,15 +235,15 @@ export class CabinetTempHumReportPdfService {
           });
 
           fillRect(margin + dayColW, y, metricW, groupH, '#FDBA74', '#FDBA74');
-          cellText('อุณหภูมิ', margin + dayColW, y, metricW, groupH, {
+          cellText(climateHeaderLabel('อุณหภูมิ', row.temp_min, row.temp_max, 'C'), margin + dayColW, y, metricW, groupH, {
             bold: true,
-            size: 11,
+            size: 10,
             color: '#9A3412',
           });
           fillRect(margin + dayColW + metricW, y, metricW, groupH, '#7DD3FC', '#7DD3FC');
-          cellText('ความชื้น', margin + dayColW + metricW, y, metricW, groupH, {
+          cellText(climateHeaderLabel('ความชื้น', row.hum_min, row.hum_max, '%'), margin + dayColW + metricW, y, metricW, groupH, {
             bold: true,
-            size: 11,
+            size: 10,
             color: '#075985',
           });
 
@@ -258,7 +260,7 @@ export class CabinetTempHumReportPdfService {
         const drawDayRow = (row: CabinetTempHumReportRow, day: number, y: number) => {
           const bg = day % 2 === 0 ? '#F8F9FA' : '#FFFFFF';
           fillRect(margin, y, dayColW, rowH, bg);
-          cellText(day === 1 ? `${day} (วันที่)` : String(day), margin, y, dayColW, rowH, {
+          cellText(String(day), margin, y, dayColW, rowH, {
             bold: true,
             size: 10,
           });
@@ -266,12 +268,22 @@ export class CabinetTempHumReportPdfService {
             const log = readingAt(row, day, time);
             const temp = log?.temp && log.temp !== '-' ? log.temp : '-';
             const hum = log?.hum && log.hum !== '-' ? log.hum : '-';
+            const tempOut = isOutsideClimateLimit(log?.temp, row.temp_min, row.temp_max);
+            const humOut = isOutsideClimateLimit(log?.hum, row.hum_min, row.hum_max);
             const tx = margin + dayColW + i * timeW;
             const hx = margin + dayColW + metricW + i * timeW;
-            fillRect(tx, y, timeW, rowH, bg);
-            cellText(temp, tx, y, timeW, rowH, { size: 10, color: '#C2410C', bold: true });
-            fillRect(hx, y, timeW, rowH, bg);
-            cellText(hum, hx, y, timeW, rowH, { size: 10, color: '#0369A1', bold: true });
+            fillRect(tx, y, timeW, rowH, tempOut ? '#F2DCDB' : bg);
+            cellText(temp, tx, y, timeW, rowH, {
+              size: 10,
+              color: '#C2410C',
+              bold: tempOut,
+            });
+            fillRect(hx, y, timeW, rowH, humOut ? '#DAEEF3' : bg);
+            cellText(hum, hx, y, timeW, rowH, {
+              size: 10,
+              color: '#0369A1',
+              bold: humOut,
+            });
           });
         };
 
@@ -308,12 +320,12 @@ export class CabinetTempHumReportPdfService {
             else ensureSpace(titleH + headerH + rowH + 8, cabinetLabel);
             drawCabinetTitle(row, doc.y);
             doc.y += titleH;
-            drawTableHeader(doc.y);
+            drawTableHeader(doc.y, row);
             doc.y += headerH;
             for (let day = 1; day <= dayCount; day++) {
               ensureSpace(rowH, cabinetLabel);
               if (doc.y === margin + 26) {
-                drawTableHeader(doc.y);
+                drawTableHeader(doc.y, row);
                 doc.y += headerH;
               }
               drawDayRow(row, day, doc.y);

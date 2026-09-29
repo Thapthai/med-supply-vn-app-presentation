@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { CABINET_TYPE_OPTIONS } from './cabinetTypes';
+import { CABINET_TYPE_OPTIONS, climatePayload } from './cabinetTypes';
 
 const fieldInputClass = 'bg-white';
 
@@ -45,6 +45,10 @@ const defaultValues: CabinetFormData = {
   cabinet_name: '',
   stock_id: '',
   cabinet_type: 'WEIGHING',
+  temp_min: '',
+  temp_max: '',
+  hum_min: '',
+  hum_max: '',
 };
 
 export default function CreateCabinetDialog({
@@ -68,9 +72,21 @@ export default function CreateCabinetDialog({
   const handleSubmit = async (values: CabinetFormData) => {
     try {
       setLoading(true);
-      const data: { cabinet_name: string; cabinet_type: string; stock_id?: number } = {
+      const data: {
+        cabinet_name: string;
+        cabinet_type: string;
+        stock_id?: number;
+        temp_min: number | null;
+        temp_max: number | null;
+        hum_min: number | null;
+        hum_max: number | null;
+      } = {
         cabinet_name: values.cabinet_name.trim(),
         cabinet_type: values.cabinet_type,
+        temp_min: climatePayload(values.temp_min),
+        temp_max: climatePayload(values.temp_max),
+        hum_min: climatePayload(values.hum_min),
+        hum_max: climatePayload(values.hum_max),
       };
       if (values.stock_id?.trim()) {
         const sid = parseInt(values.stock_id.trim(), 10);
@@ -153,6 +169,89 @@ export default function CreateCabinetDialog({
                 </FormItem>
               )}
             />
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="temp_min"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>อุณหภูมิต่ำสุด (°C)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="เช่น 2"
+                        className={fieldInputClass}
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="temp_max"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>อุณหภูมิสูงสุด (°C)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="เช่น 8"
+                        className={fieldInputClass}
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="hum_min"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ความชื้นต่ำสุด (%)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="เช่น 30"
+                        className={fieldInputClass}
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="hum_max"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ความชื้นสูงสุด (%)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="เช่น 60"
+                        className={fieldInputClass}
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}

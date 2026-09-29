@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, Loader2, Package, Plus } from 'lucide-react';
-import { normalizeCabinetType } from './cabinetTypes';
+import { formatClimateRange, normalizeCabinetType } from './cabinetTypes';
 import {
   ChevronLeft,
   ChevronRight,
@@ -20,6 +20,10 @@ interface Cabinet {
   cabinet_type?: string;
   stock_id?: number;
   cabinet_status?: string;
+  temp_min?: number | string | null;
+  temp_max?: number | string | null;
+  hum_min?: number | string | null;
+  hum_max?: number | string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -115,6 +119,8 @@ export default function CabinetsTable({
                 <TableHead>รหัสตู้</TableHead>
                 <TableHead>ประเภท</TableHead>
                 <TableHead>Stock ID</TableHead>
+                <TableHead className="whitespace-nowrap">อุณหภูมิ (°C)</TableHead>
+                <TableHead className="whitespace-nowrap">ความชื้น (%)</TableHead>
                 <TableHead>สถานะ</TableHead>
                 <TableHead className="text-right">จัดการ</TableHead>
               </TableRow>
@@ -127,6 +133,12 @@ export default function CabinetsTable({
                   <TableCell>{cabinet.cabinet_code || '-'}</TableCell>
                   <TableCell>{getTypeBadge(cabinet.cabinet_type)}</TableCell>
                   <TableCell>{cabinet.stock_id || '-'}</TableCell>
+                  <TableCell className="tabular-nums whitespace-nowrap">
+                    {formatClimateRange(cabinet.temp_min, cabinet.temp_max)}
+                  </TableCell>
+                  <TableCell className="tabular-nums whitespace-nowrap">
+                    {formatClimateRange(cabinet.hum_min, cabinet.hum_max)}
+                  </TableCell>
                   <TableCell>{getStatusBadge(cabinet.cabinet_status)}</TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end flex-wrap gap-2">

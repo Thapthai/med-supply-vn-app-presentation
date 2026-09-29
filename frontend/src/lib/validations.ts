@@ -51,7 +51,27 @@ export const categorySchema = z.object({
   is_active: z.boolean(),
 });
 
-export const cabinetFormSchema = z.object({
+function optionalLimit(label: string, min: number, max: number) {
+  return z
+    .string()
+    .optional()
+    .refine(
+      (v) => {
+        if (!v?.trim()) return true;
+        const n = Number(v.trim());
+        return Number.isFinite(n) && n >= min && n <= max;
+      },
+      { message: `${label} ต้องเป็นตัวเลขระหว่าง ${min} ถึง ${max}` },
+    );
+}
+
+function limitNumber(raw?: string): number | null {
+  if (!raw?.trim()) return null;
+  const n = Number(raw.trim());
+  return Number.isFinite(n) ? n : null;
+}
+
+const cabinetFormObject = z.object({
   cabinet_name: z
     .string()
     .trim()
@@ -72,7 +92,37 @@ export const cabinetFormSchema = z.object({
   cabinet_type: z.enum(['WEIGHING', 'RFID'], {
     message: 'กรุณาเลือกประเภทตู้',
   }),
+  temp_min: optionalLimit('อุณหภูมิต่ำสุด', -50, 80),
+  temp_max: optionalLimit('อุณหภูมิสูงสุด', -50, 80),
+  hum_min: optionalLimit('ความชื้นต่ำสุด', 0, 100),
+  hum_max: optionalLimit('ความชื้นสูงสุด', 0, 100),
 });
+
+function refineClimateRange(
+  data: { temp_min?: string; temp_max?: string; hum_min?: string; hum_max?: string },
+  ctx: z.RefinementCtx,
+) {
+  const tempMin = limitNumber(data.temp_min);
+  const tempMax = limitNumber(data.temp_max);
+  if (tempMin != null && tempMax != null && tempMin > tempMax) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['temp_max'],
+      message: 'อุณหภูมิสูงสุดต้องไม่ต่ำกว่าอุณหภูมิต่ำสุด',
+    });
+  }
+  const humMin = limitNumber(data.hum_min);
+  const humMax = limitNumber(data.hum_max);
+  if (humMin != null && humMax != null && humMin > humMax) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['hum_max'],
+      message: 'ความชื้นสูงสุดต้องไม่ต่ำกว่าความชื้นต่ำสุด',
+    });
+  }
+}
+
+export const cabinetFormSchema = cabinetFormObject.superRefine(refineClimateRange);
 
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type RegisterFormData = z.infer<typeof registerSchema>;
@@ -80,8 +130,10 @@ export type ItemFormData = z.infer<typeof itemSchema>;
 export type CategoryFormData = z.infer<typeof categorySchema>;
 export type CabinetFormData = z.infer<typeof cabinetFormSchema>;
 
-export const cabinetEditFormSchema = cabinetFormSchema.extend({
-  cabinet_status: z.enum(['ACTIVE', 'INACTIVE']),
-});
+export const cabinetEditFormSchema = cabinetFormObject
+  .extend({
+    cabinet_status: z.enum(['ACTIVE', 'INACTIVE']),
+  })
+  .superRefine(refineClimateRange);
 
 export type CabinetEditFormData = z.infer<typeof cabinetEditFormSchema>;

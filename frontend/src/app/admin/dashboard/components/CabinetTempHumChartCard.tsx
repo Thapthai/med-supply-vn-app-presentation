@@ -204,18 +204,27 @@ function useIsMobile(query = '(max-width: 639px)') {
   return matches;
 }
 
+function limitValue(value: number | null | undefined): number | null {
+  if (value == null || Number.isNaN(value)) return null;
+  return value;
+}
+
 function DailyMetricChart({
   points,
   year,
   month,
   metric,
   title,
+  limitMin,
+  limitMax,
 }: {
   points: CabinetTempHumChartPoint[];
   year: number;
   month: number;
   metric: 'temp' | 'hum';
   title: string;
+  limitMin?: number | null;
+  limitMax?: number | null;
 }) {
   const [hoverDay, setHoverDay] = useState<number | null>(null);
   const isMobile = useIsMobile();
@@ -229,7 +238,8 @@ function DailyMetricChart({
     const padR = 20;
     const padT = 32;
     const padB = 48;
-    const values = series.flatMap((s) => s.points.map((p) => p.value));
+    const limits = [limitValue(limitMin), limitValue(limitMax)].filter((n): n is number => n != null);
+    const values = [...series.flatMap((s) => s.points.map((p) => p.value)), ...limits];
     const domain = values.length
       ? niceDomain(Math.min(...values), Math.max(...values))
       : { yMin: 0, yMax: 1, ticks: [0, 1] };
@@ -251,8 +261,16 @@ function DailyMetricChart({
     const xLabels = Array.from({ length: dayCount }, (_, i) => i + 1).filter((day) =>
       isMobile ? day === 1 || day === dayCount || day % 5 === 0 : true,
     );
-    return { width, height, padL, padR, padT, innerW, innerH, domain, xAt, yAt, lines, xLabels };
-  }, [series, dayCount, isMobile]);
+    const guides = [
+      limitValue(limitMin) != null
+        ? { key: 'min' as const, value: limitValue(limitMin) as number, label: 'ต่ำสุด' }
+        : null,
+      limitValue(limitMax) != null
+        ? { key: 'max' as const, value: limitValue(limitMax) as number, label: 'สูงสุด' }
+        : null,
+    ].filter((guide): guide is { key: 'min' | 'max'; value: number; label: string } => guide != null);
+    return { width, height, padL, padR, padT, innerW, innerH, domain, xAt, yAt, lines, xLabels, guides };
+  }, [series, dayCount, isMobile, limitMin, limitMax]);
 
   if (series.length === 0) return null;
 
@@ -274,6 +292,7 @@ function DailyMetricChart({
 
   const unit = metric === 'temp' ? '°C' : 'RH';
   const axisColor = metric === 'temp' ? '#c2410c' : '#0369a1';
+  const guideColor = metric === 'temp' ? '#ea580c' : '#0284c7';
   const day = hoverDay;
   const tooltipRows =
     day == null
@@ -324,6 +343,26 @@ function DailyMetricChart({
                 />
                 <text x={layout.padL - 10} y={y + 5} textAnchor="end" fill={axisColor} fontSize="13">
                   {tick.toFixed(1)}
+                </text>
+              </g>
+            );
+          })}
+          {layout.guides.map((guide) => {
+            const y = layout.yAt(guide.value);
+            return (
+              <g key={guide.key}>
+                <line
+                  x1={layout.padL}
+                  x2={layout.width - layout.padR}
+                  y1={y}
+                  y2={y}
+                  stroke={guideColor}
+                  strokeWidth="1.75"
+                  strokeDasharray="8 6"
+                />
+                <text x={layout.padL + 6} y={y - 5} fill={guideColor} fontSize="12" fontWeight="600">
+                  {guide.label} {guide.value.toFixed(1)}
+                  {unit}
                 </text>
               </g>
             );
@@ -389,6 +428,13 @@ function DailyMetricChart({
             <span key={s.time} className="inline-flex items-center gap-2 text-xs text-slate-700 sm:text-sm">
               <span className="h-3 w-3 rounded-[3px]" style={{ backgroundColor: s.color }} />
               {s.time}
+            </span>
+          ))}
+          {layout.guides.map((guide) => (
+            <span key={guide.key} className="inline-flex items-center gap-2 text-xs text-slate-700 sm:text-sm">
+              <span className="h-0 w-4 border-t-2 border-dashed" style={{ borderColor: guideColor }} />
+              {guide.label} {guide.value.toFixed(1)}
+              {unit}
             </span>
           ))}
         </div>
@@ -501,6 +547,8 @@ function CabinetChartBlock({
             month={month}
             metric="temp"
             title={`อุณหภูมิ ${cabinetLabel(cabinet)} · เดือน ${monthLabel(year, month)}`}
+            limitMin={data.selected?.temp_min}
+            limitMax={data.selected?.temp_max}
           />
           <DailyMetricChart
             points={data.points}
@@ -508,6 +556,8 @@ function CabinetChartBlock({
             month={month}
             metric="hum"
             title={`ความชื้นสัมพัทธ์ ${cabinetLabel(cabinet)} · เดือน ${monthLabel(year, month)}`}
+            limitMin={data.selected?.hum_min}
+            limitMax={data.selected?.hum_max}
           />
         </div>
       )}
@@ -753,7 +803,7 @@ export default function CabinetTempHumChartCardV2() {
                                 </div>
                               </td>
                               <td className={cn(metricClass, 'border-b border-slate-100 text-orange-600')}>
-                                อุณหภูมิ
+                                อุณหภูมิ (°C)
                               </td>
                               {days.flatMap((day) => {
                                 const isToday = todayDay === day;
@@ -768,7 +818,7 @@ export default function CabinetTempHumChartCardV2() {
                                         isToday && 'bg-orange-50/80',
                                       )}
                                     >
-                                      {formatTemp(log?.temp_log)}
+                                      {log?.temp_log}
                                     </td>
                                   );
                                 });
@@ -776,7 +826,7 @@ export default function CabinetTempHumChartCardV2() {
                             </tr>
                             <tr className={rowClass} onClick={() => toggleCabinet(id)}>
                               <td className={cn(metricClass, 'border-b-2 border-b-slate-400 text-sky-600')}>
-                                ความชื้นสัมพัทธ์
+                                ความชื้นสัมพัทธ์ (% RH)
                               </td>
                               {days.flatMap((day) => {
                                 const isToday = todayDay === day;
@@ -791,7 +841,7 @@ export default function CabinetTempHumChartCardV2() {
                                         isToday && 'bg-orange-50/80',
                                       )}
                                     >
-                                      {formatHum(log?.hum_log)}
+                                      {log?.hum_log}
                                     </td>
                                   );
                                 });

@@ -16,6 +16,10 @@ export type CabinetTempHumChartPdfData = {
   month: number;
   month_label: string;
   points: CabinetTempHumChartPdfPoint[];
+  temp_min?: number | null;
+  temp_max?: number | null;
+  hum_min?: number | null;
+  hum_max?: number | null;
 };
 
 const LINE_COLORS = ['#ef4444', '#22c55e', '#3b82f6', '#f59e0b', '#a855f7', '#14b8a6', '#f97316', '#64748b'];
@@ -299,8 +303,14 @@ export class CabinetTempHumChartPdfService {
     const series = buildTimeSeries(points, year, month, metric);
     const dayCount = daysInMonth(year, month);
     const axisColor = '#1A365D';
-    const lineAccent = metric === 'temp' ? '#C05621' : '#2B6CB0';
-    const unit = metric === 'temp' ? '°C' : '%';
+    const guideColor = metric === 'temp' ? '#EA580C' : '#0284C7';
+    const unit = metric === 'temp' ? '°C' : 'RH';
+    const limitMin = metric === 'temp' ? opts.temp_min : opts.hum_min;
+    const limitMax = metric === 'temp' ? opts.temp_max : opts.hum_max;
+    const guides = [
+      limitMin != null && Number.isFinite(limitMin) ? { key: 'min' as const, value: limitMin, label: 'ต่ำสุด' } : null,
+      limitMax != null && Number.isFinite(limitMax) ? { key: 'max' as const, value: limitMax, label: 'สูงสุด' } : null,
+    ].filter((guide): guide is { key: 'min' | 'max'; value: number; label: string } => guide != null);
     const legendW = 78;
     const padL = 48;
     const padR = 12;
@@ -310,7 +320,10 @@ export class CabinetTempHumChartPdfService {
     const plotY = y + padT;
     const plotW = width - padL - padR - legendW;
     const plotH = height - padT - padB;
-    const values = series.flatMap((s) => s.points.map((p) => p.value));
+    const values = [
+      ...series.flatMap((s) => s.points.map((p) => p.value)),
+      ...guides.map((guide) => guide.value),
+    ];
     const domain = values.length
       ? niceDomain(Math.min(...values), Math.max(...values))
       : { yMin: 0, yMax: 1, ticks: [0, 1] };
@@ -335,6 +348,19 @@ export class CabinetTempHumChartPdfService {
       doc.restore();
       doc.font(fonts.regular).fontSize(11).fillColor(axisColor);
       writeText(doc, tick.toFixed(1), x + 4, ty - 7, { width: padL - 10, align: 'right' });
+    });
+
+    guides.forEach((guide) => {
+      const gy = yAt(guide.value);
+      doc.save();
+      doc.strokeColor(guideColor).lineWidth(1.4).dash(8, { space: 6 });
+      doc.moveTo(plotX, gy).lineTo(plotX + plotW, gy).stroke();
+      doc.restore();
+      doc.font(fonts.bold).fontSize(9).fillColor(guideColor);
+      writeText(doc, `${guide.label} ${guide.value.toFixed(1)}${unit}`, plotX + 4, gy - 12, {
+        width: plotW - 8,
+        align: 'left',
+      });
     });
 
     if (series.length === 0) {
@@ -384,9 +410,14 @@ export class CabinetTempHumChartPdfService {
       writeText(doc, s.time, legendX + 12, legendY, { width: legendW - 16 });
       legendY += 16;
     });
-    doc.font(fonts.regular).fontSize(10).fillColor(lineAccent);
-    writeText(doc, metric === 'temp' ? 'เส้น = อุณหภูมิ' : 'เส้น = ความชื้น', legendX, legendY + 6, {
-      width: legendW - 8,
+    guides.forEach((guide) => {
+      doc.save();
+      doc.strokeColor(guideColor).lineWidth(1.4).dash(8, { space: 6 });
+      doc.moveTo(legendX, legendY + 8).lineTo(legendX + 14, legendY + 8).stroke();
+      doc.restore();
+      doc.font(fonts.regular).fontSize(9).fillColor('#212529');
+      writeText(doc, `${guide.label} ${guide.value.toFixed(1)}`, legendX + 18, legendY, { width: legendW - 22 });
+      legendY += 14;
     });
     doc.x = x;
     doc.y = y;

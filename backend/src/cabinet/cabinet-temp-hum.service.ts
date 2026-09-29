@@ -7,6 +7,10 @@ type CabinetSummary = {
   cabinet_name: string | null;
   cabinet_code: string | null;
   stock_id: number | null;
+  temp_min: number | null;
+  temp_max: number | null;
+  hum_min: number | null;
+  hum_max: number | null;
 };
 
 export type CabinetTempHumLogPoint = {
@@ -24,6 +28,10 @@ export type CabinetTempHumChartCabinet = {
   last_log_at: Date | null;
   latest_temp: number | null;
   latest_hum: number | null;
+  temp_min: number | null;
+  temp_max: number | null;
+  hum_min: number | null;
+  hum_max: number | null;
   log_count: number;
   logs: CabinetTempHumLogPoint[];
 };
@@ -44,10 +52,30 @@ export class CabinetTempHumService {
     return Number(value);
   }
 
+  private toNullableNumber(value: Prisma.Decimal | number | string | null | undefined): number | null {
+    if (value == null) return null;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  private climateOf(cabinet: {
+    temp_min: Prisma.Decimal | number | string | null;
+    temp_max: Prisma.Decimal | number | string | null;
+    hum_min: Prisma.Decimal | number | string | null;
+    hum_max: Prisma.Decimal | number | string | null;
+  }): Pick<CabinetSummary, 'temp_min' | 'temp_max' | 'hum_min' | 'hum_max'> {
+    return {
+      temp_min: this.toNullableNumber(cabinet.temp_min),
+      temp_max: this.toNullableNumber(cabinet.temp_max),
+      hum_min: this.toNullableNumber(cabinet.hum_min),
+      hum_max: this.toNullableNumber(cabinet.hum_max),
+    };
+  }
+
   private async cabinetsByIdsOrStock(ids: number[]): Promise<CabinetSummary[]> {
     const unique = [...new Set(ids.filter((n) => Number.isFinite(n) && n > 0))];
     if (unique.length === 0) return [];
-    return this.prisma.cabinet.findMany({
+    const rows = await this.prisma.cabinet.findMany({
       where: {
         OR: [{ id: { in: unique } }, { stock_id: { in: unique } }],
       },
@@ -56,8 +84,19 @@ export class CabinetTempHumService {
         cabinet_name: true,
         cabinet_code: true,
         stock_id: true,
+        temp_min: true,
+        temp_max: true,
+        hum_min: true,
+        hum_max: true,
       },
     });
+    return rows.map((row) => ({
+      id: row.id,
+      cabinet_name: row.cabinet_name,
+      cabinet_code: row.cabinet_code,
+      stock_id: row.stock_id,
+      ...this.climateOf(row),
+    }));
   }
 
   private matchAppCabinet(logCabinetId: number, cabinets: CabinetSummary[]): CabinetSummary | null {
@@ -102,6 +141,10 @@ export class CabinetTempHumService {
         last_log_at: row.create_date,
         latest_temp: this.toNumber(row.temp_log),
         latest_hum: this.toNumber(row.hum_log),
+        temp_min: app?.temp_min ?? null,
+        temp_max: app?.temp_max ?? null,
+        hum_min: app?.hum_min ?? null,
+        hum_max: app?.hum_max ?? null,
         log_count: logs.length,
         logs: includeLogs
           ? logs.map((r) => ({
@@ -127,6 +170,10 @@ export class CabinetTempHumService {
           cabinet_name: true,
           cabinet_code: true,
           stock_id: true,
+          temp_min: true,
+          temp_max: true,
+          hum_min: true,
+          hum_max: true,
         },
       });
       if (cab) {
@@ -140,7 +187,7 @@ export class CabinetTempHumService {
         });
         return {
           logCabinetId: found?.cabinet_id ?? cab.stock_id ?? cab.id,
-          app: cab,
+          app: { ...cab, ...this.climateOf(cab) },
         };
       }
 
@@ -164,9 +211,16 @@ export class CabinetTempHumService {
           cabinet_name: true,
           cabinet_code: true,
           stock_id: true,
+          temp_min: true,
+          temp_max: true,
+          hum_min: true,
+          hum_max: true,
         },
       });
-      return { logCabinetId: first.log_cabinet_id, app: cab };
+      return {
+        logCabinetId: first.log_cabinet_id,
+        app: cab ? { ...cab, ...this.climateOf(cab) } : null,
+      };
     }
     return { logCabinetId: first.log_cabinet_id, app: null };
   }
@@ -281,6 +335,10 @@ export class CabinetTempHumService {
         app_cabinet_id: app?.id ?? null,
         cabinet_name: app?.cabinet_name ?? null,
         cabinet_code: app?.cabinet_code ?? null,
+        temp_min: app?.temp_min ?? null,
+        temp_max: app?.temp_max ?? null,
+        hum_min: app?.hum_min ?? null,
+        hum_max: app?.hum_max ?? null,
       },
       latest: latest
         ? {
