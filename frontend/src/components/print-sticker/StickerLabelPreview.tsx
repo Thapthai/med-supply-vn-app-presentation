@@ -1,4 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
+import { formatCEToDMY } from '@/lib/datePickerBE';
+import { cn } from '@/lib/utils';
 import type { PrintStickerConfirmLine } from './PrintStickerConfirmDialog';
 
 /**
@@ -19,13 +21,19 @@ const QR_DOTS = 8 * QR_MODULES;
 const LEFT_COL_X = 50;
 const RIGHT_COL_X = 250;
 
-function box(x: number, y: number, w: number, h: number): CSSProperties {
+const PREVIEW_WIDTH_PX = {
+  hero: 360,
+  thumb: 168,
+  zoom: 480,
+} as const;
+
+function box(x: number, y: number, w: number, h: number, scale: number): CSSProperties {
   return {
     position: 'absolute',
-    left: `${(x / STICKER_H_DOTS) * 100}%`,
-    top: `${(y / STICKER_V_DOTS) * 100}%`,
-    width: `${(w / STICKER_H_DOTS) * 100}%`,
-    height: `${(h / STICKER_V_DOTS) * 100}%`,
+    left: x * scale,
+    top: y * scale,
+    width: w * scale,
+    height: h * scale,
   };
 }
 
@@ -33,6 +41,7 @@ function Text({
   x,
   y,
   size,
+  scale,
   maxWidth,
   className,
   children,
@@ -40,6 +49,7 @@ function Text({
   x: number;
   y: number;
   size: number;
+  scale: number;
   maxWidth?: number;
   className?: string;
   children: ReactNode;
@@ -49,15 +59,15 @@ function Text({
       className={className}
       style={{
         position: 'absolute',
-        left: `${(x / STICKER_H_DOTS) * 100}%`,
-        top: `${(y / STICKER_V_DOTS) * 100}%`,
-        fontSize: `${(size / STICKER_V_DOTS) * 100}cqh`,
+        left: x * scale,
+        top: y * scale,
+        fontSize: size * scale,
         lineHeight: 1,
         whiteSpace: 'nowrap',
         fontFamily: 'Tahoma, "Noto Sans Thai", sans-serif',
         ...(maxWidth
           ? {
-              maxWidth: `${(maxWidth / STICKER_H_DOTS) * 100}%`,
+              maxWidth: maxWidth * scale,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
             }
@@ -116,11 +126,22 @@ function displayOrDash(value?: string | null) {
   return text ? text : '-';
 }
 
-export function StickerLabelPreview({ line }: { line: PrintStickerConfirmLine }) {
+export function StickerLabelPreview({
+  line,
+  size = 'hero',
+  className,
+}: {
+  line: PrintStickerConfirmLine;
+  size?: keyof typeof PREVIEW_WIDTH_PX;
+  className?: string;
+}) {
+  const widthPx = PREVIEW_WIDTH_PX[size];
+  const heightPx = (widthPx * STICKER_V_DOTS) / STICKER_H_DOTS;
+  const scale = widthPx / STICKER_H_DOTS;
   const name = line.itemname?.trim() || line.itemcode;
   const code = line.itemcode;
   const lot = displayOrDash(line.lotNo);
-  const exp = displayOrDash(line.expireDate);
+  const exp = formatCEToDMY(line.expireDate) || displayOrDash(line.expireDate);
 
   const nameY = HEADER_DOTS + 12;
   const qrY = nameY + 40;
@@ -132,61 +153,64 @@ export function StickerLabelPreview({ line }: { line: PrintStickerConfirmLine })
 
   return (
     <div
-      className="relative w-full max-w-[300px] overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm"
-      style={{ aspectRatio: `${STICKER_H_DOTS} / ${STICKER_V_DOTS}`, containerType: 'size' }}
+      className={cn(
+        'relative shrink-0 overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm',
+        className,
+      )}
+      style={{ width: widthPx, height: heightPx }}
     >
       <div
         className="flex items-center justify-between bg-[#7ec8e3] px-[4%] text-[#1e3a5f]"
-        style={box(0, 0, STICKER_H_DOTS, HEADER_DOTS)}
+        style={box(0, 0, STICKER_H_DOTS, HEADER_DOTS, scale)}
       >
-        <span className="font-semibold leading-none" style={{ fontSize: `${(36 / STICKER_V_DOTS) * 100}cqh` }}>
+        <span className="font-semibold leading-none" style={{ fontSize: 36 * scale }}>
           รายการ
         </span>
         <span className="text-right font-bold leading-none tracking-wide text-white">
-          <span className="block" style={{ fontSize: `${(34 / STICKER_V_DOTS) * 100}cqh` }}>
+          <span className="block" style={{ fontSize: 34 * scale }}>
             POSE
           </span>
           <span
             className="mt-[0.1em] block font-semibold tracking-[0.12em]"
-            style={{ fontSize: `${(13 / STICKER_V_DOTS) * 100}cqh` }}
+            style={{ fontSize: 13 * scale }}
           >
             INTELLIGENCE
           </span>
         </span>
       </div>
 
-      <Text x={LEFT_COL_X} y={nameY} size={30} maxWidth={STICKER_H_DOTS - LEFT_COL_X * 2} className="text-black">
+      <Text x={LEFT_COL_X} y={nameY} size={30} scale={scale} maxWidth={STICKER_H_DOTS - LEFT_COL_X * 2} className="text-black">
         {name}
       </Text>
 
-      <div style={box(LEFT_COL_X, qrY, QR_DOTS, QR_DOTS)}>
+      <div style={box(LEFT_COL_X, qrY, QR_DOTS, QR_DOTS, scale)}>
         <QrMark value={code} />
       </div>
-      <Text x={LEFT_COL_X} y={qrY + QR_DOTS + 8} size={18} className="text-black">
+      <Text x={LEFT_COL_X} y={qrY + QR_DOTS + 8} size={18} scale={scale} className="text-black">
         {code}
       </Text>
 
-      <Text x={RIGHT_COL_X} y={infoY} size={30} className="text-black">
+      <Text x={RIGHT_COL_X} y={infoY} size={30} scale={scale} className="text-black">
         Code : {code}
       </Text>
-      <Text x={RIGHT_COL_X} y={infoY + 44} size={30} className="text-black">
+      <Text x={RIGHT_COL_X} y={infoY + 44} size={30} scale={scale} className="text-black">
         Serial No : -
       </Text>
-      <Text x={RIGHT_COL_X} y={infoY + 88} size={30} className="text-black">
+      <Text x={RIGHT_COL_X} y={infoY + 88} size={30} scale={scale} className="text-black">
         Lot No : {lot}
       </Text>
 
-      <div className="flex items-center bg-black px-[2%]" style={box(RIGHT_COL_X - 10, expY, 440, 50)}>
+      <div className="flex items-center bg-black px-[2%]" style={box(RIGHT_COL_X - 10, expY, 440, 50, scale)}>
         <span
           className="font-bold leading-none text-white"
-          style={{ fontSize: `${(30 / STICKER_V_DOTS) * 100}cqh`, fontFamily: 'Tahoma, sans-serif' }}
+          style={{ fontSize: 30 * scale, fontFamily: 'Tahoma, sans-serif' }}
         >
           EXP: {exp}
         </span>
       </div>
 
-      <div className="bg-[#7ec8e3]" style={box(RIGHT_COL_X - 10, barY, 440, barH)} />
-      <div className="bg-[#f5d90a]" style={box(RIGHT_COL_X - 10, barY + barH + barGap, 440, barH)} />
+      <div className="bg-[#7ec8e3]" style={box(RIGHT_COL_X - 10, barY, 440, barH, scale)} />
+      <div className="bg-[#f5d90a]" style={box(RIGHT_COL_X - 10, barY + barH + barGap, 440, barH, scale)} />
     </div>
   );
 }

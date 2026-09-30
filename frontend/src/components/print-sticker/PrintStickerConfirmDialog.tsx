@@ -23,6 +23,7 @@ import {
 import { formatCEToDMY } from '@/lib/datePickerBE';
 import { cn } from '@/lib/utils';
 import { STICKER_H_DOTS, STICKER_V_DOTS, StickerLabelPreview } from './StickerLabelPreview';
+import { StickerPreviewZoom } from './StickerPreviewZoom';
 
 export type PrintStickerConfirmLine = {
   itemcode: string;
@@ -55,12 +56,14 @@ export function PrintStickerConfirmDialog({
   const [qtyDraft, setQtyDraft] = useState<Record<string, string>>({});
   const [warningCodes, setWarningCodes] = useState<string[]>([]);
   const [previewIndex, setPreviewIndex] = useState(0);
+  const [zoomOpen, setZoomOpen] = useState(false);
 
   useEffect(() => {
     if (!open) {
       setQtyDraft({});
       setWarningCodes([]);
       setPreviewIndex(0);
+      setZoomOpen(false);
       return;
     }
     setWarningCodes((prev) => {
@@ -91,10 +94,14 @@ export function PrintStickerConfirmDialog({
     <Dialog
       open={open}
       onOpenChange={(next) => {
+        if (zoomOpen) {
+          setZoomOpen(false);
+          return;
+        }
         if (!busy) onOpenChange(next);
       }}
     >
-      <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+      <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-5xl">
         <div className="border-b px-6 py-4">
           <DialogHeader className="gap-3">
             <div className="flex items-start gap-3">
@@ -119,27 +126,35 @@ export function PrintStickerConfirmDialog({
                 {lines.length > 1 ? ` · รายการ ${Math.min(previewIndex, lines.length - 1) + 1}/${lines.length}` : ''}
                 {previewLine.copies > 1 ? ` · พิมพ์ ${previewLine.copies} แผ่น` : ''}
               </p>
-              <StickerLabelPreview line={previewLine} />
+              <button
+                type="button"
+                className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                onClick={() => setZoomOpen(true)}
+                title="ขยายตัวอย่าง"
+              >
+                <StickerLabelPreview line={previewLine} size="hero" />
+              </button>
               {lines.length > 1 ? (
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={previewIndex <= 0}
-                    onClick={() => setPreviewIndex((index) => Math.max(0, index - 1))}
-                  >
-                    ก่อนหน้า
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={previewIndex >= lines.length - 1}
-                    onClick={() => setPreviewIndex((index) => Math.min(lines.length - 1, index + 1))}
-                  >
-                    ถัดไป
-                  </Button>
+                <div className="flex max-w-full flex-wrap items-center justify-center gap-2">
+                  {lines.map((line, index) => (
+                    <button
+                      key={`thumb-strip-${line.itemcode}-${index}`}
+                      type="button"
+                      className={cn(
+                        'rounded border p-0.5 transition-colors',
+                        index === previewIndex
+                          ? 'border-primary ring-2 ring-primary/30'
+                          : 'border-slate-200 hover:border-slate-400',
+                      )}
+                      title={`ดูตัวอย่าง ${line.itemcode}`}
+                      onClick={() => {
+                        setPreviewIndex(index);
+                        setZoomOpen(true);
+                      }}
+                    >
+                      <StickerLabelPreview line={line} size="thumb" />
+                    </button>
+                  ))}
                 </div>
               ) : null}
             </div>
@@ -243,6 +258,7 @@ export function PrintStickerConfirmDialog({
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="w-[184px] text-xs">พรีวิว</TableHead>
                   <TableHead className="text-xs">itemcode</TableHead>
                   <TableHead className="text-xs">ชื่อรายการ</TableHead>
                   <TableHead className="text-xs whitespace-nowrap">Lot No.</TableHead>
@@ -251,8 +267,29 @@ export function PrintStickerConfirmDialog({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {lines.map((line) => (
-                  <TableRow key={line.itemcode}>
+                {lines.map((line, index) => (
+                  <TableRow
+                    key={line.itemcode}
+                    className={index === previewIndex ? 'bg-primary/[0.04]' : undefined}
+                  >
+                    <TableCell className="w-[184px]">
+                      <button
+                        type="button"
+                        className={cn(
+                          'rounded border p-0.5 transition-colors',
+                          index === previewIndex
+                            ? 'border-primary ring-2 ring-primary/30'
+                            : 'border-slate-200 hover:border-slate-400',
+                        )}
+                        title="กดเพื่อขยายตัวอย่าง"
+                        onClick={() => {
+                          setPreviewIndex(index);
+                          setZoomOpen(true);
+                        }}
+                      >
+                        <StickerLabelPreview line={line} size="thumb" />
+                      </button>
+                    </TableCell>
                     <TableCell className="font-mono text-xs">{line.itemcode}</TableCell>
                     <TableCell className="max-w-[200px] truncate text-sm" title={line.itemname}>
                       {line.itemname || '—'}
@@ -299,6 +336,11 @@ export function PrintStickerConfirmDialog({
             </Button>
           ) : null}
         </DialogFooter>
+        <StickerPreviewZoom
+          open={zoomOpen}
+          line={previewLine ?? null}
+          onClose={() => setZoomOpen(false)}
+        />
       </DialogContent>
     </Dialog>
   );

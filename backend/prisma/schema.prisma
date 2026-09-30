@@ -930,6 +930,7 @@ model DepartmentDispenseDocumentLine {
 /// ประวัติการพิมพ์สติ๊กเกอร์ (หนึ่งครั้งต่อคำสั่งพิมพ์)
 model StickerPrintHistory {
   id                 Int      @id @default(autoincrement())
+  doc_no             String?  @unique @map("doc_no") @db.VarChar(32)
   printed_at         DateTime @default(now()) @map("printed_at") @db.DateTime(3)
   printed_by_user_id Int?     @map("printed_by_user_id")
   /// printLabel | printLabel-item | printLabel-items | manual

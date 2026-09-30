@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { History } from 'lucide-react';
+import { StickerLabelPreview } from '@/components/print-sticker/StickerLabelPreview';
+import type { PrintStickerConfirmLine } from '@/components/print-sticker/PrintStickerConfirmDialog';
 import { toast } from 'sonner';
 import { cabinetDepartmentApi, departmentApi, stickerPrintApi } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -69,6 +71,15 @@ function deptLabel(row: StickerPrintHistoryRow): string {
   if (!d) return '—';
   return `${d.DepName ?? ''} ${d.DepName2 ? `(${d.DepName2})` : ''}`.trim() || '—';
 }
+function historyLinePreview(line: StickerPrintHistoryRow['lines'][number]): PrintStickerConfirmLine {
+  return {
+    itemcode: line.itemcode,
+    itemname: line.item_name || line.itemcode,
+    copies: line.copies,
+    expireDate: line.expire_date || '',
+  };
+}
+
 function sourceLabel(source: string): string {
   if (source === 'printLabel-items') return 'พิมพ์หลายรายการ';
   if (source === 'printLabel-item') return 'พิมพ์รายการเดียว';
@@ -251,6 +262,8 @@ export default function PrintStickerHistoryTab({
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[184px]">พรีวิว</TableHead>
+                  <TableHead className="whitespace-nowrap">เลขที่เอกสาร</TableHead>
                   <TableHead className="whitespace-nowrap">วันที่พิมพ์</TableHead>
                   <TableHead>แผนก</TableHead>
                   <TableHead>ตู้</TableHead>
@@ -264,13 +277,13 @@ export default function PrintStickerHistoryTab({
               <TableBody>
                 {loading && rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-10 text-center text-slate-500">
+                    <TableCell colSpan={10} className="py-10 text-center text-slate-500">
                       กำลังโหลด…
                     </TableCell>
                   </TableRow>
                 ) : rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-10 text-center text-slate-500">
+                    <TableCell colSpan={10} className="py-10 text-center text-slate-500">
                       ยังไม่มีประวัติการพิมพ์
                     </TableCell>
                   </TableRow>
@@ -281,6 +294,16 @@ export default function PrintStickerHistoryTab({
                       className="cursor-pointer"
                       onClick={() => setSelectedRow(row)}
                     >
+                      <TableCell className="w-[184px]">
+                        {row.lines?.[0] ? (
+                          <StickerLabelPreview line={historyLinePreview(row.lines[0])} size="thumb" />
+                        ) : (
+                          <span className="text-xs text-slate-400">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap font-mono text-xs">
+                        {row.doc_no || '—'}
+                      </TableCell>
                       <TableCell className="whitespace-nowrap text-sm tabular-nums">
                         {formatPrintedAt(row.printed_at)}
                       </TableCell>

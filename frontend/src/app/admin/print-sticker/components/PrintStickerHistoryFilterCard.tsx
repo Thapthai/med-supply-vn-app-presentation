@@ -128,11 +128,11 @@ export default function PrintStickerHistoryFilterCard({
           />
           <div className="space-y-1.5">
             <label htmlFor="print-history-keyword" className="text-xs font-medium text-slate-600">
-              รายการ
+              เลขที่เอกสาร / รายการ
             </label>
             <Input
               id="print-history-keyword"
-              placeholder="itemcode หรือชื่อ"
+              placeholder="เช่น STK-20260930-0001, itemcode"
               value={formFilters.keyword}
               onChange={(e) => onFormChange({ keyword: e.target.value })}
               onKeyDown={(e) => e.key === 'Enter' && onSearch()}

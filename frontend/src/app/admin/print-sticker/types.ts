@@ -53,6 +53,7 @@ export type StickerPrintHistoryLine = {
 
 export type StickerPrintHistoryRow = {
   id: number;
+  doc_no?: string | null;
   printed_at: string;
   printed_by_user_id?: number | null;
   source: string;

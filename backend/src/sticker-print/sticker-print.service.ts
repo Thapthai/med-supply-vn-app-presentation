@@ -427,23 +427,28 @@ export class StickerPrintService {
     const itemcode = query.itemcode?.trim();
     const keyword = query.keyword?.trim();
     if (itemcode || keyword) {
-      where.lines = {
-        some: {
-          AND: [
-            ...(itemcode ? [{ itemcode }] : []),
-            ...(keyword
-              ? [
-                  {
-                    OR: [
-                      { itemcode: { contains: keyword } },
-                      { item_name: { contains: keyword } },
-                    ],
-                  },
-                ]
-              : []),
+      const and: Prisma.StickerPrintHistoryWhereInput[] = [];
+      if (itemcode) {
+        and.push({ lines: { some: { itemcode } } });
+      }
+      if (keyword) {
+        and.push({
+          OR: [
+            { doc_no: { contains: keyword } },
+            {
+              lines: {
+                some: {
+                  OR: [
+                    { itemcode: { contains: keyword } },
+                    { item_name: { contains: keyword } },
+                  ],
+                },
+              },
+            },
           ],
-        },
-      };
+        });
+      }
+      where.AND = and;
     }
 
     const [total, rows] = await this.prisma.$transaction([
@@ -490,6 +495,22 @@ export class StickerPrintService {
     return { success: true as const, data: row };
   }
 
+  private async generateDocNo(): Promise<string> {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const prefix = `STK-${y}${m}${d}-`;
+    const last = await this.prisma.stickerPrintHistory.findFirst({
+      where: { doc_no: { startsWith: prefix } },
+      orderBy: { doc_no: 'desc' },
+      select: { doc_no: true },
+    });
+    const lastSeq = last?.doc_no ? parseInt(last.doc_no.slice(prefix.length), 10) : 0;
+    const nextSeq = Number.isFinite(lastSeq) ? lastSeq + 1 : 1;
+    return `${prefix}${String(nextSeq).padStart(4, '0')}`;
+  }
+
   private async recordHistorySafe(input: RecordHistoryInput): Promise<void> {
     try {
       await this.recordHistory(input);
@@ -522,9 +543,11 @@ export class StickerPrintService {
     const totalBytes = lines.reduce((s, l) => s + (l.bytes_sent ?? 0), 0);
 
     const location = await this.resolveCabinetDepartment(input.departmentId, input.cabinetId);
+    const doc_no = await this.generateDocNo();
 
     return this.prisma.stickerPrintHistory.create({
       data: {
+        doc_no,
         printed_by_user_id: input.printedByUserId ?? null,
         source: input.source,
         host: input.host ?? null,
