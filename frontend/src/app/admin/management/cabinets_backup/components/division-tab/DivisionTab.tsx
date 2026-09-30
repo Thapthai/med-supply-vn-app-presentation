@@ -14,7 +14,7 @@ import DepartmentMasterTable from '@/app/admin/management/departments/components
 import DepartmentDetailsCard from '@/app/admin/management/departments/components/DepartmentDetailsCard';
 import type { DeptRow, StatusFilter, SubDepartmentRow } from '@/app/admin/management/departments/types';
 
-export default function DivisionTab({ embedded = false }: { embedded?: boolean }) {
+export default function DivisionTab() {
   const [rows, setRows] = useState<SubDepartmentRow[]>([]);
   const [loadingSubs, setLoadingSubs] = useState(true);
 
@@ -342,7 +342,6 @@ export default function DivisionTab({ embedded = false }: { embedded?: boolean }
 
   return (
     <div className="space-y-6">
-      {embedded ? null : (
       <div className="flex items-center gap-3">
         <div className="p-2.5 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-600 shadow-lg">
           <Building2 className="h-6 w-6 text-white" />
@@ -354,7 +353,6 @@ export default function DivisionTab({ embedded = false }: { embedded?: boolean }
           </p>
         </div>
       </div>
-      )}
 
       <SubDepartmentsFilters
         deptKeywordInput={deptKwInput}

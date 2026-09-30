@@ -1,4 +1,4 @@
-import { IsString, IsInt, IsNumber, IsOptional, Min, Max, ValidateIf } from 'class-validator';
+import { IsString, IsInt, IsNumber, IsOptional, Min, Max, ValidateIf, Matches } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 /** ช่องว่างหรือ null = ยังไม่ตั้งเกณฑ์; ตัวเลขที่ไม่ถูกต้องคงไว้ให้ validator ปฏิเสธ */
@@ -8,6 +8,15 @@ function toNullableNumber({ value }: { value: unknown }): number | null | unknow
   const n = Number(value);
   return Number.isFinite(n) ? n : value;
 }
+
+function toNullableIp({ value }: { value: unknown }): string | null {
+  if (value == null) return null;
+  const ip = String(value).trim();
+  return ip || null;
+}
+
+const IPV4_PATTERN =
+  /^(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)$/;
 
 export class CreateCabinetDto {
   @IsOptional()
@@ -26,6 +35,13 @@ export class CreateCabinetDto {
   @IsInt()
   @Type(() => Number)
   stock_id?: number;
+
+  @IsOptional()
+  @Transform(toNullableIp)
+  @ValidateIf((_, v) => v != null)
+  @IsString()
+  @Matches(IPV4_PATTERN, { message: 'รูปแบบ IP ไม่ถูกต้อง เช่น 192.168.1.2' })
+  machine_ip?: string | null;
 
   @IsOptional()
   @IsString()
@@ -86,6 +102,13 @@ export class UpdateCabinetDto {
   @IsInt()
   @Type(() => Number)
   stock_id?: number;
+
+  @IsOptional()
+  @Transform(toNullableIp)
+  @ValidateIf((_, v) => v != null)
+  @IsString()
+  @Matches(IPV4_PATTERN, { message: 'รูปแบบ IP ไม่ถูกต้อง เช่น 192.168.1.2' })
+  machine_ip?: string | null;
 
   @IsOptional()
   @IsString()

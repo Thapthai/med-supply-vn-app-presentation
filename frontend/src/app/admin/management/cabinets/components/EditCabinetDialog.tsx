@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { cabinetApi } from '@/lib/api';
+import { cabinetApi, cabinetDepartmentApi } from '@/lib/api';
 import { cabinetEditFormSchema, type CabinetEditFormData } from '@/lib/validations';
 import {
   Dialog,
@@ -32,7 +32,18 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Edit } from 'lucide-react';
-import { CABINET_TYPE_OPTIONS, climateInputValue, climatePayload, normalizeCabinetType } from './cabinetTypes';
+import {
+  CABINET_TYPE_OPTIONS,
+  climateInputValue,
+  climatePayload,
+  divisionLinkLabel,
+  MACHINE_IP_PLACEHOLDER,
+  machineIpHint,
+  normalizeCabinetType,
+  stockIdFromMachineIp,
+  type CabinetDivisionLink,
+} from './cabinetTypes';
+import CabinetDivisionPicker, { type DivisionPick } from './CabinetDivisionPicker';
 
 function cabinetStatusToFormValue(status?: string): 'ACTIVE' | 'INACTIVE' {
   return status?.toUpperCase() === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
@@ -54,11 +65,13 @@ interface Cabinet {
   cabinet_code?: string;
   cabinet_type?: string;
   stock_id?: number;
+  machine_ip?: string | null;
   cabinet_status?: string;
   temp_min?: number | string | null;
   temp_max?: number | string | null;
   hum_min?: number | string | null;
   hum_max?: number | string | null;
+  cabinetDepartments?: CabinetDivisionLink[];
 }
 
 const fieldInputClass = 'bg-white';
@@ -77,12 +90,13 @@ export default function EditCabinetDialog({
   onSuccess,
 }: EditCabinetDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [divisions, setDivisions] = useState<DivisionPick[]>([]);
 
   const form = useForm<CabinetEditFormData>({
     resolver: zodResolver(cabinetEditFormSchema),
     defaultValues: {
       cabinet_name: '',
-      stock_id: '',
+      machine_ip: '',
       cabinet_type: 'WEIGHING',
       cabinet_status: 'ACTIVE',
       temp_min: '',
@@ -96,7 +110,7 @@ export default function EditCabinetDialog({
     if (open && cabinet) {
       form.reset({
         cabinet_name: cabinet.cabinet_name || '',
-        stock_id: cabinet.stock_id != null ? String(cabinet.stock_id) : '',
+        machine_ip: cabinet.machine_ip || '',
         cabinet_type: normalizeCabinetType(cabinet.cabinet_type) || 'WEIGHING',
         cabinet_status: cabinetStatusToFormValue(cabinet.cabinet_status),
         temp_min: climateInputValue(cabinet.temp_min),
@@ -104,11 +118,17 @@ export default function EditCabinetDialog({
         hum_min: climateInputValue(cabinet.hum_min),
         hum_max: climateInputValue(cabinet.hum_max),
       });
+      setDivisions(
+        (cabinet.cabinetDepartments ?? []).map((link) => ({
+          id: String(link.department_id),
+          label: divisionLinkLabel(link),
+        })),
+      );
     }
     if (!open) {
       form.reset({
         cabinet_name: '',
-        stock_id: '',
+        machine_ip: '',
         cabinet_type: 'WEIGHING',
         cabinet_status: 'ACTIVE',
         temp_min: '',
@@ -116,6 +136,7 @@ export default function EditCabinetDialog({
         hum_min: '',
         hum_max: '',
       });
+      setDivisions([]);
     }
   }, [open, cabinet, form]);
 
@@ -128,6 +149,7 @@ export default function EditCabinetDialog({
         cabinet_name: string;
         cabinet_type: string;
         stock_id?: number;
+        machine_ip?: string | null;
         cabinet_status: string;
         temp_min: number | null;
         temp_max: number | null;
@@ -142,14 +164,30 @@ export default function EditCabinetDialog({
         hum_min: climatePayload(values.hum_min),
         hum_max: climatePayload(values.hum_max),
       };
-      if (values.stock_id?.trim()) {
-        const sid = parseInt(values.stock_id.trim(), 10);
-        if (!Number.isNaN(sid)) data.stock_id = sid;
-      }
+      const stockId = stockIdFromMachineIp(values.machine_ip);
+      if (stockId != null) data.stock_id = stockId;
+      data.machine_ip = values.machine_ip?.trim() || null;
 
       const response = await cabinetApi.update(cabinet.id, data);
 
       if (response.success) {
+        const nextIds = new Set(divisions.map((d) => parseInt(d.id, 10)).filter((n) => Number.isFinite(n)));
+        const current = cabinet.cabinetDepartments ?? [];
+        for (const link of current) {
+          if (!nextIds.has(link.department_id)) {
+            await cabinetDepartmentApi.delete(link.id);
+          }
+        }
+        const currentIds = new Set(current.map((link) => link.department_id));
+        for (const department_id of nextIds) {
+          if (!currentIds.has(department_id)) {
+            await cabinetDepartmentApi.create({
+              cabinet_id: cabinet.id,
+              department_id,
+              status: 'ACTIVE',
+            });
+          }
+        }
         toast.success('แก้ไขตู้เรียบร้อยแล้ว');
         onOpenChange(false);
         onSuccess();
@@ -168,14 +206,14 @@ export default function EditCabinetDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Edit className="h-5 w-5" />
             <span>แก้ไขตู้ Cabinet</span>
           </DialogTitle>
           <DialogDescription>
-            แก้ไขข้อมูลตู้ (รหัสตู้และ Stock ID สร้างอัตโนมัติจากระบบ)
+            แก้ไขข้อมูลตู้ (รหัสตู้สร้างอัตโนมัติจากระบบ)
           </DialogDescription>
         </DialogHeader>
 
@@ -316,21 +354,27 @@ export default function EditCabinetDialog({
               />
             </div>
 
+            <CabinetDivisionPicker open={open} values={divisions} onChange={setDivisions} disabled={loading} />
+
             <FormField
               control={form.control}
-              name="stock_id"
+              name="machine_ip"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Stock ID</FormLabel>
+                  <FormLabel>IP เครื่อง</FormLabel>
                   <FormControl>
                     <Input
-                      type="number"
-                      placeholder="กรอก Stock ID"
+                      inputMode="decimal"
+                      autoComplete="off"
+                      placeholder={MACHINE_IP_PLACEHOLDER}
                       className={fieldInputClass}
                       {...field}
                       value={field.value ?? ''}
                     />
                   </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    {machineIpHint(field.value, cabinet.stock_id)}
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}

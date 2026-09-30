@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { cabinetApi, cabinetDepartmentApi } from '@/lib/api';
-import { cabinetFormSchema, type CabinetFormData } from '@/lib/validations';
+import { cabinetApi } from '@/lib/api';
+import { cabinetEditFormSchema, type CabinetEditFormData } from '@/lib/validations';
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Form,
   FormControl,
@@ -21,8 +22,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { toast } from 'sonner';
-import { Package } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -31,63 +30,105 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import {
-  CABINET_TYPE_OPTIONS,
-  climatePayload,
-  MACHINE_IP_PLACEHOLDER,
-  machineIpHint,
-  stockIdFromMachineIp,
-} from './cabinetTypes';
-import CabinetDivisionPicker, { type DivisionPick } from './CabinetDivisionPicker';
+import { toast } from 'sonner';
+import { Edit } from 'lucide-react';
+import { CABINET_TYPE_OPTIONS, climateInputValue, climatePayload, normalizeCabinetType } from './cabinetTypes';
+
+function cabinetStatusToFormValue(status?: string): 'ACTIVE' | 'INACTIVE' {
+  return status?.toUpperCase() === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
+}
+
+function resolveCabinetStatusForSave(
+  formStatus: 'ACTIVE' | 'INACTIVE',
+  previousStatus?: string,
+): string {
+  if (formStatus === 'INACTIVE') return 'INACTIVE';
+  const prev = previousStatus?.trim();
+  if (prev && prev.toUpperCase() !== 'INACTIVE') return prev;
+  return 'ACTIVE';
+}
+
+interface Cabinet {
+  id: number;
+  cabinet_name?: string;
+  cabinet_code?: string;
+  cabinet_type?: string;
+  stock_id?: number;
+  cabinet_status?: string;
+  temp_min?: number | string | null;
+  temp_max?: number | string | null;
+  hum_min?: number | string | null;
+  hum_max?: number | string | null;
+}
 
 const fieldInputClass = 'bg-white';
 
-interface CreateCabinetDialogProps {
+interface EditCabinetDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  cabinet: Cabinet | null;
   onSuccess: () => void;
 }
 
-const defaultValues: CabinetFormData = {
-  cabinet_name: '',
-  machine_ip: '',
-  cabinet_type: 'WEIGHING',
-  temp_min: '',
-  temp_max: '',
-  hum_min: '',
-  hum_max: '',
-};
-
-export default function CreateCabinetDialog({
+export default function EditCabinetDialog({
   open,
   onOpenChange,
+  cabinet,
   onSuccess,
-}: CreateCabinetDialogProps) {
+}: EditCabinetDialogProps) {
   const [loading, setLoading] = useState(false);
-  const [divisions, setDivisions] = useState<DivisionPick[]>([]);
 
-  const form = useForm<CabinetFormData>({
-    resolver: zodResolver(cabinetFormSchema),
-    defaultValues,
+  const form = useForm<CabinetEditFormData>({
+    resolver: zodResolver(cabinetEditFormSchema),
+    defaultValues: {
+      cabinet_name: '',
+      stock_id: '',
+      cabinet_type: 'WEIGHING',
+      cabinet_status: 'ACTIVE',
+      temp_min: '',
+      temp_max: '',
+      hum_min: '',
+      hum_max: '',
+    },
   });
 
   useEffect(() => {
-    if (!open) {
-      form.reset(defaultValues);
-      setDivisions([]);
+    if (open && cabinet) {
+      form.reset({
+        cabinet_name: cabinet.cabinet_name || '',
+        stock_id: cabinet.stock_id != null ? String(cabinet.stock_id) : '',
+        cabinet_type: normalizeCabinetType(cabinet.cabinet_type) || 'WEIGHING',
+        cabinet_status: cabinetStatusToFormValue(cabinet.cabinet_status),
+        temp_min: climateInputValue(cabinet.temp_min),
+        temp_max: climateInputValue(cabinet.temp_max),
+        hum_min: climateInputValue(cabinet.hum_min),
+        hum_max: climateInputValue(cabinet.hum_max),
+      });
     }
-  }, [open, form]);
+    if (!open) {
+      form.reset({
+        cabinet_name: '',
+        stock_id: '',
+        cabinet_type: 'WEIGHING',
+        cabinet_status: 'ACTIVE',
+        temp_min: '',
+        temp_max: '',
+        hum_min: '',
+        hum_max: '',
+      });
+    }
+  }, [open, cabinet, form]);
 
-  const handleSubmit = async (values: CabinetFormData) => {
+  const handleSubmit = async (values: CabinetEditFormData) => {
+    if (!cabinet) return;
+
     try {
       setLoading(true);
-      const divisionIds = divisions.map((d) => parseInt(d.id, 10)).filter((n) => Number.isFinite(n));
       const data: {
         cabinet_name: string;
         cabinet_type: string;
         stock_id?: number;
-        machine_ip?: string | null;
-        department_id?: number;
+        cabinet_status: string;
         temp_min: number | null;
         temp_max: number | null;
         hum_min: number | null;
@@ -95,58 +136,56 @@ export default function CreateCabinetDialog({
       } = {
         cabinet_name: values.cabinet_name.trim(),
         cabinet_type: values.cabinet_type,
+        cabinet_status: resolveCabinetStatusForSave(values.cabinet_status, cabinet.cabinet_status),
         temp_min: climatePayload(values.temp_min),
         temp_max: climatePayload(values.temp_max),
         hum_min: climatePayload(values.hum_min),
         hum_max: climatePayload(values.hum_max),
       };
-      if (divisionIds[0]) data.department_id = divisionIds[0];
-      const stockId = stockIdFromMachineIp(values.machine_ip);
-      if (stockId != null) data.stock_id = stockId;
-      if (values.machine_ip?.trim()) data.machine_ip = values.machine_ip.trim();
+      if (values.stock_id?.trim()) {
+        const sid = parseInt(values.stock_id.trim(), 10);
+        if (!Number.isNaN(sid)) data.stock_id = sid;
+      }
 
-      const response = await cabinetApi.create(data);
+      const response = await cabinetApi.update(cabinet.id, data);
 
       if (response.success) {
-        const cabinetId = Number((response.data as { id?: number } | undefined)?.id);
-        if (cabinetId && divisionIds.length > 1) {
-          for (const department_id of divisionIds.slice(1)) {
-            await cabinetDepartmentApi.create({
-              cabinet_id: cabinetId,
-              department_id,
-              status: 'ACTIVE',
-            });
-          }
-        }
-        toast.success(
-          divisionIds.length > 0 ? 'เพิ่มตู้และเชื่อมโยง Division แล้ว' : 'เพิ่มตู้เรียบร้อยแล้ว',
-        );
+        toast.success('แก้ไขตู้เรียบร้อยแล้ว');
         onOpenChange(false);
         onSuccess();
       } else {
-        toast.error(response.message || 'ไม่สามารถเพิ่มตู้ได้');
+        toast.error(response.message || 'ไม่สามารถแก้ไขตู้ได้');
       }
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || 'เกิดข้อผิดพลาดในการเพิ่มตู้');
+      toast.error(err.response?.data?.message || 'เกิดข้อผิดพลาดในการแก้ไขตู้');
     } finally {
       setLoading(false);
     }
   };
 
+  if (!cabinet) return null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
-            <Package className="h-5 w-5" />
-            <span>เพิ่มตู้ใหม่</span>
+            <Edit className="h-5 w-5" />
+            <span>แก้ไขตู้ Cabinet</span>
           </DialogTitle>
-          <DialogDescription>รหัสตู้จะสร้างอัตโนมัติจากระบบ</DialogDescription>
+          <DialogDescription>
+            แก้ไขข้อมูลตู้ (รหัสตู้และ Stock ID สร้างอัตโนมัติจากระบบ)
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <Label>รหัสตู้</Label>
+              <Input value={cabinet.cabinet_code || '-'} readOnly className="bg-muted" />
+            </div>
+
             <FormField
               control={form.control}
               name="cabinet_type"
@@ -277,25 +316,43 @@ export default function CreateCabinetDialog({
               />
             </div>
 
-            <CabinetDivisionPicker open={open} values={divisions} onChange={setDivisions} disabled={loading} />
-
             <FormField
               control={form.control}
-              name="machine_ip"
+              name="stock_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>IP เครื่อง</FormLabel>
+                  <FormLabel>Stock ID</FormLabel>
                   <FormControl>
                     <Input
-                      inputMode="decimal"
-                      autoComplete="off"
-                      placeholder={MACHINE_IP_PLACEHOLDER}
+                      type="number"
+                      placeholder="กรอก Stock ID"
                       className={fieldInputClass}
                       {...field}
                       value={field.value ?? ''}
                     />
                   </FormControl>
-                  <p className="text-xs text-muted-foreground">{machineIpHint(field.value)}</p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="cabinet_status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>สถานะการใช้งาน</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger className={cn('w-full', fieldInputClass)}>
+                        <SelectValue placeholder="เลือกสถานะ" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="ACTIVE">เปิดการใช้งาน</SelectItem>
+                      <SelectItem value="INACTIVE">ปิดการใช้งาน</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

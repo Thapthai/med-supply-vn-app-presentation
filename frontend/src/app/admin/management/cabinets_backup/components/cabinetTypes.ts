@@ -12,44 +12,6 @@ export function normalizeCabinetType(value?: string | null): CabinetTypeCode | '
   return CABINET_TYPES.includes(code as CabinetTypeCode) ? (code as CabinetTypeCode) : '';
 }
 
-export type CabinetDivisionLink = {
-  id: number;
-  cabinet_id: number;
-  department_id: number;
-  status?: string;
-  description?: string;
-  department?: {
-    ID?: number;
-    DepName?: string;
-    DepName2?: string;
-  };
-};
-
-export type CabinetRow = {
-  id: number;
-  cabinet_name?: string;
-  cabinet_code?: string;
-  cabinet_type?: string;
-  stock_id?: number;
-  machine_ip?: string | null;
-  cabinet_status?: string;
-  temp_min?: number | string | null;
-  temp_max?: number | string | null;
-  hum_min?: number | string | null;
-  hum_max?: number | string | null;
-  cabinetDepartments?: CabinetDivisionLink[];
-  created_at?: string;
-  updated_at?: string;
-};
-
-export function divisionLinkLabel(link: CabinetDivisionLink): string {
-  return (
-    link.department?.DepName?.trim() ||
-    link.department?.DepName2?.trim() ||
-    `Division #${link.department_id}`
-  );
-}
-
 export type CabinetClimateFields = {
   temp_min?: number | string | null;
   temp_max?: number | string | null;
@@ -102,30 +64,6 @@ export function climateFormError(values: {
     return 'ความชื้นต่ำสุดต้องไม่มากกว่าความชื้นสูงสุด';
   }
   return null;
-}
-
-/** IPv4 ของเครื่องตู้ — stock_id = เลขท้าย + 1 เช่น .0 → 1, .2 → 3 */
-const IPV4_OCTET = /^(?:25[0-5]|2[0-4]\d|1?\d?\d)$/;
-
-export const MACHINE_IP_PLACEHOLDER = 'เช่น 192.168.1.2';
-
-export function stockIdFromMachineIp(raw?: string): number | null {
-  const ip = raw?.trim() ?? '';
-  if (!ip) return null;
-  const parts = ip.split('.');
-  if (parts.length !== 4 || parts.some((part) => !IPV4_OCTET.test(part))) return null;
-  return Number(parts[3]) + 1;
-}
-
-export function machineIpHint(ip?: string, currentStockId?: number | null): string {
-  const typed = ip?.trim() ?? '';
-  const derived = stockIdFromMachineIp(typed);
-  if (derived != null) return `Stock ID ที่จะใช้: ${derived}`;
-  if (typed) return 'รูปแบบ IP ไม่ถูกต้อง เช่น 192.168.1.2';
-  if (currentStockId != null && currentStockId > 0) {
-    return `Stock ID ปัจจุบัน: ${currentStockId} — กรอก IP เพื่อเปลี่ยน (ท้าย .0 = 1, ท้าย .2 = 3)`;
-  }
-  return 'ไม่กรอกระบบจะสร้าง Stock ID ให้อัตโนมัติ (ท้าย .0 = 1, ท้าย .2 = 3)';
 }
 
 export function formatClimateRange(

@@ -6,7 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Package } from 'lucide-react';
-import { climateFormError, climatePayload } from '@/app/admin/management/cabinets/components/cabinetTypes';
+import {
+  climateFormError,
+  climatePayload,
+  MACHINE_IP_PLACEHOLDER,
+  machineIpHint,
+  stockIdFromMachineIp,
+} from '@/app/admin/management/cabinets/components/cabinetTypes';
 
 const fieldInputClass = 'bg-white';
 
@@ -24,7 +30,7 @@ export default function CreateCabinetDialog({
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     cabinet_name: '',
-    stock_id: '',
+    machine_ip: '',
     temp_min: '',
     temp_max: '',
     hum_min: '',
@@ -35,7 +41,7 @@ export default function CreateCabinetDialog({
     if (!open) {
       setFormData({
         cabinet_name: '',
-        stock_id: '',
+        machine_ip: '',
         temp_min: '',
         temp_max: '',
         hum_min: '',
@@ -52,12 +58,17 @@ export default function CreateCabinetDialog({
       toast.error(climateError);
       return;
     }
+    if (formData.machine_ip.trim() && stockIdFromMachineIp(formData.machine_ip) == null) {
+      toast.error('รูปแบบ IP ไม่ถูกต้อง เช่น 192.168.1.2');
+      return;
+    }
 
     try {
       setLoading(true);
       const data: {
         cabinet_name?: string;
         stock_id?: number;
+        machine_ip?: string | null;
         temp_min: number | null;
         temp_max: number | null;
         hum_min: number | null;
@@ -69,10 +80,9 @@ export default function CreateCabinetDialog({
         hum_min: climatePayload(formData.hum_min),
         hum_max: climatePayload(formData.hum_max),
       };
-      if (formData.stock_id.trim()) {
-        const sid = parseInt(formData.stock_id, 10);
-        if (!Number.isNaN(sid)) data.stock_id = sid;
-      }
+      const stockId = stockIdFromMachineIp(formData.machine_ip);
+      if (stockId != null) data.stock_id = stockId;
+      if (formData.machine_ip.trim()) data.machine_ip = formData.machine_ip.trim();
 
       const response = await cabinetApi.create(data);
 
@@ -117,18 +127,17 @@ export default function CreateCabinetDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="stock_id">Stock ID</Label>
+            <Label htmlFor="machine_ip">IP เครื่อง</Label>
             <Input
-              id="stock_id"
-              type="number"
-              placeholder="กรอก Stock ID (ตัวเลข)"
-              value={formData.stock_id}
-              onChange={(e) => setFormData({ ...formData, stock_id: e.target.value })}
+              id="machine_ip"
+              inputMode="decimal"
+              autoComplete="off"
+              placeholder={MACHINE_IP_PLACEHOLDER}
+              value={formData.machine_ip}
+              onChange={(e) => setFormData({ ...formData, machine_ip: e.target.value })}
               className={fieldInputClass}
             />
-            <p className="text-xs text-muted-foreground">
-              ไม่กรอกระบบจะสร้างให้อัตโนมัติ
-            </p>
+            <p className="text-xs text-muted-foreground">{machineIpHint(formData.machine_ip)}</p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

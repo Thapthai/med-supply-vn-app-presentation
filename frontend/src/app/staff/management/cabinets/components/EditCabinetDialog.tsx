@@ -6,7 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Edit } from 'lucide-react';
-import { climateFormError, climateInputValue, climatePayload } from '@/app/admin/management/cabinets/components/cabinetTypes';
+import {
+  climateFormError,
+  climateInputValue,
+  climatePayload,
+  MACHINE_IP_PLACEHOLDER,
+  machineIpHint,
+  stockIdFromMachineIp,
+} from '@/app/admin/management/cabinets/components/cabinetTypes';
 
 const fieldInputClass = 'bg-white';
 
@@ -16,6 +23,7 @@ interface Cabinet {
   cabinet_code?: string;
   cabinet_type?: string;
   stock_id?: number;
+  machine_ip?: string | null;
   cabinet_status?: string;
   temp_min?: number | string | null;
   temp_max?: number | string | null;
@@ -40,7 +48,7 @@ export default function EditCabinetDialog({
   const [formData, setFormData] = useState({
     cabinet_name: '',
     cabinet_code: '',
-    stock_id: '',
+    machine_ip: '',
     temp_min: '',
     temp_max: '',
     hum_min: '',
@@ -53,7 +61,7 @@ export default function EditCabinetDialog({
       setFormData({
         cabinet_name: cabinet.cabinet_name || '',
         cabinet_code: cabinet.cabinet_code || '',
-        stock_id: cabinet.stock_id?.toString() || '',
+        machine_ip: cabinet.machine_ip || '',
         temp_min: climateInputValue(cabinet.temp_min),
         temp_max: climateInputValue(cabinet.temp_max),
         hum_min: climateInputValue(cabinet.hum_min),
@@ -68,7 +76,7 @@ export default function EditCabinetDialog({
       setFormData({
         cabinet_name: '',
         cabinet_code: '',
-        stock_id: '',
+        machine_ip: '',
         temp_min: '',
         temp_max: '',
         hum_min: '',
@@ -86,6 +94,10 @@ export default function EditCabinetDialog({
       toast.error(climateError);
       return;
     }
+    if (formData.machine_ip.trim() && stockIdFromMachineIp(formData.machine_ip) == null) {
+      toast.error('รูปแบบ IP ไม่ถูกต้อง เช่น 192.168.1.2');
+      return;
+    }
 
     try {
       setLoading(true);
@@ -97,10 +109,9 @@ export default function EditCabinetDialog({
         hum_min: climatePayload(formData.hum_min),
         hum_max: climatePayload(formData.hum_max),
       };
-      if (formData.stock_id.trim()) {
-        const sid = parseInt(formData.stock_id, 10);
-        if (!Number.isNaN(sid)) data.stock_id = sid;
-      }
+      const stockId = stockIdFromMachineIp(formData.machine_ip);
+      if (stockId != null) data.stock_id = stockId;
+      data.machine_ip = formData.machine_ip.trim() || null;
 
       const response = await cabinetApi.update(cabinet.id, data);
 
@@ -157,15 +168,19 @@ export default function EditCabinetDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="stock_id">Stock ID</Label>
+            <Label htmlFor="machine_ip">IP เครื่อง</Label>
             <Input
-              id="stock_id"
-              type="number"
-              placeholder="กรอก Stock ID"
-              value={formData.stock_id}
-              onChange={(e) => setFormData({ ...formData, stock_id: e.target.value })}
+              id="machine_ip"
+              inputMode="decimal"
+              autoComplete="off"
+              placeholder={MACHINE_IP_PLACEHOLDER}
+              value={formData.machine_ip}
+              onChange={(e) => setFormData({ ...formData, machine_ip: e.target.value })}
               className={fieldInputClass}
             />
+            <p className="text-xs text-muted-foreground">
+              {machineIpHint(formData.machine_ip, cabinet.stock_id)}
+            </p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

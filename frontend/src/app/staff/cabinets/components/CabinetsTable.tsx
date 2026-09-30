@@ -19,6 +19,7 @@ interface Cabinet {
   cabinet_code?: string;
   cabinet_type?: string;
   stock_id?: number;
+  machine_ip?: string | null;
   cabinet_status?: string;
   temp_min?: number | string | null;
   temp_max?: number | string | null;
@@ -122,7 +123,7 @@ export default function CabinetsTable({
                 <TableHead>ชื่อตู้</TableHead>
                 <TableHead>รหัสตู้</TableHead>
                 <TableHead>ประเภท</TableHead>
-                <TableHead>Stock ID</TableHead>
+                <TableHead>IP เครื่อง</TableHead>
                 <TableHead className="whitespace-nowrap">อุณหภูมิ (°C)</TableHead>
                 <TableHead className="whitespace-nowrap">ความชื้น (%)</TableHead>
                 <TableHead>สถานะ</TableHead>
@@ -136,7 +137,7 @@ export default function CabinetsTable({
                   <TableCell>{cabinet.cabinet_name || '-'}</TableCell>
                   <TableCell>{cabinet.cabinet_code || '-'}</TableCell>
                   <TableCell>{cabinet.cabinet_type || '-'}</TableCell>
-                  <TableCell>{cabinet.stock_id || '-'}</TableCell>
+                  <TableCell className="font-mono text-sm">{cabinet.machine_ip || '-'}</TableCell>
                   <TableCell className="tabular-nums whitespace-nowrap">
                     {formatClimateRange(cabinet.temp_min, cabinet.temp_max)}
                   </TableCell>

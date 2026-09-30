@@ -2428,6 +2428,7 @@ export const cabinetApi = {
     cabinet_code?: string;
     cabinet_type?: string;
     stock_id?: number;
+    machine_ip?: string | null;
     cabinet_status?: string;
     department_id?: number;
     temp_min?: number | null;
@@ -2444,6 +2445,7 @@ export const cabinetApi = {
     cabinet_code?: string;
     cabinet_type?: string;
     stock_id?: number;
+    machine_ip?: string | null;
     cabinet_status?: string;
     temp_min?: number | null;
     temp_max?: number | null;

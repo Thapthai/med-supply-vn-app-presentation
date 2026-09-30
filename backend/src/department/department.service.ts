@@ -8,6 +8,22 @@ import {
 } from './dto/department.dto';
 import { CreateCabinetDto, UpdateCabinetDto } from './dto/cabinet.dto';
 
+function normalizeMachineIp(raw?: string | null): string | null {
+  const ip = raw?.trim() ?? '';
+  return ip || null;
+}
+
+/** stock_id = เลขท้าย IPv4 + 1 เช่น 192.168.1.2 → 3 */
+function stockIdFromMachineIp(raw?: string | null): number | null {
+  const ip = normalizeMachineIp(raw);
+  if (!ip) return null;
+  const parts = ip.split('.');
+  if (parts.length !== 4) return null;
+  const last = Number(parts[3]);
+  if (!Number.isInteger(last) || last < 0 || last > 255) return null;
+  return last + 1;
+}
+
 @Injectable()
 export class DepartmentService {
   private readonly logger = new Logger(DepartmentService.name);
@@ -190,9 +206,10 @@ export class DepartmentService {
 
   async createCabinet(data: CreateCabinetDto) {
     try {
-      const { department_id, ...rest } = data;
+      const { department_id, machine_ip: rawIp, ...rest } = data;
+      const machine_ip = normalizeMachineIp(rawIp);
       let cabinet_code = data.cabinet_code?.trim();
-      let stock_id = data.stock_id;
+      let stock_id = data.stock_id ?? stockIdFromMachineIp(machine_ip) ?? undefined;
       if (!cabinet_code || stock_id == null) {
         const generated = await this.generateCabinetCode({
           hospitalPrefix: this.HOSPITAL_PREFIX,
@@ -207,6 +224,7 @@ export class DepartmentService {
           ...rest,
           cabinet_code,
           stock_id,
+          machine_ip,
           ...(department_id ? { cabinet_status: 'USED' } : {}),
         },
       });
@@ -269,6 +287,7 @@ export class DepartmentService {
       where.OR = [
         { cabinet_name: { contains: query.keyword } },
         { cabinet_code: { contains: query.keyword } },
+        { machine_ip: { contains: query.keyword } },
       ];
     }
 
@@ -335,9 +354,20 @@ export class DepartmentService {
 
   async updateCabinet(id: number, data: UpdateCabinetDto) {
     try {
+      const { machine_ip: rawIp, stock_id: rawStock, ...rest } = data;
+      const machine_ip = rawIp !== undefined ? normalizeMachineIp(rawIp) : undefined;
+      const derivedStock = machine_ip ? stockIdFromMachineIp(machine_ip) : null;
       const cabinet = await this.prisma.cabinet.update({
         where: { id },
-        data,
+        data: {
+          ...rest,
+          ...(machine_ip !== undefined ? { machine_ip } : {}),
+          ...(derivedStock != null
+            ? { stock_id: derivedStock }
+            : rawStock != null
+              ? { stock_id: rawStock }
+              : {}),
+        },
       });
       return { success: true, message: 'อัปเดตตู้แล้ว', data: cabinet };
     } catch (err: any) {

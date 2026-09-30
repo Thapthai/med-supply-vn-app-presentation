@@ -29,10 +29,11 @@ interface SearchableSelectProps {
   /** ส่ง ref ของ container ใน modal เพื่อให้ dropdown ไปโผล่ด้านนอก (scroll ได้ปกติ) */
   portalTargetRef?: React.RefObject<HTMLElement | null>;
   /**
-   * inline = วางใต้ trigger ในกล่อง relative (รองรับ `zoom` ที่ main ของ AppLayout — ไม่เพี้ยน)
-   * floating = portal ไป body + fixed (ใช้ใน dialog ที่ไม่ส่ง portalTargetRef แต่ต้องลอยนอก overflow)
+   * inline = วางใต้ trigger แบบ absolute
+   * flow = เปิดรายการในเลย์เอาต์ปกติ (ใช้ใน Dialog — ไม่โดน overlay แย่งคลิก)
+   * floating = portal ไป body + fixed
    */
-  positionMode?: "inline" | "floating";
+  positionMode?: "inline" | "flow" | "floating";
   /** แสดงแถวล้างค่าในรายการ (เมื่อมีค่าแล้ว) เพื่อให้เปลี่ยนใจไม่เลือกได้ */
   allowClear?: boolean;
   clearLabel?: string;
@@ -306,7 +307,9 @@ export default function SearchableSelect({
       {allowClear && value.trim() ? (
         <button
           type="button"
-          onClick={() => {
+          onMouseDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
             onValueChange("");
             setIsOpen(false);
             setSearchTerm("");
@@ -326,7 +329,9 @@ export default function SearchableSelect({
           <button
             key={`opt-${option.value}-${idx}`}
             type="button"
-            onClick={() => {
+            onMouseDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
               lastSelectedRef.current = option;
               onValueChange(option.value);
               setIsOpen(false);
@@ -365,11 +370,13 @@ export default function SearchableSelect({
     </div>
   );
 
-  const showInlinePanel = isOpen && !useFloatingLayout;
+  const showFlowPanel = isOpen && positionMode === "flow" && !useFloatingLayout;
+  const showInlinePanel = isOpen && !useFloatingLayout && !showFlowPanel;
 
   const dropdownContent = position ? (
     <div
       ref={portalRef}
+      data-searchable-select-portal=""
       className={cn(
         "overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl ring-1 ring-slate-900/5",
         position.maxHeight == null && "max-h-[300px]",
@@ -377,6 +384,7 @@ export default function SearchableSelect({
       style={{
         position: position.isFixed ? "fixed" : "absolute",
         zIndex: position.isFixed ? 100_002 : 10_000,
+        pointerEvents: "auto",
         left: position.left,
         width: position.width,
         minWidth: 200,
@@ -446,6 +454,18 @@ export default function SearchableSelect({
             className={cn(
               "absolute left-0 right-0 top-full z-[10001] mt-1 flex max-h-[min(300px,50vh)] flex-col overflow-hidden",
               "rounded-lg border border-slate-200 bg-white shadow-xl ring-1 ring-slate-900/5",
+            )}
+          >
+            {searchHeader}
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{optionsBlock}</div>
+          </div>
+        )}
+
+        {showFlowPanel && (
+          <div
+            className={cn(
+              "relative z-10 mt-1 flex max-h-60 flex-col overflow-hidden",
+              "rounded-lg border border-slate-200 bg-white shadow-sm ring-1 ring-slate-900/5",
             )}
           >
             {searchHeader}

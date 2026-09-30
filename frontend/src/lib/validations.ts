@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { stockIdFromMachineIp } from '@/app/admin/management/cabinets/components/cabinetTypes';
 
 export const loginSchema = z.object({
   email: z.string().email('กรุณาใส่อีเมลที่ถูกต้อง'),
@@ -78,17 +79,12 @@ const cabinetFormObject = z.object({
     .min(1, 'ชื่อตู้ต้องไม่ว่าง')
     .min(2, 'ชื่อตู้ต้องมีอย่างน้อย 2 ตัวอักษร')
     .max(255, 'ชื่อตู้ต้องไม่เกิน 255 ตัวอักษร'),
-  stock_id: z
+  machine_ip: z
     .string()
     .optional()
-    .refine(
-      (v) => {
-        if (!v?.trim()) return true;
-        const n = parseInt(v.trim(), 10);
-        return !Number.isNaN(n) && n > 0;
-      },
-      { message: 'Stock ID ต้องเป็นตัวเลขที่ถูกต้อง' },
-    ),
+    .refine((v) => !v?.trim() || stockIdFromMachineIp(v) != null, {
+      message: 'รูปแบบ IP ไม่ถูกต้อง เช่น 192.168.1.2',
+    }),
   cabinet_type: z.enum(['WEIGHING', 'RFID'], {
     message: 'กรุณาเลือกประเภทตู้',
   }),

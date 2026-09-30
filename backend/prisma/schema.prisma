@@ -664,6 +664,8 @@ model cabinet {
   cabinet_type   String?  @map("cabinet_type") @db.VarChar(255)
   cabinet_status String?  @default("ACTIVE") @map("cabinet_status") @db.VarChar(255)
   stock_id       Int?     @unique() @map("stock_id")
+  /// IP เครื่องตู้ — stock_id = เลขท้าย IP + 1
+  machine_ip     String?  @map("machine_ip") @db.VarChar(45)
   /// เกณฑ์อุณหภูมิ (°C)
   temp_min       Decimal? @map("temp_min") @db.Decimal(5, 2)
   temp_max       Decimal? @map("temp_max") @db.Decimal(5, 2)

@@ -1,6 +1,5 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
 import { Search, RefreshCw, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -13,23 +12,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import SearchableSelect from '@/app/admin/management/cabinet-departments/components/SearchableSelect';
-import { departmentApi } from '@/lib/api';
 import { CABINET_TYPE_OPTIONS, type CabinetTypeCode } from './cabinetTypes';
 
 const fieldInputClass = 'bg-white';
-
-type Dept = { ID: number; DepName?: string; DepName2?: string };
 
 export interface CabinetsSearchCardProps {
   keywordInput: string;
   activeKeyword: string;
   typeFilter: CabinetTypeCode | 'all';
-  divisionId?: string;
-  activeDivisionId?: string;
   onKeywordInputChange: (value: string) => void;
   onTypeFilterChange: (value: CabinetTypeCode | 'all') => void;
-  onDivisionIdChange?: (value: string) => void;
   onSearch: () => void;
   onClearFilters: () => void;
   onRefresh: () => void;
@@ -40,41 +32,14 @@ export default function CabinetsSearchCard({
   keywordInput,
   activeKeyword,
   typeFilter,
-  divisionId = '',
-  activeDivisionId = '',
   onKeywordInputChange,
   onTypeFilterChange,
-  onDivisionIdChange,
   onSearch,
   onClearFilters,
   onRefresh,
   loading = false,
 }: CabinetsSearchCardProps) {
-  const [departments, setDepartments] = useState<Dept[]>([]);
-  const [loadingDepartments, setLoadingDepartments] = useState(false);
-
-  const loadDepartments = useCallback(async (keyword?: string) => {
-    setLoadingDepartments(true);
-    try {
-      const response = await departmentApi.getAll({
-        limit: 50,
-        ...(keyword?.trim() ? { keyword: keyword.trim() } : {}),
-      });
-      if (response.success && Array.isArray(response.data)) {
-        setDepartments(response.data as Dept[]);
-      }
-    } finally {
-      setLoadingDepartments(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadDepartments();
-  }, [loadDepartments]);
-
-  const hasActiveFilters =
-    activeKeyword.trim() !== '' || typeFilter !== 'all' || activeDivisionId.trim() !== '';
-  const appliedDept = departments.find((d) => String(d.ID) === activeDivisionId);
+  const hasActiveFilters = activeKeyword.trim() !== '' || typeFilter !== 'all';
 
   return (
     <Card className="border-slate-200 shadow-sm">
@@ -85,7 +50,7 @@ export default function CabinetsSearchCard({
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-slate-900">ค้นหาและกรอง</p>
-            <p className="text-xs text-slate-500">ค้นจากชื่อตู้ รหัสตู้ และกรองตาม Division / ประเภท</p>
+            <p className="text-xs text-slate-500">ค้นจากชื่อตู้ หรือรหัสตู้ และกรองตามประเภท RFID / WEIGHING</p>
           </div>
         </div>
 
@@ -107,50 +72,26 @@ export default function CabinetsSearchCard({
             </div>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2">
-            {onDivisionIdChange ? (
-              <SearchableSelect
-                label="Division"
-                placeholder="— เลือก Division —"
-                searchPlaceholder="ค้นหา Division..."
-                value={divisionId}
-                onValueChange={onDivisionIdChange}
-                options={[
-                  { value: '', label: 'ทั้งหมด' },
-                  ...departments.map((dept) => ({
-                    value: String(dept.ID),
-                    label: dept.DepName || '',
-                    subLabel: dept.DepName2 || '',
-                  })),
-                ]}
-                loading={loadingDepartments}
-                onSearch={(keyword) => void loadDepartments(keyword)}
-                allowClear
-                clearLabel="ทั้งหมด"
-              />
-            ) : null}
-
-            <div className="space-y-1.5">
-              <label htmlFor="cabinet-type-filter" className="text-xs font-medium text-slate-600">
-                ประเภทตู้
-              </label>
-              <Select
-                value={typeFilter}
-                onValueChange={(v) => onTypeFilterChange(v as CabinetTypeCode | 'all')}
-              >
-                <SelectTrigger id="cabinet-type-filter" className={cn('h-10 w-full shadow-sm', fieldInputClass)}>
-                  <SelectValue placeholder="ทุกประเภท" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">ทุกประเภท</SelectItem>
-                  {CABINET_TYPE_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-1.5">
+            <label htmlFor="cabinet-type-filter" className="text-xs font-medium text-slate-600">
+              ประเภทตู้
+            </label>
+            <Select
+              value={typeFilter}
+              onValueChange={(v) => onTypeFilterChange(v as CabinetTypeCode | 'all')}
+            >
+              <SelectTrigger id="cabinet-type-filter" className={cn('h-10 w-full shadow-sm', fieldInputClass)}>
+                <SelectValue placeholder="ทุกประเภท" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">ทุกประเภท</SelectItem>
+                {CABINET_TYPE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex justify-end gap-2">
@@ -184,11 +125,6 @@ export default function CabinetsSearchCard({
                 ประเภท: {typeFilter}
               </span>
             ) : null}
-            {activeDivisionId.trim() ? (
-              <span className="inline-flex items-center gap-1 rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-0.5 text-xs font-medium text-cyan-900">
-                Division: {appliedDept?.DepName || appliedDept?.DepName2 || activeDivisionId}
-              </span>
-            ) : null}
             <Button
               type="button"
               variant="ghost"
@@ -201,6 +137,7 @@ export default function CabinetsSearchCard({
             </Button>
           </div>
         ) : null}
+
       </CardContent>
     </Card>
   );

@@ -179,7 +179,24 @@ export default function CabinetsSearchCard({
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-3">
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <label htmlFor="staff-cabinet-keyword" className="text-xs font-medium text-slate-600">
+              คำค้นหา
+            </label>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                id="staff-cabinet-keyword"
+                placeholder="เช่น ตู้ A1, CAB-001..."
+                value={formFilters.keyword}
+                onChange={(e) => setFormFilters((prev) => ({ ...prev, keyword: e.target.value }))}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                className={cn('h-10 pl-9 shadow-sm', fieldInputClass)}
+              />
+            </div>
+          </div>
+
           <SearchableSelect
             label="Division"
             placeholder={
@@ -205,23 +222,6 @@ export default function CabinetsSearchCard({
             onSearch={loadDepartments}
             searchPlaceholder="ค้นหา Division..."
           />
-
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <label htmlFor="staff-cabinet-keyword" className="text-xs font-medium text-slate-600">
-              คำค้นหา
-            </label>
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input
-                id="staff-cabinet-keyword"
-                placeholder="เช่น ตู้ A1, CAB-001..."
-                value={formFilters.keyword}
-                onChange={(e) => setFormFilters((prev) => ({ ...prev, keyword: e.target.value }))}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                className={cn('h-10 pl-9 shadow-sm', fieldInputClass)}
-              />
-            </div>
-          </div>
         </div>
 
         <div className="mt-4 flex flex-wrap justify-end gap-2">

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { cabinetApi, cabinetDepartmentApi } from '@/lib/api';
+import { cabinetApi } from '@/lib/api';
 import { cabinetFormSchema, type CabinetFormData } from '@/lib/validations';
 import {
   Dialog,
@@ -31,14 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import {
-  CABINET_TYPE_OPTIONS,
-  climatePayload,
-  MACHINE_IP_PLACEHOLDER,
-  machineIpHint,
-  stockIdFromMachineIp,
-} from './cabinetTypes';
-import CabinetDivisionPicker, { type DivisionPick } from './CabinetDivisionPicker';
+import { CABINET_TYPE_OPTIONS, climatePayload } from './cabinetTypes';
 
 const fieldInputClass = 'bg-white';
 
@@ -50,7 +43,7 @@ interface CreateCabinetDialogProps {
 
 const defaultValues: CabinetFormData = {
   cabinet_name: '',
-  machine_ip: '',
+  stock_id: '',
   cabinet_type: 'WEIGHING',
   temp_min: '',
   temp_max: '',
@@ -64,7 +57,6 @@ export default function CreateCabinetDialog({
   onSuccess,
 }: CreateCabinetDialogProps) {
   const [loading, setLoading] = useState(false);
-  const [divisions, setDivisions] = useState<DivisionPick[]>([]);
 
   const form = useForm<CabinetFormData>({
     resolver: zodResolver(cabinetFormSchema),
@@ -74,20 +66,16 @@ export default function CreateCabinetDialog({
   useEffect(() => {
     if (!open) {
       form.reset(defaultValues);
-      setDivisions([]);
     }
   }, [open, form]);
 
   const handleSubmit = async (values: CabinetFormData) => {
     try {
       setLoading(true);
-      const divisionIds = divisions.map((d) => parseInt(d.id, 10)).filter((n) => Number.isFinite(n));
       const data: {
         cabinet_name: string;
         cabinet_type: string;
         stock_id?: number;
-        machine_ip?: string | null;
-        department_id?: number;
         temp_min: number | null;
         temp_max: number | null;
         hum_min: number | null;
@@ -100,27 +88,15 @@ export default function CreateCabinetDialog({
         hum_min: climatePayload(values.hum_min),
         hum_max: climatePayload(values.hum_max),
       };
-      if (divisionIds[0]) data.department_id = divisionIds[0];
-      const stockId = stockIdFromMachineIp(values.machine_ip);
-      if (stockId != null) data.stock_id = stockId;
-      if (values.machine_ip?.trim()) data.machine_ip = values.machine_ip.trim();
+      if (values.stock_id?.trim()) {
+        const sid = parseInt(values.stock_id.trim(), 10);
+        if (!Number.isNaN(sid)) data.stock_id = sid;
+      }
 
       const response = await cabinetApi.create(data);
 
       if (response.success) {
-        const cabinetId = Number((response.data as { id?: number } | undefined)?.id);
-        if (cabinetId && divisionIds.length > 1) {
-          for (const department_id of divisionIds.slice(1)) {
-            await cabinetDepartmentApi.create({
-              cabinet_id: cabinetId,
-              department_id,
-              status: 'ACTIVE',
-            });
-          }
-        }
-        toast.success(
-          divisionIds.length > 0 ? 'เพิ่มตู้และเชื่อมโยง Division แล้ว' : 'เพิ่มตู้เรียบร้อยแล้ว',
-        );
+        toast.success('เพิ่มตู้เรียบร้อยแล้ว');
         onOpenChange(false);
         onSuccess();
       } else {
@@ -136,7 +112,7 @@ export default function CreateCabinetDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Package className="h-5 w-5" />
@@ -277,25 +253,24 @@ export default function CreateCabinetDialog({
               />
             </div>
 
-            <CabinetDivisionPicker open={open} values={divisions} onChange={setDivisions} disabled={loading} />
-
             <FormField
               control={form.control}
-              name="machine_ip"
+              name="stock_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>IP เครื่อง</FormLabel>
+                  <FormLabel>Stock ID</FormLabel>
                   <FormControl>
                     <Input
-                      inputMode="decimal"
-                      autoComplete="off"
-                      placeholder={MACHINE_IP_PLACEHOLDER}
+                      type="number"
+                      placeholder="กรอก Stock ID (ตัวเลข)"
                       className={fieldInputClass}
                       {...field}
                       value={field.value ?? ''}
                     />
                   </FormControl>
-                  <p className="text-xs text-muted-foreground">{machineIpHint(field.value)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    ไม่กรอกระบบจะสร้างให้อัตโนมัติ
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}
