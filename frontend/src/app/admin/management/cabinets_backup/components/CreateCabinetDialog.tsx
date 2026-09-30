@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { cabinetApi } from '@/lib/api';
-import { cabinetFormSchema, type CabinetFormData } from '@/lib/validations';
+import { backupCabinetFormSchema, type BackupCabinetFormData } from './formSchema';
 import {
   Dialog,
   DialogContent,
@@ -41,7 +41,7 @@ interface CreateCabinetDialogProps {
   onSuccess: () => void;
 }
 
-const defaultValues: CabinetFormData = {
+const defaultValues: BackupCabinetFormData = {
   cabinet_name: '',
   stock_id: '',
   cabinet_type: 'WEIGHING',
@@ -58,8 +58,8 @@ export default function CreateCabinetDialog({
 }: CreateCabinetDialogProps) {
   const [loading, setLoading] = useState(false);
 
-  const form = useForm<CabinetFormData>({
-    resolver: zodResolver(cabinetFormSchema),
+  const form = useForm<BackupCabinetFormData>({
+    resolver: zodResolver(backupCabinetFormSchema),
     defaultValues,
   });
 
@@ -69,7 +69,7 @@ export default function CreateCabinetDialog({
     }
   }, [open, form]);
 
-  const handleSubmit = async (values: CabinetFormData) => {
+  const handleSubmit = async (values: BackupCabinetFormData) => {
     try {
       setLoading(true);
       const data: {

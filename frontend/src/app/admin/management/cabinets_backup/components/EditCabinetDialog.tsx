@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { cabinetApi } from '@/lib/api';
-import { cabinetEditFormSchema, type CabinetEditFormData } from '@/lib/validations';
+import { backupCabinetEditFormSchema, type BackupCabinetEditFormData } from './formSchema';
 import {
   Dialog,
   DialogContent,
@@ -78,8 +78,8 @@ export default function EditCabinetDialog({
 }: EditCabinetDialogProps) {
   const [loading, setLoading] = useState(false);
 
-  const form = useForm<CabinetEditFormData>({
-    resolver: zodResolver(cabinetEditFormSchema),
+  const form = useForm<BackupCabinetEditFormData>({
+    resolver: zodResolver(backupCabinetEditFormSchema),
     defaultValues: {
       cabinet_name: '',
       stock_id: '',
@@ -119,7 +119,7 @@ export default function EditCabinetDialog({
     }
   }, [open, cabinet, form]);
 
-  const handleSubmit = async (values: CabinetEditFormData) => {
+  const handleSubmit = async (values: BackupCabinetEditFormData) => {
     if (!cabinet) return;
 
     try {
