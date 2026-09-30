@@ -10,6 +10,12 @@
  * ใช้ NEXT_PUBLIC_BASE_PATH เป็นหลัก เพราะอ่านได้ทั้งฝั่ง server และ browser
  * (NEXTAUTH_URL เป็น env ฝั่ง server เท่านั้น — ถ้าใช้เป็นหลักจะได้คนละค่ากันสองฝั่ง)
  */
+/** path login ของแอปนี้ เช่น /smart-cabinet-presentation/auth/login */
+export function getLoginPath(): string {
+  const basePath = (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/\/$/, '');
+  return `${basePath}/auth/login`;
+}
+
 export function getAppName(): string {
   const basePath = (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/^\/+|\/+$/g, '');
   if (basePath) return basePath;

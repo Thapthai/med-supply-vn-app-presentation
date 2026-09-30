@@ -1,7 +1,7 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getAppName } from "@/lib/appAuth";
+import { getAppName, getLoginPath } from "@/lib/appAuth";
 
 function stripBasePath(pathname: string, basePath: string): string {
   if (!basePath) return pathname;
@@ -71,8 +71,8 @@ export default withAuth(
       },
     },
     pages: {
-      // withAuth เติม basePath ให้เองตอน redirect — ใส่ที่นี่ซ้ำจะได้ /basePath/basePath/auth/login
-      signIn: "/auth/login",
+      // withAuth สร้าง URL จาก origin อย่างเดียว จึงต้องใส่ basePath เอง
+      signIn: getLoginPath(),
     },
   },
 );
