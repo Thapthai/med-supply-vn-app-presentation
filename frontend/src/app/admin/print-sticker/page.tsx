@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import PrintStickerTab from '@/app/admin/print-sticker/PrintStickerTab';
 import PrintStickerHistoryTab from '@/app/admin/print-sticker/components/PrintStickerHistoryTab';
+import { openPrintedStickerPreviews } from '@/components/print-sticker/printedStickerBatch';
 
 const TABS = [
   {
@@ -82,7 +83,7 @@ export default function AdminPrintStickerPage() {
             </Card>
 
             <TabsContent value="print">
-              <PrintStickerTab />
+              <PrintStickerTab onPrintedBatch={openPrintedStickerPreviews} />
             </TabsContent>
 
             <TabsContent value="history">

@@ -1,6 +1,15 @@
 import staffApi from './index';
 
 export const staffItemStockApi = {
+  peekNextUsageCodes: async (
+    itemcodes: string[],
+  ): Promise<{ success?: boolean; data?: Record<string, string> }> => {
+    const response = await staffApi.get('/item-stocks/next-usage-codes', {
+      params: { itemcodes: itemcodes.join(',') },
+    });
+    return response.data;
+  },
+
   createForPrintByStock: async (body: {
     department_id?: number;
     lines: Array<{
@@ -13,7 +22,7 @@ export const staffItemStockApi = {
   }): Promise<{
     success?: boolean;
     message?: string;
-    data?: { count: number; rows: Array<{ RowID: number; ItemCode?: string | null; RfidCode?: string | null }> };
+    data?: { count: number; rows: Array<{ RowID: number; ItemCode?: string | null; RfidCode?: string | null; UsageCode?: string | null }> };
     error?: string;
   }> => {
     const response = await staffApi.post('/item-stocks/for-print-by-stock', body);

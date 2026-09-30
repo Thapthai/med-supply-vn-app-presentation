@@ -26,8 +26,12 @@ import type {
   PreparedStockRow,
   PrintMode,
 } from './types';
+import type { PrintStickerConfirmLine } from '@/components/print-sticker/PrintStickerConfirmDialog';
+import { buildPrintedPreviewLines } from '@/components/print-sticker/buildPrintedPreviewLines';
 
-export function usePrintStickerTab() {
+export function usePrintStickerTab(options?: {
+  onPrintedBatch?: (lines: PrintStickerConfirmLine[]) => void;
+}) {
 
   const [departments, setDepartments] = useState<DepartmentOpt[]>([]);
   const [cabinets, setCabinets] = useState<CabinetOpt[]>([]);
@@ -719,7 +723,9 @@ export function usePrintStickerTab() {
         RowID: Number(r.RowID),
         ItemCode: r.ItemCode ?? null,
         RfidCode: r.RfidCode ?? null,
+        UsageCode: r.UsageCode ?? null,
       }));
+      const printedPreviews = buildPrintedPreviewLines(createdRows, selectedLines);
 
       const grouped = new Map<string, number>();
       for (const row of createdRows) {
@@ -742,6 +748,7 @@ export function usePrintStickerTab() {
       toast.success(res.message, {
         description: `${res.lineCount} แถว · ${res.count} แผ่น · ${res.totalBytesSent} bytes → ${res.host}:${res.port} · ${res.template} · ${formatBangkokDateTime(res.printedAt)}`,
       });
+      options?.onPrintedBatch?.(printedPreviews);
 
       const remainingByCode = new Map<string, number>();
       for (const line of selectedLines) {

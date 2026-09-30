@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Printer, Search, X } from 'lucide-react';
+import { itemStockApi } from '@/lib/api';
 import { PrintStickerConfirmDialog } from '@/components/print-sticker/PrintStickerConfirmDialog';
 import type { Item } from '@/types/item';
 import ItemNameWithUnit from '@/components/ItemNameWithUnit';
@@ -94,6 +95,10 @@ export function PrintStickerItemListCard({
   const canPrint = printableCount > 0 && !preparing && !printing;
   const [confirmOpen, setConfirmOpen] = useState(false);
   const printBusy = preparing || printing;
+  const resolveUsageCodes = useCallback(async (itemcodes: string[]) => {
+    const res = await itemStockApi.peekNextUsageCodes(itemcodes);
+    return res.data ?? {};
+  }, []);
   const confirmLines = printableLines.map((l) => ({
     itemcode: l.itemcode,
     itemname: l.itemname,
@@ -280,6 +285,7 @@ export function PrintStickerItemListCard({
                   onPrintSelected(printOverLimit);
                 }}
                 onCopiesChange={onSetCopies}
+                resolveUsageCodes={resolveUsageCodes}
               />
             </>
           ) : null}

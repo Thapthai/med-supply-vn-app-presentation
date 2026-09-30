@@ -523,7 +523,7 @@ model ItemStock {
   RowID                 Int       @id @default(autoincrement()) @map("RowID")
   CreateDate            DateTime? @default(now()) @map("CreateDate")
   ItemCode              String?   @map("ItemCode") @db.VarChar(20)
-  UsageCode             String?   @map("UsageCode") @db.VarChar(20)
+  UsageCode             String?   @map("UsageCode") @db.VarChar(40)
   UsageCode2            String?   @map("UsageCode2") @db.VarChar(20)
   RfidCode              String?   @map("RfidCode") @db.VarChar(255)
   IsStatus              Int?      @default(0) @map("IsStatus")

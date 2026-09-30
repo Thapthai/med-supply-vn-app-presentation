@@ -15,6 +15,7 @@ import { PrintStickerItemListCard } from '@/app/staff/print-sticker/components/P
 import PrintStickerFilterShell from '@/app/staff/print-sticker/components/PrintStickerFilterShell';
 import PrintStickerHeader from '@/app/staff/print-sticker/components/PrintStickerHeader';
 import { usePrintStickerTab } from '@/app/staff/print-sticker/usePrintStickerTab';
+import { openPrintedStickerPreviews } from '@/components/print-sticker/printedStickerBatch';
 
 const TABS = [
   {
@@ -32,7 +33,7 @@ const TABS = [
 ] as const;
 
 function StaffPrintStickerForm() {
-  const s = usePrintStickerTab();
+  const s = usePrintStickerTab({ onPrintedBatch: openPrintedStickerPreviews });
   return (
     <div className="flex w-full flex-col gap-6">
       <PrintStickerFilterShell

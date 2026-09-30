@@ -302,6 +302,16 @@ export class ItemController {
 export class ItemStockController {
   constructor(private readonly itemService: ItemService) { }
 
+  /** UsageCode ถัดไปของแต่ละ itemcode รูปแบบ itemcode-YYmm-0000X */
+  @Get('next-usage-codes')
+  async nextUsageCodes(@Query('itemcodes') itemcodes?: string) {
+    const codes = (itemcodes ?? '')
+      .split(',')
+      .map((c) => c.trim())
+      .filter(Boolean);
+    return this.itemService.peekNextUsageCodes(codes);
+  }
+
   /** สร้าง itemstock + RFID เฮกซ์ 24 ตัว (สุ่ม) ตามจำนวนแผ่น — ใช้ก่อนพิมพ์สติ๊กเกอร์ */
   @Post('for-print')
   async createForPrint(@Body() body: CreateItemStocksForPrintDto) {

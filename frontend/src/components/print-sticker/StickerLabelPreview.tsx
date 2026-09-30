@@ -10,16 +10,12 @@ import type { PrintStickerConfirmLine } from './PrintStickerConfirmDialog';
 export const STICKER_H_DOTS = 700;
 export const STICKER_V_DOTS = 420;
 
-/** SATO 203 dpi ≈ 8 จุด/มม. — หัวสีฟ้าบนฉลากจริงสูงประมาณ 1 ซม. */
-const DOTS_PER_MM = 8;
-const HEADER_DOTS = 10 * DOTS_PER_MM;
-
 /** 2D30 cell size 8 จุด × QR version 1 (21 โมดูล) */
 const QR_MODULES = 21;
 const QR_DOTS = 8 * QR_MODULES;
 
-const LEFT_COL_X = 50;
-const RIGHT_COL_X = 250;
+const PAD_X = 36;
+const QR_SIZE = QR_DOTS;
 
 const PREVIEW_WIDTH_PX = {
   hero: 360,
@@ -126,6 +122,21 @@ function displayOrDash(value?: string | null) {
   return text ? text : '-';
 }
 
+function usageCodeYm(now = new Date()): string {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Bangkok',
+    year: '2-digit',
+    month: '2-digit',
+  }).formatToParts(now);
+  const yy = parts.find((p) => p.type === 'year')?.value ?? '';
+  const mm = parts.find((p) => p.type === 'month')?.value ?? '';
+  return `${yy}${mm}`;
+}
+
+export function formatItemUsageCode(itemcode: string, seq = 1): string {
+  return `${itemcode}-${usageCodeYm()}-${String(seq).padStart(5, '0')}`;
+}
+
 export function StickerLabelPreview({
   line,
   size = 'hero',
@@ -140,16 +151,20 @@ export function StickerLabelPreview({
   const scale = widthPx / STICKER_H_DOTS;
   const name = line.itemname?.trim() || line.itemcode;
   const code = line.itemcode;
+  const usage = line.usageCode?.trim() || formatItemUsageCode(code);
   const lot = displayOrDash(line.lotNo);
   const exp = formatCEToDMY(line.expireDate) || displayOrDash(line.expireDate);
 
-  const nameY = HEADER_DOTS + 12;
-  const qrY = nameY + 40;
-  const infoY = qrY + 6;
-  const expY = infoY + 138;
-  const barH = 32;
-  const barGap = 10;
-  const barY = STICKER_V_DOTS - barH * 2 - barGap - 8;
+  const nameY = 24;
+  const usageY = 62;
+  const bodyTop = 104;
+  const infoX = PAD_X + QR_SIZE + 28;
+  const infoGap = 38;
+  const expH = 44;
+  const qrY = bodyTop + 8;
+  const infoY = qrY + 16;
+  const expY = infoY + infoGap * 2 + 34;
+  const expW = STICKER_H_DOTS - infoX - PAD_X;
 
   return (
     <div
@@ -159,58 +174,62 @@ export function StickerLabelPreview({
       )}
       style={{ width: widthPx, height: heightPx }}
     >
-      <div
-        className="flex items-center justify-between bg-[#7ec8e3] px-[4%] text-[#1e3a5f]"
-        style={box(0, 0, STICKER_H_DOTS, HEADER_DOTS, scale)}
+      <Text
+        x={PAD_X}
+        y={nameY}
+        size={32}
+        scale={scale}
+        maxWidth={STICKER_H_DOTS - PAD_X * 2}
+        className="font-semibold text-black"
       >
-        <span className="font-semibold leading-none" style={{ fontSize: 36 * scale }}>
-          รายการ
-        </span>
-        <span className="text-right font-bold leading-none tracking-wide text-white">
-          <span className="block" style={{ fontSize: 34 * scale }}>
-            POSE
-          </span>
-          <span
-            className="mt-[0.1em] block font-semibold tracking-[0.12em]"
-            style={{ fontSize: 13 * scale }}
-          >
-            INTELLIGENCE
-          </span>
-        </span>
-      </div>
-
-      <Text x={LEFT_COL_X} y={nameY} size={30} scale={scale} maxWidth={STICKER_H_DOTS - LEFT_COL_X * 2} className="text-black">
         {name}
       </Text>
+      <Text
+        x={PAD_X}
+        y={usageY}
+        size={18}
+        scale={scale}
+        maxWidth={STICKER_H_DOTS - PAD_X * 2}
+        className="text-slate-600"
+      >
+        {code} | {usage}
+      </Text>
 
-      <div style={box(LEFT_COL_X, qrY, QR_DOTS, QR_DOTS, scale)}>
+      <div style={box(PAD_X, qrY, QR_SIZE, QR_SIZE, scale)}>
         <QrMark value={code} />
       </div>
-      <Text x={LEFT_COL_X} y={qrY + QR_DOTS + 8} size={18} scale={scale} className="text-black">
-        {code}
+      <Text
+        x={PAD_X}
+        y={qrY + QR_SIZE + 8}
+        size={13}
+        scale={scale}
+        maxWidth={QR_SIZE}
+        className="text-slate-700"
+      >
+        {code} | {usage}
       </Text>
 
-      <Text x={RIGHT_COL_X} y={infoY} size={30} scale={scale} className="text-black">
+      <Text x={infoX} y={infoY} size={26} scale={scale} className="text-black">
         Code : {code}
       </Text>
-      <Text x={RIGHT_COL_X} y={infoY + 44} size={30} scale={scale} className="text-black">
+      <Text x={infoX} y={infoY + infoGap} size={26} scale={scale} className="text-black">
         Serial No : -
       </Text>
-      <Text x={RIGHT_COL_X} y={infoY + 88} size={30} scale={scale} className="text-black">
+      <Text x={infoX} y={infoY + infoGap * 2} size={26} scale={scale} className="text-black">
         Lot No : {lot}
       </Text>
 
-      <div className="flex items-center bg-black px-[2%]" style={box(RIGHT_COL_X - 10, expY, 440, 50, scale)}>
+      <div
+        className="flex items-center bg-black px-[3%]"
+        style={box(infoX, expY, expW, expH, scale)}
+      >
         <span
           className="font-bold leading-none text-white"
-          style={{ fontSize: 30 * scale, fontFamily: 'Tahoma, sans-serif' }}
+          style={{ fontSize: 26 * scale, fontFamily: 'Tahoma, sans-serif' }}
         >
           EXP: {exp}
         </span>
       </div>
-
-      <div className="bg-[#7ec8e3]" style={box(RIGHT_COL_X - 10, barY, 440, barH, scale)} />
-      <div className="bg-[#f5d90a]" style={box(RIGHT_COL_X - 10, barY + barH + barGap, 440, barH, scale)} />
     </div>
   );
 }

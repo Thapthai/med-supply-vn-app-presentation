@@ -1,11 +1,16 @@
 'use client';
 
 import { PrintStickerItemListCard } from '@/app/admin/management/print-sticker/components/PrintStickerItemListCard';
+import type { PrintStickerConfirmLine } from '@/components/print-sticker/PrintStickerConfirmDialog';
 import PrintStickerFilterCard from './components/PrintStickerFilterCard';
 import { usePrintStickerTab } from './usePrintStickerTab';
 
-export default function PrintStickerTab() {
-  const s = usePrintStickerTab();
+export default function PrintStickerTab({
+  onPrintedBatch,
+}: {
+  onPrintedBatch?: (lines: PrintStickerConfirmLine[]) => void;
+}) {
+  const s = usePrintStickerTab({ onPrintedBatch });
 
   return (
     <div className="flex w-full flex-col gap-6">

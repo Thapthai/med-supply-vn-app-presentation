@@ -31,6 +31,7 @@ export type PrintStickerConfirmLine = {
   copies: number;
   expireDate: string;
   lotNo?: string;
+  usageCode?: string;
   /** เพดานจำนวนที่พิมพ์ได้จริง — ถ้า copies เกิน จะขึ้นคำเตือน */
   maxCopies?: number;
 };
@@ -42,8 +43,13 @@ type PrintStickerConfirmDialogProps = {
   /** true = พิมพ์จำนวนที่ใส่แม้เกินค่าสูงสุด, false = พิมพ์ไม่เกินค่าสูงสุด */
   onConfirm: (printOverLimit: boolean) => void;
   onCopiesChange?: (itemcode: string, copies: number | null) => void;
+  resolveUsageCodes?: (itemcodes: string[]) => Promise<Record<string, string>>;
   busy?: boolean;
 };
+
+function isOverLimit(line: PrintStickerConfirmLine) {
+  return line.maxCopies != null && line.copies > line.maxCopies;
+}
 
 export function PrintStickerConfirmDialog({
   open,
@@ -51,44 +57,53 @@ export function PrintStickerConfirmDialog({
   lines,
   onConfirm,
   onCopiesChange,
+  resolveUsageCodes,
   busy = false,
 }: PrintStickerConfirmDialogProps) {
   const [qtyDraft, setQtyDraft] = useState<Record<string, string>>({});
-  const [warningCodes, setWarningCodes] = useState<string[]>([]);
-  const [previewIndex, setPreviewIndex] = useState(0);
+  const [selectedCode, setSelectedCode] = useState<string | null>(null);
   const [zoomOpen, setZoomOpen] = useState(false);
+  const [usageByCode, setUsageByCode] = useState<Record<string, string>>({});
+  const codesKey = lines.map((line) => line.itemcode).join(',');
 
   useEffect(() => {
     if (!open) {
       setQtyDraft({});
-      setWarningCodes([]);
-      setPreviewIndex(0);
+      setSelectedCode(null);
       setZoomOpen(false);
+      setUsageByCode({});
       return;
     }
-    setWarningCodes((prev) => {
-      if (prev.length > 0) return prev;
-      return lines
-        .filter((line) => line.maxCopies != null && line.copies > line.maxCopies)
-        .map((line) => line.itemcode);
-    });
     setQtyDraft((prev) => {
       if (Object.keys(prev).length > 0) return prev;
       return Object.fromEntries(lines.map((line) => [line.itemcode, String(line.copies)]));
     });
-  }, [open, lines]);
+    const codes = codesKey.split(',').filter(Boolean);
+    if (!resolveUsageCodes || codes.length === 0) return;
+    void resolveUsageCodes(codes)
+      .then((data) => setUsageByCode(data ?? {}))
+      .catch(() => setUsageByCode({}));
+  }, [open, resolveUsageCodes, codesKey, lines]);
 
   const itemCount = lines.length;
-  const overLimitLines = lines.filter(
-    (line) => line.maxCopies != null && line.copies > line.maxCopies,
-  );
-  const warningLines = lines.filter((line) => warningCodes.includes(line.itemcode));
+  const normalLines = lines.filter((line) => !isOverLimit(line));
+  const overLimitLines = lines.filter(isOverLimit);
   const enteredSheetCount = lines.reduce((sum, line) => sum + line.copies, 0);
-  const cappedSheetCount = lines.reduce((sum, line) => {
-    if (line.maxCopies != null) return sum + Math.min(line.copies, line.maxCopies);
-    return sum + line.copies;
-  }, 0);
-  const previewLine = lines[Math.min(previewIndex, Math.max(lines.length - 1, 0))];
+  const previewLine = selectedCode
+    ? (() => {
+        const line = lines.find((row) => row.itemcode === selectedCode);
+        if (!line) return null;
+        return {
+          ...line,
+          usageCode: line.usageCode || usageByCode[line.itemcode],
+        };
+      })()
+    : null;
+
+  const selectRow = (itemcode: string) => {
+    setSelectedCode(itemcode);
+    setZoomOpen(false);
+  };
 
   return (
     <Dialog
@@ -111,21 +126,22 @@ export function PrintStickerConfirmDialog({
               <div className="min-w-0 flex-1 space-y-1 text-left">
                 <DialogTitle>ยืนยันการพิมพ์สติ๊กเกอร์</DialogTitle>
                 <DialogDescription>
-                  {itemCount} รายการ · รวม {enteredSheetCount} แผ่น — ตรวจสอบรายการด้านล่างก่อนพิมพ์
+                  {itemCount} รายการ · รวม {enteredSheetCount} แผ่น — กดแถวเพื่อดูตัวอย่างฉลาก
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
-          {previewLine ? (
-            <div className="mb-4 flex flex-col items-center gap-2">
-              <p className="text-xs text-slate-500">
-                ตัวอย่างฉลาก · {STICKER_H_DOTS}×{STICKER_V_DOTS} จุด
-                {lines.length > 1 ? ` · รายการ ${Math.min(previewIndex, lines.length - 1) + 1}/${lines.length}` : ''}
-                {previewLine.copies > 1 ? ` · พิมพ์ ${previewLine.copies} แผ่น` : ''}
-              </p>
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-xs text-slate-500">
+              ตัวอย่างฉลาก · {STICKER_H_DOTS}×{STICKER_V_DOTS} จุด
+              {previewLine
+                ? `${previewLine.copies > 1 ? ` · พิมพ์ ${previewLine.copies} แผ่น` : ''}`
+                : ' · กดแถวรายการเพื่อแสดง'}
+            </p>
+            {previewLine ? (
               <button
                 type="button"
                 className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
@@ -134,211 +150,154 @@ export function PrintStickerConfirmDialog({
               >
                 <StickerLabelPreview line={previewLine} size="hero" />
               </button>
-              {lines.length > 1 ? (
-                <div className="flex max-w-full flex-wrap items-center justify-center gap-2">
-                  {lines.map((line, index) => (
-                    <button
-                      key={`thumb-strip-${line.itemcode}-${index}`}
-                      type="button"
-                      className={cn(
-                        'rounded border p-0.5 transition-colors',
-                        index === previewIndex
-                          ? 'border-primary ring-2 ring-primary/30'
-                          : 'border-slate-200 hover:border-slate-400',
-                      )}
-                      title={`ดูตัวอย่าง ${line.itemcode}`}
-                      onClick={() => {
-                        setPreviewIndex(index);
-                        setZoomOpen(true);
-                      }}
-                    >
-                      <StickerLabelPreview line={line} size="thumb" />
-                    </button>
-                  ))}
-                </div>
-              ) : null}
+            ) : (
+              <div
+                className="flex items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-400"
+                style={{ width: 360, height: (360 * STICKER_V_DOTS) / STICKER_H_DOTS }}
+              >
+                ยังไม่ได้เลือกรายการ
+              </div>
+            )}
+          </div>
+
+          {normalLines.length > 0 ? (
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-slate-800">จำนวนปกติ</p>
+              <div className="overflow-hidden rounded-lg border border-slate-200">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                      <TableHead className="text-xs">itemcode</TableHead>
+                      <TableHead className="text-xs">ชื่อรายการ</TableHead>
+                      <TableHead className="text-xs whitespace-nowrap">Lot No.</TableHead>
+                      <TableHead className="text-xs whitespace-nowrap">หมดอายุ</TableHead>
+                      <TableHead className="w-16 text-center text-xs">QTY</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {normalLines.map((line) => (
+                      <TableRow
+                        key={line.itemcode}
+                        className={cn(
+                          'cursor-pointer',
+                          selectedCode === line.itemcode && 'bg-primary/[0.06]',
+                        )}
+                        onClick={() => selectRow(line.itemcode)}
+                      >
+                        <TableCell className="font-mono text-xs">{line.itemcode}</TableCell>
+                        <TableCell className="max-w-[200px] truncate text-sm" title={line.itemname}>
+                          {line.itemname || '—'}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-muted-foreground">
+                          {line.lotNo?.trim() ? line.lotNo : '—'}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap text-xs tabular-nums">
+                          {formatCEToDMY(line.expireDate) || line.expireDate}
+                        </TableCell>
+                        <TableCell className="text-center text-sm font-medium tabular-nums">
+                          {line.copies}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           ) : null}
-          {warningLines.length > 0 ? (
-            <div className="mb-4 rounded-lg border border-red-300 bg-red-50 p-4">
-              <p className="text-sm font-semibold text-red-700">จำนวนเกินค่าสูงสุด</p>
-              <p className="mt-1 text-sm text-red-700">แก้จำนวนในตารางได้ หรือเลือกพิมพ์ค่าที่เกินกับไม่เกินค่าสูงสุด</p>
-              <div className="mt-3 overflow-hidden rounded-md border border-red-200 bg-white">
+
+          {overLimitLines.length > 0 ? (
+            <div className="space-y-2">
+              <div>
+                <p className="text-sm font-semibold text-red-700">จำนวนเกินค่าสูงสุด</p>
+                <p className="text-sm text-red-700">แก้จำนวนในตารางนี้ได้ก่อนยืนยันพิมพ์</p>
+              </div>
+              <div className="overflow-hidden rounded-lg border border-red-200">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-red-50 hover:bg-red-50">
                       <TableHead className="text-xs text-red-800">itemcode</TableHead>
                       <TableHead className="text-xs text-red-800">ชื่อรายการ</TableHead>
+                      <TableHead className="text-xs whitespace-nowrap text-red-800">Lot No.</TableHead>
+                      <TableHead className="text-xs whitespace-nowrap text-red-800">หมดอายุ</TableHead>
                       <TableHead className="w-24 text-center text-xs text-red-800">ค่าสูงสุด</TableHead>
                       <TableHead className="w-28 text-center text-xs text-red-800">จำนวน</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {warningLines.map((line) => {
-                      const draftRaw = qtyDraft[line.itemcode];
-                      const draftCopies =
-                        draftRaw == null || draftRaw === '' || draftRaw === '-'
-                          ? line.copies
-                          : parseInt(draftRaw, 10);
-                      const overMax =
-                        line.maxCopies != null &&
-                        Number.isFinite(draftCopies) &&
-                        draftCopies > line.maxCopies;
-                      return (
-                        <TableRow key={line.itemcode}>
-                          <TableCell className="font-mono text-xs">{line.itemcode}</TableCell>
-                          <TableCell className="max-w-[180px] truncate text-sm" title={line.itemname}>
-                            {line.itemname || '—'}
-                          </TableCell>
-                          <TableCell className="text-center text-sm font-medium tabular-nums text-red-700">
-                            {line.maxCopies}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Input
-                              type="number"
-                              inputMode="numeric"
-                              min={0}
-                              disabled={busy || !onCopiesChange}
-                              title={overMax ? `ค่าสูงสุด ${line.maxCopies}` : undefined}
-                              className={cn(
-                                'mx-auto h-8 w-16 bg-white text-center font-mono text-sm',
-                                overMax &&
-                                  'border-red-600 text-red-700 ring-2 ring-red-200 focus-visible:border-red-600 focus-visible:ring-red-400',
-                              )}
-                              value={qtyDraft[line.itemcode] ?? String(line.copies)}
-                              onChange={(e) => {
-                                const raw = e.target.value;
-                                setQtyDraft((prev) => ({ ...prev, [line.itemcode]: raw }));
-                                if (raw === '' || raw === '-') return;
-                                const n = parseInt(raw, 10);
-                                if (Number.isFinite(n)) onCopiesChange?.(line.itemcode, Math.max(0, n));
-                              }}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
+                    {overLimitLines.map((line) => (
+                      <TableRow
+                        key={line.itemcode}
+                        className={cn(
+                          'cursor-pointer',
+                          selectedCode === line.itemcode && 'bg-red-50',
+                        )}
+                        onClick={() => selectRow(line.itemcode)}
+                      >
+                        <TableCell className="font-mono text-xs">{line.itemcode}</TableCell>
+                        <TableCell className="max-w-[200px] truncate text-sm" title={line.itemname}>
+                          {line.itemname || '—'}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-muted-foreground">
+                          {line.lotNo?.trim() ? line.lotNo : '—'}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap text-xs tabular-nums">
+                          {formatCEToDMY(line.expireDate) || line.expireDate}
+                        </TableCell>
+                        <TableCell className="text-center text-sm font-medium tabular-nums text-red-700">
+                          {line.maxCopies}
+                        </TableCell>
+                        <TableCell className="text-center" onClick={(event) => event.stopPropagation()}>
+                          <Input
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            disabled={busy || !onCopiesChange}
+                            title={`ค่าสูงสุด ${line.maxCopies}`}
+                            className="mx-auto h-8 w-16 border-red-600 bg-white text-center font-mono text-sm text-red-700 ring-2 ring-red-200 focus-visible:border-red-600 focus-visible:ring-red-400"
+                            value={qtyDraft[line.itemcode] ?? String(line.copies)}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              setQtyDraft((prev) => ({ ...prev, [line.itemcode]: raw }));
+                              if (raw === '' || raw === '-') return;
+                              const n = parseInt(raw, 10);
+                              if (Number.isFinite(n)) onCopiesChange?.(line.itemcode, Math.max(0, n));
+                            }}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </div>
-              {overLimitLines.length > 0 ? (
-              <div className="mt-3 flex flex-wrap justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="border-red-300 bg-white text-red-700 hover:bg-red-100"
-                  onClick={() => onConfirm(false)}
-                  disabled={busy || itemCount === 0}
-                >
-                  ไม่พิมพ์ค่าที่เกิน ({cappedSheetCount} แผ่น)
-                </Button>
-                <Button
-                  type="button"
-                  className="bg-red-600 text-white hover:bg-red-700"
-                  onClick={() => onConfirm(true)}
-                  disabled={busy || itemCount === 0}
-                >
-                  {busy ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      กำลังพิมพ์…
-                    </>
-                  ) : (
-                    <>
-                      <Printer className="h-4 w-4" />
-                      พิมพ์ค่าที่เกิน ({enteredSheetCount} แผ่น)
-                    </>
-                  )}
-                </Button>
-              </div>
-              ) : null}
             </div>
           ) : null}
-          <div className="overflow-hidden rounded-lg border border-slate-200">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50 hover:bg-muted/50">
-                  <TableHead className="w-[184px] text-xs">พรีวิว</TableHead>
-                  <TableHead className="text-xs">itemcode</TableHead>
-                  <TableHead className="text-xs">ชื่อรายการ</TableHead>
-                  <TableHead className="text-xs whitespace-nowrap">Lot No.</TableHead>
-                  <TableHead className="text-xs whitespace-nowrap">หมดอายุ</TableHead>
-                  <TableHead className="w-16 text-center text-xs">QTY</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {lines.map((line, index) => (
-                  <TableRow
-                    key={line.itemcode}
-                    className={index === previewIndex ? 'bg-primary/[0.04]' : undefined}
-                  >
-                    <TableCell className="w-[184px]">
-                      <button
-                        type="button"
-                        className={cn(
-                          'rounded border p-0.5 transition-colors',
-                          index === previewIndex
-                            ? 'border-primary ring-2 ring-primary/30'
-                            : 'border-slate-200 hover:border-slate-400',
-                        )}
-                        title="กดเพื่อขยายตัวอย่าง"
-                        onClick={() => {
-                          setPreviewIndex(index);
-                          setZoomOpen(true);
-                        }}
-                      >
-                        <StickerLabelPreview line={line} size="thumb" />
-                      </button>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">{line.itemcode}</TableCell>
-                    <TableCell className="max-w-[200px] truncate text-sm" title={line.itemname}>
-                      {line.itemname || '—'}
-                    </TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">
-                      {line.lotNo?.trim() ? line.lotNo : '—'}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap text-xs tabular-nums">
-                      {formatCEToDMY(line.expireDate) || line.expireDate}
-                    </TableCell>
-                    <TableCell
-                      className={
-                        line.maxCopies != null && line.copies > line.maxCopies
-                          ? 'text-center text-sm font-semibold tabular-nums text-red-600'
-                          : 'text-center text-sm font-medium tabular-nums'
-                      }
-                    >
-                      {line.copies}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
         </div>
 
         <DialogFooter className="gap-3 border-t px-6 py-4 sm:justify-end">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
             ยกเลิก
           </Button>
-          {overLimitLines.length === 0 ? (
-            <Button onClick={() => onConfirm(false)} disabled={busy || itemCount === 0}>
-              {busy ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  กำลังพิมพ์…
-                </>
-              ) : (
-                <>
-                  <Printer className="h-4 w-4" />
-                  ยืนยันพิมพ์ ({enteredSheetCount} แผ่น)
-                </>
-              )}
-            </Button>
-          ) : null}
+          <Button
+            onClick={() => onConfirm(true)}
+            disabled={busy || itemCount === 0}
+            className={overLimitLines.length > 0 ? 'bg-red-600 text-white hover:bg-red-700' : undefined}
+          >
+            {busy ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                กำลังพิมพ์…
+              </>
+            ) : (
+              <>
+                <Printer className="h-4 w-4" />
+                ยืนยันพิมพ์ ({enteredSheetCount} แผ่น)
+              </>
+            )}
+          </Button>
         </DialogFooter>
         <StickerPreviewZoom
           open={zoomOpen}
-          line={previewLine ?? null}
+          line={previewLine}
           onClose={() => setZoomOpen(false)}
         />
       </DialogContent>

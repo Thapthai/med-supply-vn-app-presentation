@@ -2354,6 +2354,59 @@ export class ItemService {
     return `RF${x}${ts}`.slice(0, 20);
   }
 
+  /** YYmm ตามปฏิทิน Asia/Bangkok เช่น 2608 */
+  private usageCodeYm(now = new Date()): string {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Bangkok',
+      year: '2-digit',
+      month: '2-digit',
+    }).formatToParts(now);
+    const yy = parts.find((p) => p.type === 'year')?.value ?? '';
+    const mm = parts.find((p) => p.type === 'month')?.value ?? '';
+    return `${yy}${mm}`;
+  }
+
+  /** itemcode-YYmm-0000X */
+  private formatUsageCode(itemcode: string, yymm: string, seq: number): string {
+    return `${itemcode}-${yymm}-${String(seq).padStart(5, '0')}`.slice(0, 40);
+  }
+
+  private async nextUsageSeq(itemcode: string, yymm: string): Promise<number> {
+    const prefix = `${itemcode}-${yymm}-`;
+    const last = await this.prisma.itemStock.findFirst({
+      where: { UsageCode: { startsWith: prefix } },
+      orderBy: { UsageCode: 'desc' },
+      select: { UsageCode: true },
+    });
+    const raw = last?.UsageCode?.slice(prefix.length) ?? '';
+    const n = parseInt(raw, 10);
+    return (Number.isFinite(n) ? n : 0) + 1;
+  }
+
+  private async allocateUsageCode(
+    itemcode: string,
+    yymm: string,
+    cursor: Map<string, number>,
+  ): Promise<string> {
+    if (!cursor.has(itemcode)) {
+      cursor.set(itemcode, await this.nextUsageSeq(itemcode, yymm));
+    }
+    const seq = cursor.get(itemcode)!;
+    cursor.set(itemcode, seq + 1);
+    return this.formatUsageCode(itemcode, yymm, seq);
+  }
+
+  async peekNextUsageCodes(itemcodes: string[]) {
+    const unique = [...new Set(itemcodes.map((c) => c.trim()).filter(Boolean))];
+    const yymm = this.usageCodeYm();
+    const data: Record<string, string> = {};
+    for (const itemcode of unique) {
+      const seq = await this.nextUsageSeq(itemcode, yymm);
+      data[itemcode] = this.formatUsageCode(itemcode, yymm, seq);
+    }
+    return { success: true as const, data };
+  }
+
   /**
    * สร้างแถว itemstock ก่อนพิมพ์สติ๊กเกอร์ — แต่ละแผ่น = 1 RFID เฮกซ์ 24 ตัว (สุ่ม)
    * ฟิลด์สอดคล้อง INSERT legacy: IsStatus=5, PackDate, UsageCode(≈Barcode), ProductSerial(≈itemcode2),
@@ -2382,7 +2435,14 @@ export class ItemService {
       /** lot ร่วมสำหรับชุดพิมพ์ครั้งนี้ — legacy ใช้ LotNo */
       const lotNoBatch = `P-${insertRfidDocNo}`.slice(0, 50);
 
-      const created: Array<{ RowID: number; ItemCode: string | null; RfidCode: string | null }> = [];
+      const created: Array<{
+        RowID: number;
+        ItemCode: string | null;
+        RfidCode: string | null;
+        UsageCode: string | null;
+      }> = [];
+      const usageCursor = new Map<string, number>();
+      const usageYm = this.usageCodeYm();
 
       for (const line of lines) {
         const itemCodeKey =
@@ -2431,19 +2491,18 @@ export class ItemService {
           };
         }
 
-        /** UsageCode ใน legacy = QrCode — ใช้ Barcode แล้ว fallback itemcode */
-        const usageCode = (item.Barcode?.trim() || item.itemcode || '').slice(0, 20);
         /** ProductSerial = ItemCode2 */
         const productSerial = (item.itemcode2?.trim() || '').slice(0, 25);
         const expireAt = this.parsePrintExpireDateYmd(line.expire_date);
 
         for (let _n = 0; _n < line.copies; _n++) {
+          const usageCode = await this.allocateUsageCode(itemCodeKey, usageYm, usageCursor);
           const rfid = await this.generateUniqueRfid24();
           const row = await this.prisma.itemStock.create({
             data: {
               CreateDate: packDate,
               ItemCode: itemCodeKey.slice(0, 20),
-              UsageCode: usageCode || null,
+              UsageCode: usageCode,
               RfidCode: rfid,
               IsStatus: 5,
               PackDate: packDate,
@@ -2466,6 +2525,7 @@ export class ItemService {
             RowID: row.RowID,
             ItemCode: row.ItemCode,
             RfidCode: row.RfidCode,
+            UsageCode: row.UsageCode,
           });
         }
       }
@@ -2512,7 +2572,14 @@ export class ItemService {
       const packDate = new Date();
       const lotNoBatch = `P-${insertRfidDocNo}`.slice(0, 50);
 
-      const created: Array<{ RowID: number; ItemCode: string | null; RfidCode: string | null }> = [];
+      const created: Array<{
+        RowID: number;
+        ItemCode: string | null;
+        RfidCode: string | null;
+        UsageCode: string | null;
+      }> = [];
+      const usageCursor = new Map<string, number>();
+      const usageYm = this.usageCodeYm();
 
       for (const line of lines) {
         const stockId = Number(line.stock_id);
@@ -2600,7 +2667,6 @@ export class ItemService {
           };
         }
 
-        const usageCode = (item.Barcode?.trim() || item.itemcode || '').slice(0, 20);
         const productSerial = (item.itemcode2?.trim() || '').slice(0, 25);
         const expireAt = this.parsePrintExpireDateYmd(line.expire_date);
 
@@ -2612,12 +2678,13 @@ export class ItemService {
             : lotNoBatch || null;
 
         for (let _n = 0; _n < line.copies; _n++) {
+          const usageCode = await this.allocateUsageCode(itemCodeKey, usageYm, usageCursor);
           const rfid = await this.generateUniqueRfid24();
           const row = await this.prisma.itemStock.create({
             data: {
               CreateDate: packDate,
               ItemCode: itemCodeKey.slice(0, 20),
-              UsageCode: usageCode || null,
+              UsageCode: usageCode,
               RfidCode: rfid,
               IsStatus: 5,
               PackDate: packDate,
@@ -2640,6 +2707,7 @@ export class ItemService {
             RowID: row.RowID,
             ItemCode: row.ItemCode,
             RfidCode: row.RfidCode,
+            UsageCode: row.UsageCode,
           });
         }
       }
