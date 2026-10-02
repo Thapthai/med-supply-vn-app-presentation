@@ -107,11 +107,45 @@ export class CabinetTempHumService {
     );
   }
 
+  private mapLogs(logs: CabinetTempHumLogPoint[] | { id: number; create_date: Date; temp_log: Prisma.Decimal | number | string; hum_log: Prisma.Decimal | number | string }[]) {
+    return logs.map((r) => ({
+      id: r.id,
+      create_date: r.create_date,
+      temp_log: this.toNumber(r.temp_log),
+      hum_log: this.toNumber(r.hum_log),
+    }));
+  }
+
+  private toOverviewRow(
+    logCabinetId: number,
+    app: CabinetSummary | null,
+    logs: { id: number; create_date: Date; temp_log: Prisma.Decimal | number | string; hum_log: Prisma.Decimal | number | string }[],
+    includeLogs: boolean,
+  ): CabinetTempHumChartCabinet {
+    const latest = logs[0] ?? null;
+    return {
+      log_cabinet_id: logCabinetId,
+      app_cabinet_id: app?.id ?? null,
+      cabinet_name: app?.cabinet_name ?? null,
+      cabinet_code: app?.cabinet_code ?? null,
+      last_log_at: latest?.create_date ?? null,
+      latest_temp: latest != null ? this.toNumber(latest.temp_log) : null,
+      latest_hum: latest != null ? this.toNumber(latest.hum_log) : null,
+      temp_min: app?.temp_min ?? null,
+      temp_max: app?.temp_max ?? null,
+      hum_min: app?.hum_min ?? null,
+      hum_max: app?.hum_max ?? null,
+      log_count: logs.length,
+      logs: includeLogs ? this.mapLogs(logs) : [],
+    };
+  }
+
   async listCabinetsForLogs(
     range?: { from: Date; to: Date },
-    options?: { includeLogs?: boolean },
+    options?: { includeLogs?: boolean; includeEmptyCabinets?: boolean },
   ): Promise<CabinetTempHumChartCabinet[]> {
     const includeLogs = options?.includeLogs === true;
+    const includeEmptyCabinets = options?.includeEmptyCabinets === true;
     const rows = await this.prisma.cabinetTempHumLog.findMany({
       where: range ? { create_date: { gte: range.from, lt: range.to } } : undefined,
       orderBy: { create_date: 'desc' },
@@ -125,36 +159,43 @@ export class CabinetTempHumService {
       else logsByCabinet.set(row.cabinet_id, [row]);
     }
 
-    const latestRows = [...latestByCabinet.values()].sort((a, b) => {
-      return b.create_date.getTime() - a.create_date.getTime();
-    });
-    const cabinets = await this.cabinetsByIdsOrStock(latestRows.map((r) => r.cabinet_id));
+    const everLoggedIds = includeEmptyCabinets
+      ? (await this.prisma.cabinetTempHumLog.groupBy({ by: ['cabinet_id'] })).map((row) => row.cabinet_id)
+      : [...latestByCabinet.keys()];
+    const appCabinets = await this.cabinetsByIdsOrStock(everLoggedIds);
 
-    return latestRows.map((row) => {
-      const app = this.matchAppCabinet(row.cabinet_id, cabinets);
-      const logs = logsByCabinet.get(row.cabinet_id) ?? [row];
-      return {
-        log_cabinet_id: row.cabinet_id,
-        app_cabinet_id: app?.id ?? null,
-        cabinet_name: app?.cabinet_name ?? null,
-        cabinet_code: app?.cabinet_code ?? null,
-        last_log_at: row.create_date,
-        latest_temp: this.toNumber(row.temp_log),
-        latest_hum: this.toNumber(row.hum_log),
-        temp_min: app?.temp_min ?? null,
-        temp_max: app?.temp_max ?? null,
-        hum_min: app?.hum_min ?? null,
-        hum_max: app?.hum_max ?? null,
-        log_count: logs.length,
-        logs: includeLogs
-          ? logs.map((r) => ({
-              id: r.id,
-              create_date: r.create_date,
-              temp_log: this.toNumber(r.temp_log),
-              hum_log: this.toNumber(r.hum_log),
-            }))
-          : [],
-      };
+    const usedLogIds = new Set<number>();
+    const result: CabinetTempHumChartCabinet[] = [];
+
+    if (includeEmptyCabinets) {
+      for (const logCabinetId of everLoggedIds) {
+        usedLogIds.add(logCabinetId);
+        const app = this.matchAppCabinet(logCabinetId, appCabinets);
+        result.push(this.toOverviewRow(logCabinetId, app, logsByCabinet.get(logCabinetId) ?? [], includeLogs));
+      }
+    } else {
+      const latestRows = [...latestByCabinet.values()].sort(
+        (a, b) => b.create_date.getTime() - a.create_date.getTime(),
+      );
+      for (const row of latestRows) {
+        usedLogIds.add(row.cabinet_id);
+        const app = this.matchAppCabinet(row.cabinet_id, appCabinets);
+        result.push(this.toOverviewRow(row.cabinet_id, app, logsByCabinet.get(row.cabinet_id) ?? [row], includeLogs));
+      }
+    }
+
+    for (const [logCabinetId, logs] of logsByCabinet) {
+      if (usedLogIds.has(logCabinetId)) continue;
+      result.push(this.toOverviewRow(logCabinetId, this.matchAppCabinet(logCabinetId, appCabinets), logs, includeLogs));
+    }
+
+    return result.sort((a, b) => {
+      const aTime = a.last_log_at?.getTime() ?? 0;
+      const bTime = b.last_log_at?.getTime() ?? 0;
+      if (aTime !== bTime) return bTime - aTime;
+      const aName = a.cabinet_name?.trim() || a.cabinet_code?.trim() || `ตู้ #${a.log_cabinet_id}`;
+      const bName = b.cabinet_name?.trim() || b.cabinet_code?.trim() || `ตู้ #${b.log_cabinet_id}`;
+      return aName.localeCompare(bName, 'th');
     });
   }
 
@@ -240,9 +281,31 @@ export class CabinetTempHumService {
     };
   }
 
+  private clockTimesFromDates(dates: Date[]): string[] {
+    const set = new Set<string>();
+    for (const at of dates) {
+      set.add(
+        `${String(at.getUTCHours()).padStart(2, '0')}:${String(at.getUTCMinutes()).padStart(2, '0')}`,
+      );
+    }
+    return [...set].sort();
+  }
+
   async getOverview(query: { year?: number; month?: number }) {
     const range = this.resolveRange(query);
-    const cabinets = await this.listCabinetsForLogs({ from: range.from, to: range.to }, { includeLogs: true });
+    const cabinets = await this.listCabinetsForLogs(
+      { from: range.from, to: range.to },
+      { includeLogs: true, includeEmptyCabinets: true },
+    );
+    let timeSlots = this.clockTimesFromDates(cabinets.flatMap((c) => c.logs.map((log) => log.create_date)));
+    if (timeSlots.length === 0) {
+      const recent = await this.prisma.cabinetTempHumLog.findMany({
+        orderBy: { create_date: 'desc' },
+        take: 400,
+        select: { create_date: true },
+      });
+      timeSlots = this.clockTimesFromDates(recent.map((row) => row.create_date));
+    }
     return {
       cabinets,
       range: {
@@ -252,6 +315,7 @@ export class CabinetTempHumService {
         from: range.from,
         to: range.to,
       },
+      time_slots: timeSlots,
     };
   }
 

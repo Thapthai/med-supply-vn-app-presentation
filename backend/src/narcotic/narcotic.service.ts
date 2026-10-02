@@ -89,6 +89,7 @@ export class NarcoticService {
       permission_label: row.permission_id === 2 ? 'two-person' : 'single',
       low_stock: row.item_min > 0 && row.qty < row.item_min,
       weight_per_item: toNum(row.weight_per_item),
+      is_weighing: toNum(row.weight_per_item) !== 0,
       last_weight_g: toNum(row.last_weight_g),
       weight_tare_g: toNum(row.weight_tare_g),
       created_at: row.created_at,
@@ -199,6 +200,7 @@ export class NarcoticService {
       .map(([drawer, boxes]) => ({
         drawer,
         box_count: boxes.length,
+        is_weighing: boxes.some((box) => box.weight_per_item !== 0),
         boxes,
       }));
 

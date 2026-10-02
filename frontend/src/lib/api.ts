@@ -2598,6 +2598,15 @@ export type NarcoticSlot = {
   item_max: number;
   permission_id: number;
   low_stock?: boolean;
+  weight_per_item?: number;
+  is_weighing?: boolean;
+};
+
+export type NarcoticLayoutDrawer = {
+  drawer: number;
+  box_count: number;
+  is_weighing: boolean;
+  boxes: NarcoticSlot[];
 };
 
 export type NarcoticDetail = {
@@ -2629,7 +2638,7 @@ export const narcoticApi = {
           cabinet_code: string | null;
           trolley_id?: number | null;
         } | null;
-        drawers: Array<{ drawer: number; box_count: number; boxes: NarcoticSlot[] }>;
+        drawers: NarcoticLayoutDrawer[];
       };
     };
   },

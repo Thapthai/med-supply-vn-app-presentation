@@ -11,6 +11,7 @@ import type {
   CabinetTempHumChartPoint,
 } from '@/lib/cabinet-http-clients';
 import { formatUtcDateTime, toUtcYyyyMmDd } from '@/lib/formatThaiDateTime';
+import { MonthPickerBE } from '@/components/ui/month-picker-be';
 import { cn } from '@/lib/utils';
 
 const TH_MONTHS = [
@@ -570,6 +571,7 @@ export default function CabinetTempHumChartCardV2() {
   const [year, setYear] = useState(initial.year);
   const [month, setMonth] = useState(initial.month);
   const [cabinets, setCabinets] = useState<CabinetTempHumChartCabinet[]>([]);
+  const [hintTimes, setHintTimes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [exportLoading, setExportLoading] = useState<'excel' | 'pdf' | null>(null);
@@ -584,13 +586,18 @@ export default function CabinetTempHumChartCardV2() {
         const response = await cabinetTempHumApi.getOverview({ year, month });
         if (!cancelled && response.success && response.data) {
           setCabinets(response.data.cabinets);
+          setHintTimes(response.data.time_slots ?? []);
           setSelectedIds((prev) => prev.filter((id) => response.data!.cabinets.some((c) => cabinetSelectValue(c) === id)));
         } else if (!cancelled) {
           setCabinets([]);
+          setHintTimes([]);
         }
       } catch (error) {
         console.error('Failed to fetch cabinet temperature overview:', error);
-        if (!cancelled) setCabinets([]);
+        if (!cancelled) {
+          setCabinets([]);
+          setHintTimes([]);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -606,8 +613,10 @@ export default function CabinetTempHumChartCardV2() {
   const days = useMemo(() => Array.from({ length: dayCount }, (_, i) => i + 1), [dayCount]);
   const timeSlots = useMemo(() => {
     const slots = collectTimes(cabinets, year, month);
-    return slots.length > 0 ? slots : ['—'];
-  }, [cabinets, year, month]);
+    if (slots.length > 0) return slots;
+    if (hintTimes.length > 0) return hintTimes;
+    return [''];
+  }, [cabinets, year, month, hintTimes]);
   const today = currentYearMonth();
   const todayDay = today.year === year && today.month === month ? new Date().getDate() : null;
 
@@ -662,16 +671,13 @@ export default function CabinetTempHumChartCardV2() {
           <span className="leading-snug">อุณหภูมิและความชื้นในตู้</span>
         </CardTitle>
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
-          <input
-            type="month"
-            className="h-8 min-w-0 flex-1 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-700 shadow-xs sm:w-auto sm:flex-none"
-            value={`${year}-${String(month).padStart(2, '0')}`}
-            onChange={(e) => {
-              const [y, m] = e.target.value.split('-').map(Number);
-              if (y && m) {
-                setYear(y);
-                setMonth(m);
-              }
+          <MonthPickerBE
+            className="min-w-0 flex-1 sm:flex-none"
+            year={year}
+            month={month}
+            onChange={({ year: nextYear, month: nextMonth }) => {
+              setYear(nextYear);
+              setMonth(nextMonth);
             }}
           />
           <Button
@@ -709,10 +715,7 @@ export default function CabinetTempHumChartCardV2() {
               <div className="px-4 py-3 text-center text-sm font-semibold tracking-wide text-slate-600">
                 เดือน {monthLabel(year, month)}
               </div>
-              {cabinets.length === 0 ? (
-                <p className="py-10 text-center text-slate-500">ไม่มีข้อมูลใน {monthLabel(year, month)}</p>
-              ) : (
-                <div ref={calendarScrollRef} className="relative overflow-x-auto overscroll-x-contain border-t border-slate-200 [-webkit-overflow-scrolling:touch]">
+              <div ref={calendarScrollRef} className="relative overflow-x-auto overscroll-x-contain border-t border-slate-200 [-webkit-overflow-scrolling:touch]">
                   <p className="px-3 py-2 text-center text-[11px] text-slate-400 sm:hidden">
                     เลื่อนซ้าย–ขวา เพื่อดูวันที่อื่น
                   </p>
@@ -853,7 +856,6 @@ export default function CabinetTempHumChartCardV2() {
                     </tbody>
                   </table>
                 </div>
-              )}
             </div>
             <div className="flex flex-col gap-1.5 text-xs text-slate-500 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4">
               <span className="inline-flex items-center gap-1.5">

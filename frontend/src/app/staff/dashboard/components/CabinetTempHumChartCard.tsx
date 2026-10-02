@@ -13,6 +13,7 @@ import type {
   StaffCabinetTempHumLogPoint,
 } from '@/lib/staffApi/cabinetApi';
 import { formatUtcDateTime } from '@/lib/formatThaiDateTime';
+import { MonthPickerBE } from '@/components/ui/month-picker-be';
 
 const SUB_LOG_VISIBLE_COUNT = 10;
 /** header 40px + 10 แถว × 36px */
@@ -509,16 +510,13 @@ export default function CabinetTempHumChartCard() {
           <span className="leading-snug">อุณหภูมิและความชื้นในตู้</span>
         </CardTitle>
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-          <input
-            type="month"
-            className="h-8 min-w-0 flex-1 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-700 shadow-xs sm:w-auto sm:flex-none"
-            value={`${year}-${String(month).padStart(2, '0')}`}
-            onChange={(e) => {
-              const [y, m] = e.target.value.split('-').map(Number);
-              if (y && m) {
-                setYear(y);
-                setMonth(m);
-              }
+          <MonthPickerBE
+            className="min-w-0 flex-1 sm:flex-none"
+            year={year}
+            month={month}
+            onChange={({ year: nextYear, month: nextMonth }) => {
+              setYear(nextYear);
+              setMonth(nextMonth);
             }}
           />
           <Button
@@ -570,7 +568,7 @@ export default function CabinetTempHumChartCard() {
                   {cabinets.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="py-10 text-center text-slate-500">
-                        ไม่มีข้อมูลใน {monthLabel(year, month)}
+                        ยังไม่มีตู้ในระบบ
                       </TableCell>
                     </TableRow>
                   ) : (

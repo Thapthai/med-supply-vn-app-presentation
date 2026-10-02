@@ -129,6 +129,7 @@ export type CabinetTempHumOverviewData = {
     from: string;
     to: string;
   };
+  time_slots?: string[];
 };
 
 export function createCabinetTempHumApi(http: AxiosInstance) {
