@@ -28,6 +28,7 @@ const PAGE_SIZE = 10;
 
 export type PrintStickerHistoryApis = {
   listHistory: typeof stickerPrintApi.listHistory;
+  getHistory?: typeof stickerPrintApi.getHistory;
   getDepartments: (keyword?: string) => Promise<{ success?: boolean; data?: DepartmentOpt[] }>;
   getCabinetMappings: (params: {
     departmentId: number;
@@ -37,6 +38,7 @@ export type PrintStickerHistoryApis = {
 
 const defaultHistoryApis: PrintStickerHistoryApis = {
   listHistory: stickerPrintApi.listHistory,
+  getHistory: stickerPrintApi.getHistory,
   getDepartments: (keyword) => departmentApi.getAll({ limit: 80, keyword }),
   getCabinetMappings: ({ departmentId, keyword }) =>
     cabinetDepartmentApi.getAll({
@@ -280,7 +282,14 @@ export default function PrintStickerHistoryTab({
                     <TableRow
                       key={row.id}
                       className="cursor-pointer"
-                      onClick={() => setSelectedRow(row)}
+                      onClick={() => {
+                        setSelectedRow(row);
+                        if (!apis.getHistory) return;
+                        void apis.getHistory(row.id).then((res) => {
+                          const detail = (res as { data?: StickerPrintHistoryRow })?.data;
+                          if (detail) setSelectedRow(detail);
+                        }).catch(() => undefined);
+                      }}
                     >
                       <TableCell className="whitespace-nowrap font-mono text-xs">
                         {row.doc_no || '—'}

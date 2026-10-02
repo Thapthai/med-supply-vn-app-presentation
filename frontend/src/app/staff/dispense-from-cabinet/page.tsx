@@ -78,7 +78,7 @@ export default function DispenseFromCabinetPage() {
         let page = 1;
 
         while (true) {
-          const response = await DispensedItemsApi.getDispensedItems({
+          const response = await DispensedItemsApi.getDispensedItemsFromSlots({
             ...params,
             page,
             limit: FETCH_BATCH_LIMIT,

@@ -20,6 +20,25 @@ import moment from 'moment-timezone';
 export class MedicalSuppliesService {
   constructor(private prisma: PrismaService) { }
 
+  /** HN จาก itemstock.HNCode — 0/ว่าง = ไม่ผูกผู้ป่วย */
+  private formatCabinetDispenseHn(raw: unknown): string | undefined {
+    if (raw == null) return undefined;
+    const value = typeof raw === 'bigint' ? raw.toString() : String(raw).trim();
+    if (!value || value === '0') return undefined;
+    return value;
+  }
+
+  /** HnCode จาก itemslotincabinet_detail — แสดงตามค่าในตาราง รวม '0' */
+  private formatSlotHnCode(raw: unknown): string | undefined {
+    if (raw == null) return undefined;
+    if (typeof Buffer !== 'undefined' && Buffer.isBuffer(raw)) {
+      const text = raw.toString('utf8').trim();
+      return text || undefined;
+    }
+    const value = typeof raw === 'bigint' ? raw.toString() : String(raw).trim();
+    return value || undefined;
+  }
+
   /** ดึง HN, EN, ประเภท, สถานะ จาก payload log สำหรับคอลัมน์แยก */
   private extractLogIndexFields(actionData: any): {
     patient_hn: string | null;
@@ -3624,6 +3643,7 @@ export class MedicalSuppliesService {
           ist.StockID,
           ist.Istatus_rfid,
           ist.CabinetUserID,
+          ist.HNCode,
           ist.IsBorrow AS stockIsBorrow,
           COALESCE(CONCAT(employee.FirstName, ' ', employee.LastName), 'ไม่ระบุ') AS cabinetUserName,
           department.DepName AS departmentName,
@@ -3721,6 +3741,7 @@ export class MedicalSuppliesService {
           StockID: raw.StockID != null ? Number(raw.StockID) : null,
           Istatus_rfid: raw.Istatus_rfid,
           CabinetUserID: raw.CabinetUserID,
+          hn: this.formatCabinetDispenseHn(raw.HNCode ?? raw.hncode),
           cabinetUserName: raw.cabinetUserName,
           departmentName: raw.departmentName,
           cabinetName: raw.cabinetName,
@@ -3766,6 +3787,208 @@ export class MedicalSuppliesService {
       //   error_message: error.message,
       //   error_code: error.code,
       // });
+      throw error;
+    }
+  }
+
+  /**
+   * รายการเบิกจากตู้ — อ่านจาก itemslotincabinet_detail (Sign = '-')
+   * HnCode = HN ผู้ป่วย, UserID = ผู้เบิก, DepID = แผนกที่ยืม
+   */
+  async getDispensedItemsFromSlotDetail(filters?: {
+    keyword?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+    departmentId?: string;
+    cabinetId?: string;
+    subDepartmentId?: string;
+    staffAllowedDepartmentIds?: number[] | null;
+  }) {
+    try {
+      const page = filters?.page || 1;
+      const limit = filters?.limit || 20;
+      const offset = (page - 1) * limit;
+      const ymd = /^\d{4}-\d{2}-\d{2}$/;
+
+      const sqlConditions: Prisma.Sql[] = [
+        Prisma.sql`isd.Sign = '-'`,
+        Prisma.sql`isd.itemcode IS NOT NULL`,
+        Prisma.sql`TRIM(isd.itemcode) <> ''`,
+      ];
+
+      const keyword = filters?.keyword?.trim();
+      if (keyword) {
+        const kw = `%${keyword}%`;
+        sqlConditions.push(
+          Prisma.sql`(
+            isd.itemcode LIKE ${kw}
+            OR isd.HnCode LIKE ${kw}
+            OR i.itemcode LIKE ${kw}
+            OR i.itemname LIKE ${kw}
+          )`,
+        );
+      }
+
+      if (filters?.startDate && ymd.test(filters.startDate) && filters?.endDate && ymd.test(filters.endDate)) {
+        sqlConditions.push(
+          Prisma.sql`DATE(isd.ModifyDate) BETWEEN ${filters.startDate} AND ${filters.endDate}`,
+        );
+      } else if (filters?.startDate && ymd.test(filters.startDate)) {
+        sqlConditions.push(Prisma.sql`DATE(isd.ModifyDate) >= ${filters.startDate}`);
+      } else if (filters?.endDate && ymd.test(filters.endDate)) {
+        sqlConditions.push(Prisma.sql`DATE(isd.ModifyDate) <= ${filters.endDate}`);
+      }
+
+      const staffIds = filters?.staffAllowedDepartmentIds;
+      if (staffIds !== undefined && Array.isArray(staffIds) && staffIds.length === 0) {
+        sqlConditions.push(Prisma.sql`1 = 0`);
+      }
+
+      if (filters?.departmentId?.trim()) {
+        const deptId = parseInt(filters.departmentId, 10);
+        if (!Number.isNaN(deptId)) {
+          if (
+            staffIds != null &&
+            Array.isArray(staffIds) &&
+            staffIds.length > 0 &&
+            !staffIds.includes(deptId)
+          ) {
+            sqlConditions.push(Prisma.sql`1 = 0`);
+          }
+        }
+      }
+
+      if (filters?.cabinetId) {
+        const cabId = parseInt(filters.cabinetId, 10);
+        if (!Number.isNaN(cabId)) {
+          sqlConditions.push(Prisma.sql`app_cabinets.id = ${cabId}`);
+        }
+      }
+
+      const whereClause = Prisma.join(sqlConditions, ' AND ');
+      const cdOneJoin = this.buildDispensedItemsCabinetOneDeptJoin(filters);
+
+      const countResult: Array<{ total: bigint | number }> = await this.prisma.$queryRaw`
+        SELECT COUNT(*) as total
+        FROM itemslotincabinet_detail isd
+        LEFT JOIN item i ON i.itemcode = isd.itemcode
+        INNER JOIN app_cabinets ON app_cabinets.stock_id = isd.StockID
+        ${cdOneJoin}
+        INNER JOIN department ON department.ID = cd_one.department_id
+        WHERE ${whereClause}
+      `;
+      const totalCount = Number(countResult[0]?.total || 0);
+
+      const dispensedItems: any[] = await this.prisma.$queryRaw`
+        SELECT
+          isd.id AS RowID,
+          COALESCE(i.itemcode, isd.itemcode) AS itemcode,
+          i.itemname,
+          isd.ModifyDate AS modifyDate,
+          isd.Qty AS qty,
+          'SLOT' AS itemCategory,
+          i.itemtypeID,
+          NULLIF(TRIM(isd.HnCode), '') AS hn,
+          isd.HnCode,
+          isd.StockID,
+          isd.UserID AS CabinetUserID,
+          isd.IsBorrow,
+          isd.DepID,
+          isd.SlotNo,
+          isd.Sensor,
+          isd.Sign,
+          COALESCE(
+            NULLIF(TRIM(CONCAT(IFNULL(e_direct.FirstName, ''), ' ', IFNULL(e_direct.LastName, ''))), ''),
+            NULLIF(TRIM(CONCAT(IFNULL(e_via.FirstName, ''), ' ', IFNULL(e_via.LastName, ''))), ''),
+            NULLIF(TRIM(u_direct.UserName), ''),
+            NULLIF(TRIM(u_via.UserName), ''),
+            'ไม่ระบุ'
+          ) AS cabinetUserName,
+          department.DepName AS departmentName,
+          app_cabinets.cabinet_name AS cabinetName,
+          app_cabinets.cabinet_code AS cabinetCode,
+          i.UnitID AS ItemUnitID,
+          i.sub_unit_id AS ItemSubUnitID,
+          i.sub_unit_qty AS ItemSubUnitQty,
+          u_main.UnitName AS ItemMainUnitName,
+          u_sub.UnitName AS ItemSubUnitUnitName,
+          borrow_dep.DepName AS borrowDepartmentName
+        FROM itemslotincabinet_detail isd
+        LEFT JOIN item i ON i.itemcode = isd.itemcode
+        LEFT JOIN units u_main ON u_main.ID = i.UnitID
+        LEFT JOIN units u_sub ON u_sub.ID = i.sub_unit_id
+        LEFT JOIN users u_direct ON u_direct.ID = isd.UserID
+        LEFT JOIN employee e_direct ON e_direct.EmpCode = u_direct.EmpCode
+        LEFT JOIN user_cabinet uc ON uc.cabinet_id = isd.UserID
+        LEFT JOIN users u_via ON u_via.ID = uc.user_id
+        LEFT JOIN employee e_via ON e_via.EmpCode = u_via.EmpCode
+        LEFT JOIN department borrow_dep ON borrow_dep.ID = isd.DepID
+        INNER JOIN app_cabinets ON app_cabinets.stock_id = isd.StockID
+        ${cdOneJoin}
+        INNER JOIN department ON department.ID = cd_one.department_id
+        WHERE ${whereClause}
+        ORDER BY isd.ModifyDate DESC, COALESCE(i.itemname, isd.itemcode) ASC
+        LIMIT ${limit}
+        OFFSET ${offset}
+      `;
+
+      const result = dispensedItems.map((raw: any) => {
+        const uid = raw.ItemUnitID ?? raw.itemunitid;
+        const suid = raw.ItemSubUnitID ?? raw.itemsubunitid;
+        const sqty = raw.ItemSubUnitQty ?? raw.itemsubunitqty;
+        const uName = raw.ItemMainUnitName ?? raw.itemmainunitname;
+        const suName = raw.ItemSubUnitUnitName ?? raw.itemsubunitunitname;
+        const mainLabel = uName != null ? String(uName).trim() : '';
+        const subLabel = suName != null ? String(suName).trim() : '';
+        const isBorrow =
+          raw.IsBorrow === true ||
+          raw.IsBorrow === 1 ||
+          Number(raw.IsBorrow ?? raw.isborrow ?? 0) === 1;
+        const borrowDepartmentName =
+          raw.borrowDepartmentName != null && String(raw.borrowDepartmentName).trim() !== ''
+            ? String(raw.borrowDepartmentName).trim()
+            : undefined;
+        const qtyNum = Number(raw.qty);
+        return {
+          RowID: raw.RowID != null ? Number(raw.RowID) : null,
+          itemcode: raw.itemcode,
+          itemname: raw.itemname ?? raw.itemcode,
+          modifyDate: raw.modifyDate,
+          qty: Number.isFinite(qtyNum) ? Math.abs(qtyNum) : 1,
+          itemCategory: raw.itemCategory,
+          itemtypeID: raw.itemtypeID != null ? Number(raw.itemtypeID) : null,
+          RfidCode: null,
+          StockID: raw.StockID != null ? Number(raw.StockID) : null,
+          CabinetUserID: raw.CabinetUserID != null ? Number(raw.CabinetUserID) : null,
+          hn: this.formatSlotHnCode(raw.hn ?? raw.HnCode ?? raw.hncode ?? raw.HNCode),
+          HnCode: this.formatSlotHnCode(raw.HnCode ?? raw.hncode ?? raw.hn ?? raw.HNCode) ?? null,
+          cabinetUserName: raw.cabinetUserName,
+          departmentName: raw.departmentName,
+          cabinetName: raw.cabinetName,
+          cabinetCode: raw.cabinetCode,
+          UnitID: uid != null ? Number(uid) : undefined,
+          SubUnitID: suid != null ? Number(suid) : undefined,
+          SubUnitQty: sqty != null ? Number(sqty) : undefined,
+          unit: mainLabel ? { ID: uid != null ? Number(uid) : undefined, UnitName: mainLabel } : undefined,
+          subUnit: subLabel ? { ID: suid != null ? Number(suid) : undefined, UnitName: subLabel } : undefined,
+          borrowDepartmentName,
+          isBorrow,
+          borrowRemark: isBorrow ? 'ยืม' : undefined,
+        };
+      });
+
+      return {
+        success: true,
+        data: result,
+        total: totalCount,
+        page,
+        limit,
+        totalPages: Math.max(1, Math.ceil(totalCount / limit)),
+        filters: filters || {},
+      };
+    } catch (error) {
       throw error;
     }
   }

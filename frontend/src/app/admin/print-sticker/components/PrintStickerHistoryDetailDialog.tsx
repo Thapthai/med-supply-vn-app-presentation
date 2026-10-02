@@ -24,14 +24,28 @@ import {
 } from '@/components/ui/table';
 import { formatCEToDMY } from '@/lib/datePickerBE';
 import { cn } from '@/lib/utils';
-import type { StickerPrintHistoryRow } from '../types';
+import type { StickerPrintHistoryLine, StickerPrintHistoryRow } from '../types';
+
+function historyExpireYmd(
+  line: StickerPrintHistoryLine & { expireDate?: string | null },
+): string {
+  const raw = line.expire_date ?? line.expireDate;
+  if (raw == null) return '';
+  return String(raw).trim();
+}
+
+function historyExpireLabel(line: StickerPrintHistoryLine & { expireDate?: string | null }): string {
+  const ymd = historyExpireYmd(line);
+  if (!ymd) return '—';
+  return formatCEToDMY(ymd) || ymd;
+}
 
 function historyLinePreview(line: StickerPrintHistoryRow['lines'][number]): PrintStickerConfirmLine {
   return {
     itemcode: line.itemcode,
     itemname: line.item_name || line.itemcode,
     copies: line.copies,
-    expireDate: line.expire_date || '',
+    expireDate: historyExpireYmd(line),
   };
 }
 
@@ -150,7 +164,7 @@ export default function PrintStickerHistoryDetailDialog({ row, open, onOpenChang
                             {line.item_name || '—'}
                           </TableCell>
                           <TableCell className="whitespace-nowrap text-xs tabular-nums">
-                            {line.expire_date ? formatCEToDMY(line.expire_date) : '—'}
+                            {historyExpireLabel(line)}
                           </TableCell>
                           <TableCell className="text-center text-sm font-medium tabular-nums">
                             {line.copies}

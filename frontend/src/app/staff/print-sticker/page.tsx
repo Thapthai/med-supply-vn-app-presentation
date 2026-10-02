@@ -81,6 +81,7 @@ export default function StaffPrintStickerPage() {
   const historyApis = useMemo<PrintStickerHistoryApis>(
     () => ({
       listHistory: staffStickerPrintApi.listHistory,
+      getHistory: staffStickerPrintApi.getHistory,
       getDepartments: async (keyword) => {
         const rows = await fetchStaffDepartmentsForFilter({ keyword, limit: 80 });
         return {

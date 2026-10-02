@@ -2238,7 +2238,7 @@ export class ReportServiceService {
     subDepartmentId?: string;
   }): Promise<{ buffer: Buffer; filename: string }> {
     try {
-      const result: any = await this.medicalSuppliesService.getDispensedItems({
+      const result: any = await this.medicalSuppliesService.getDispensedItemsFromSlotDetail({
         keyword: params.keyword,
         startDate: params.startDate,
         endDate: params.endDate,
@@ -2305,7 +2305,7 @@ export class ReportServiceService {
     subDepartmentId?: string;
   }): Promise<{ buffer: Buffer; filename: string }> {
     try {
-      const result: any = await this.medicalSuppliesService.getDispensedItems({
+      const result: any = await this.medicalSuppliesService.getDispensedItemsFromSlotDetail({
         keyword: params.keyword,
         startDate: params.startDate,
         endDate: params.endDate,

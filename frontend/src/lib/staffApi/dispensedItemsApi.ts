@@ -21,6 +21,25 @@ export const DispensedItemsApi = {
     return response.data;
   },
 
+  getDispensedItemsFromSlots: async (query?: {
+    keyword?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+    departmentId?: string;
+    cabinetId?: string;
+    subDepartmentId?: string;
+  }): Promise<ApiResponse<unknown> & {
+    total?: number;
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+  }> => {
+    const response = await staffApi.get('/medical-supply/dispensed-items-from-slots', { params: query });
+    return response.data;
+  },
+
   /** ดาวน์โหลดรายงานเบิกจากตู้ (Excel) — Backend POST /reports/dispensed-items/excel returns JSON { success, data: { buffer (base64), filename, contentType } } */
   downloadDispensedItemsExcel: async (params?: {
     keyword?: string;

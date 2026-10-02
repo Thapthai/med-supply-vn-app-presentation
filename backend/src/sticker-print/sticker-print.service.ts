@@ -347,6 +347,9 @@ export class StickerPrintService {
       totalBytesSent += itemBytes;
     }
 
+    const expireFromStock = await this.lookupRecentExpireByItemcode(
+      entries.filter((entry) => !entry.expire_date).map((entry) => entry.code),
+    );
     await this.recordHistorySafe({
       printedByUserId,
       source: 'printLabel-items',
@@ -355,13 +358,19 @@ export class StickerPrintService {
       template: 'SBPL1.txt',
       departmentId: dto.department_id,
       cabinetId: dto.cabinet_id,
-      lines: items.map((row, idx) => ({
-        itemcode: row.itemcode,
-        item_name: byCode.get(row.itemcode)?.itemname,
-        copies: row.copies,
-        expire_date: entries[idx]?.expire_date ?? null,
-        bytes_sent: row.bytesSent,
-      })),
+      lines: items.map((row) => {
+        const fromPayload = entries.find((entry) => entry.code === row.itemcode)?.expire_date;
+        return {
+          itemcode: row.itemcode,
+          item_name: byCode.get(row.itemcode)?.itemname,
+          copies: row.copies,
+          expire_date:
+            fromPayload ??
+            expireFromStock.get(this.itemCodeKey(row.itemcode)) ??
+            null,
+          bytes_sent: row.bytesSent,
+        };
+      }),
     });
 
     return {
@@ -469,7 +478,7 @@ export class StickerPrintService {
 
     return {
       success: true as const,
-      data: rows,
+      data: await this.attachMissingExpireDates(rows),
       meta: {
         total,
         page,
@@ -492,7 +501,127 @@ export class StickerPrintService {
     if (!row) {
       throw new NotFoundException(`ไม่พบประวัติการพิมพ์ id ${id}`);
     }
-    return { success: true as const, data: row };
+    const [enriched] = await this.attachMissingExpireDates([row]);
+    return { success: true as const, data: enriched };
+  }
+
+  private itemCodeKey(code: string): string {
+    return code.trim().slice(0, 20);
+  }
+
+  private formatExpireYmd(raw: Date | string | null | undefined): string | null {
+    if (raw == null) return null;
+    if (typeof raw === 'string') {
+      const trimmed = raw.trim();
+      const match = /^(\d{4}-\d{2}-\d{2})/.exec(trimmed);
+      if (match?.[1]) return match[1];
+      const parsed = new Date(trimmed);
+      if (Number.isNaN(parsed.getTime())) return null;
+      raw = parsed;
+    }
+    if (!(raw instanceof Date) || Number.isNaN(raw.getTime())) return null;
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Bangkok',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(raw);
+    const y = parts.find((p) => p.type === 'year')?.value;
+    const m = parts.find((p) => p.type === 'month')?.value;
+    const d = parts.find((p) => p.type === 'day')?.value;
+    if (!y || !m || !d) return null;
+    return `${y}-${m}-${d}`;
+  }
+
+  private async lookupRecentExpireByItemcode(itemcodes: string[]): Promise<Map<string, string>> {
+    const keys = [...new Set(itemcodes.map((code) => this.itemCodeKey(code)).filter(Boolean))];
+    const found = new Map<string, string>();
+    if (keys.length === 0) return found;
+    const since = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    const stocks = await this.prisma.itemStock.findMany({
+      where: {
+        ItemCode: { in: keys },
+        CreateDate: { gte: since },
+        OR: [{ ExpireDate: { not: null } }, { expDate: { not: null } }],
+      },
+      select: { ItemCode: true, ExpireDate: true, expDate: true },
+      orderBy: { CreateDate: 'desc' },
+    });
+    for (const stock of stocks) {
+      const key = (stock.ItemCode ?? '').trim();
+      const ymd = this.formatExpireYmd(stock.ExpireDate ?? stock.expDate);
+      if (key && ymd && !found.has(key)) found.set(key, ymd);
+    }
+    return found;
+  }
+
+  private async attachMissingExpireDates<
+    T extends {
+      printed_at: Date;
+      lines: Array<{ id: number; itemcode: string; expire_date: string | null }>;
+    },
+  >(rows: T[]): Promise<T[]> {
+    const neededCodes = new Set<string>();
+    for (const row of rows) {
+      for (const line of row.lines) {
+        if (!line.expire_date?.trim()) neededCodes.add(this.itemCodeKey(line.itemcode));
+      }
+    }
+    if (neededCodes.size === 0) return rows;
+
+    const times = rows.map((row) => row.printed_at.getTime()).filter((t) => Number.isFinite(t));
+    const minT = (times.length ? Math.min(...times) : Date.now()) - 7 * 24 * 60 * 60 * 1000;
+    const maxT = (times.length ? Math.max(...times) : Date.now()) + 10 * 60 * 1000;
+
+    const stocks = await this.prisma.itemStock.findMany({
+      where: {
+        ItemCode: { in: [...neededCodes] },
+        CreateDate: { gte: new Date(minT), lte: new Date(maxT) },
+        OR: [{ ExpireDate: { not: null } }, { expDate: { not: null } }],
+      },
+      select: { ItemCode: true, ExpireDate: true, expDate: true, CreateDate: true, InsertDate: true },
+      orderBy: { CreateDate: 'desc' },
+    });
+
+    const backfill: Array<{ id: number; expire_date: string }> = [];
+    const next = rows.map((row) => {
+      const printed = row.printed_at.getTime();
+      const lines = row.lines.map((line) => {
+        if (line.expire_date?.trim()) return line;
+        const key = this.itemCodeKey(line.itemcode);
+        const candidates = stocks.filter((stock) => (stock.ItemCode ?? '').trim() === key);
+        if (candidates.length === 0) return line;
+        let best = candidates[0]!;
+        let bestDist = Infinity;
+        for (const stock of candidates) {
+          const t = (stock.InsertDate ?? stock.CreateDate)?.getTime();
+          if (t == null) continue;
+          const dist = Math.abs(t - printed);
+          if (dist < bestDist) {
+            bestDist = dist;
+            best = stock;
+          }
+        }
+        const ymd = this.formatExpireYmd(best.ExpireDate ?? best.expDate);
+        if (!ymd) return line;
+        backfill.push({ id: line.id, expire_date: ymd });
+        return { ...line, expire_date: ymd };
+      });
+      return { ...row, lines };
+    });
+
+    if (backfill.length > 0) {
+      await this.prisma.$transaction(
+        backfill.map((row) =>
+          this.prisma.stickerPrintHistoryLine.update({
+            where: { id: row.id },
+            data: { expire_date: row.expire_date },
+          }),
+        ),
+      );
+    }
+
+    return next;
   }
 
   private async generateDocNo(): Promise<string> {

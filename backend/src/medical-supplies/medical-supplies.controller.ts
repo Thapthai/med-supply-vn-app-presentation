@@ -472,6 +472,50 @@ export class MedicalSupplyController {
     }
   }
 
+  @Get('dispensed-items-from-slots')
+  @UseGuards(FlexibleAuthGuard)
+  async getDispensedItemsFromSlots(
+    @Req() req: Request & MedicalSuppliesAuthRequest,
+    @Query('keyword') keyword?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('departmentId') departmentId?: string,
+    @Query('cabinetId') cabinetId?: string,
+    @Query('subDepartmentId') subDepartmentId?: string,
+  ) {
+    try {
+      let staffAllowedDepartmentIds: number[] | null | undefined = undefined;
+      const staffUser = await this.staffDepartmentScope.resolveActiveStaffUser(req);
+      if (staffUser != null) {
+        staffAllowedDepartmentIds = await this.staffDepartmentScope.resolveAllowedDepartmentIds(req);
+      }
+      const result = await this.medicalSuppliesService.getDispensedItemsFromSlotDetail({
+        keyword,
+        startDate,
+        endDate,
+        page: page ? parseInt(page, 10) : undefined,
+        limit: limit ? parseInt(limit, 10) : undefined,
+        departmentId,
+        cabinetId,
+        subDepartmentId,
+        staffAllowedDepartmentIds,
+      });
+      return {
+        success: true,
+        data: result.data,
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        totalPages: result.totalPages,
+        filters: result.filters,
+      };
+    } catch (error: any) {
+      return { success: false, error: error?.message };
+    }
+  }
+
   @Get('dispensed-items')
   @UseGuards(FlexibleAuthGuard)
   async getDispensedItems(

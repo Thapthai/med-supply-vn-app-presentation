@@ -733,7 +733,14 @@ export function usePrintStickerTab(options?: {
         if (!code) continue;
         grouped.set(code, (grouped.get(code) ?? 0) + 1);
       }
-      const payloadItems = [...grouped.entries()].map(([itemcode, copies]) => ({ itemcode, copies }));
+      const expireByCode = new Map(
+        selectedLines.map((line) => [line.itemcode, (line.expireDate ?? '').trim()]),
+      );
+      const payloadItems = [...grouped.entries()].map(([itemcode, copies]) => ({
+        itemcode,
+        copies,
+        ...(expireByCode.get(itemcode) ? { expire_date: expireByCode.get(itemcode) } : {}),
+      }));
       if (payloadItems.length === 0) {
         toast.error('บันทึกแล้วแต่ไม่มี itemcode ที่พิมพ์ได้');
         return;
@@ -795,7 +802,14 @@ export function usePrintStickerTab(options?: {
       if (!code) continue;
       grouped.set(code, (grouped.get(code) ?? 0) + 1);
     }
-    const payloadItems = [...grouped.entries()].map(([itemcode, copies]) => ({ itemcode, copies }));
+    const expireByCode = new Map(
+      selectedLines.map((line) => [line.itemcode, (line.expireDate ?? '').trim()]),
+    );
+    const payloadItems = [...grouped.entries()].map(([itemcode, copies]) => ({
+      itemcode,
+      copies,
+      ...(expireByCode.get(itemcode) ? { expire_date: expireByCode.get(itemcode) } : {}),
+    }));
     if (payloadItems.length === 0) {
       toast.error('ไม่มี itemcode ที่พิมพ์ได้ในรายการที่บันทึก');
       return;

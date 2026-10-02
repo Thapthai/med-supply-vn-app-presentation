@@ -2,7 +2,7 @@ import staffApi from './index';
 
 export const staffStickerPrintApi = {
   printLabelItems: async (body: {
-    items: Array<{ itemcode: string; copies: number }>;
+    items: Array<{ itemcode: string; copies: number; expire_date?: string }>;
     department_id?: number;
     cabinet_id?: number;
   }): Promise<{

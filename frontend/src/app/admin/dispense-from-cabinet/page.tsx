@@ -75,7 +75,7 @@ export default function DispenseFromCabinetPage() {
         let page = 1;
 
         while (true) {
-          const response = (await medicalSuppliesApi.getDispensedItems({
+          const response = (await medicalSuppliesApi.getDispensedItemsFromSlots({
             ...params,
             page,
             limit: FETCH_BATCH_LIMIT,

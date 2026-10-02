@@ -225,6 +225,7 @@ export default function DispensedTable({
                                         <TableHead className="w-12">ลำดับ</TableHead>
                                         <TableHead>รหัสอุปกรณ์</TableHead>
                                         <TableHead>ชื่ออุปกรณ์</TableHead>
+                                        <TableHead>HN</TableHead>
                                         <TableHead className="text-center">
                                           <span className="block">จำนวน</span>
                                           <span className="block text-xs font-normal text-muted-foreground">
@@ -252,6 +253,9 @@ export default function DispensedTable({
                                               item={item as unknown as Item}
                                               showUnitBracket={false}
                                             />
+                                          </TableCell>
+                                          <TableCell className="font-mono text-sm text-slate-700">
+                                            {item.hn?.trim() || item.HnCode?.trim() || '—'}
                                           </TableCell>
                                           <TableCell className="text-center font-medium text-slate-700">
                                             <QtyWithMainUnit

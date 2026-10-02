@@ -11,6 +11,9 @@ export interface DispensedItem {
   StockID: number;
   Istatus_rfid?: number;
   CabinetUserID?: number;
+  /** HN ผู้ป่วยจาก itemslotincabinet_detail.HnCode */
+  hn?: string | null;
+  HnCode?: string | null;
   cabinetUserName?: string;
   cabinetName?: string;
   departmentName?: string;

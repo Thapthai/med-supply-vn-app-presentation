@@ -624,6 +624,26 @@ export const medicalSuppliesApi = {
     return response.data;
   },
 
+  /** รายการเบิกจากตู้ — itemslotincabinet_detail (Sign = '-') */
+  getDispensedItemsFromSlots: async (query?: {
+    keyword?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+    departmentId?: string;
+    cabinetId?: string;
+    subDepartmentId?: string;
+  }): Promise<ApiResponse<any> & {
+    total?: number;
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+  }> => {
+    const response = await api.get('/medical-supply/dispensed-items-from-slots', { params: query });
+    return response.data;
+  },
+
   /** ดาวน์โหลดรายงานเบิกจากตู้ (Excel/PDF) — Backend POST /reports/dispensed-items/excel|pdf returns JSON { success, data: { buffer (base64), filename, contentType } } */
   downloadDispensedItemsExcel: async (params?: {
     keyword?: string;

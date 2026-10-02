@@ -74,6 +74,11 @@ export function PrintStickerConfirmDialog({
       setUsageByCode({});
       return;
     }
+    setSelectedCode((prev) => {
+      if (prev && lines.some((line) => line.itemcode === prev)) return prev;
+      const first = lines.find((line) => !isOverLimit(line)) ?? lines[0];
+      return first?.itemcode ?? null;
+    });
     setQtyDraft((prev) => {
       if (Object.keys(prev).length > 0) return prev;
       return Object.fromEntries(lines.map((line) => [line.itemcode, String(line.copies)]));
