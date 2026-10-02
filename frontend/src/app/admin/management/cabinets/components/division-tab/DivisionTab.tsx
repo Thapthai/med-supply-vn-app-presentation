@@ -175,7 +175,7 @@ export default function DivisionTab({ embedded = false }: { embedded?: boolean }
           toast.error(res.message || 'อัปเดตแผนกไม่สำเร็จ');
           return;
         }
-        toast.success(res.message || 'อัปเดตแผนกหลักแล้ว');
+        toast.success(res.message || 'อัปเดตแผนกแล้ว');
         setDeptMainOpen(false);
         setDeptMainEditDept(null);
         await loadFilterDepartments();
@@ -192,7 +192,7 @@ export default function DivisionTab({ embedded = false }: { embedded?: boolean }
         toast.error(res.message || 'สร้างแผนกไม่สำเร็จ');
         return;
       }
-      toast.success(res.message || 'สร้างแผนกหลักแล้ว');
+      toast.success(res.message || 'สร้างแผนกแล้ว');
       setDeptMainOpen(false);
       await loadFilterDepartments();
       const row = res.data as DeptRow | undefined;
@@ -268,7 +268,7 @@ export default function DivisionTab({ embedded = false }: { embedded?: boolean }
       return;
     }
     if (formDepartmentId == null) {
-      toast.error('กรุณาเลือกแผนกหลัก');
+      toast.error('กรุณาเลือกแผนก');
       return;
     }
     setSaving(true);
@@ -348,9 +348,9 @@ export default function DivisionTab({ embedded = false }: { embedded?: boolean }
           <Building2 className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-slate-900">จัดการ Division</h2>
+          <h2 className="text-xl font-bold text-slate-900">จัดการแผนก</h2>
           <p className="text-sm text-slate-500 mt-0.5 max-w-3xl">
-            คลิกแถว Division เพื่อดูและจัดการรหัสแผนกย่อยด้านล่าง
+            คลิกแถว แผนก เพื่อดูและจัดการรหัสแผนกย่อยด้านล่าง
           </p>
         </div>
       </div>

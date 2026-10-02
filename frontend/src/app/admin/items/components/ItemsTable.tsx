@@ -252,7 +252,7 @@ export default function ItemsTable({
                     <TableHead className="w-[100px]">ลำดับ</TableHead>
                     <TableHead>รหัสอุปกรณ์</TableHead>
                     <TableHead>ชื่ออุปกรณ์</TableHead>
-                    <TableHead>Division</TableHead>
+                    <TableHead>แผนก</TableHead>
                     <TableHead className="text-center">จำนวนในตู้</TableHead>
                     <TableHead className="text-center">จำนวนที่ถูกใช้งาน</TableHead>
                     <TableHead className="text-center">Min/Max</TableHead>

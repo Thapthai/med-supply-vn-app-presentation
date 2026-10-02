@@ -105,7 +105,7 @@ export default function PrintStickerHistoryTab({
         setDepartments(response.data as DepartmentOpt[]);
       }
     } catch {
-      toast.error('โหลด Division ไม่สำเร็จ');
+      toast.error('โหลด แผนก ไม่สำเร็จ');
     } finally {
       setLoadingDepartments(false);
     }

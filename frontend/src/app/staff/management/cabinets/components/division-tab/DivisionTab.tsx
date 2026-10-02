@@ -249,7 +249,7 @@ export default function DivisionTab() {
           toast.error(res.message || 'อัปเดตแผนกไม่สำเร็จ');
           return;
         }
-        toast.success(res.message || 'อัปเดตแผนกหลักแล้ว');
+        toast.success(res.message || 'อัปเดตแผนกแล้ว');
         setDeptMainOpen(false);
         setDeptMainEditDept(null);
         await loadRoleDepartments();
@@ -266,7 +266,7 @@ export default function DivisionTab() {
         toast.error(res.message || 'สร้างแผนกไม่สำเร็จ');
         return;
       }
-      toast.success(res.message || 'สร้างแผนกหลักแล้ว');
+      toast.success(res.message || 'สร้างแผนกแล้ว');
       setDeptMainOpen(false);
       await loadRoleDepartments();
       const row = res.data as DeptRow | undefined;
@@ -350,7 +350,7 @@ export default function DivisionTab() {
       return;
     }
     if (formDepartmentId == null) {
-      toast.error('กรุณาเลือกแผนกหลัก');
+      toast.error('กรุณาเลือกแผนก');
       return;
     }
     if (!roleDeptIdSet.has(formDepartmentId)) {
@@ -464,7 +464,7 @@ export default function DivisionTab() {
             onClick={openDeptMainCreate}
           >
             <Plus className="h-4 w-4 shrink-0" />
-            เพิ่มแผนกหลัก
+            เพิ่มแผนก
           </Button>
         </div>
       </div>
@@ -478,7 +478,7 @@ export default function DivisionTab() {
             </CardTitle>
             {!scopeLoading && roleDivisionSummary ? (
               <p className="text-xs text-muted-foreground mt-1">
-                Division ตามสิทธิ์: {roleDivisionSummary}
+                แผนก ตามสิทธิ์: {roleDivisionSummary}
               </p>
             ) : null}
             {!scopeLoading && roleDepartments.length === 0 ? (
@@ -489,7 +489,7 @@ export default function DivisionTab() {
           </div>
           <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
             <div className="flex min-w-[180px] flex-1 flex-col gap-1.5">
-              <p className="text-xs text-muted-foreground">ค้นหาใน Division ตามสิทธิ์ของคุณ</p>
+              <p className="text-xs text-muted-foreground">ค้นหาใน แผนก ตามสิทธิ์ของคุณ</p>
               <Input
                 placeholder="ชื่อ, ชื่อย่อ, ID, RefDepID..."
                 value={deptKwInput}

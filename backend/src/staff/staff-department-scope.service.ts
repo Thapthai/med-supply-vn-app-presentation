@@ -11,7 +11,7 @@ import { PrismaService } from '../prisma/prisma.service';
 type RequestLike = { headers: Record<string, string | string[] | undefined> };
 
 /**
- * กำหนดขอบเขตแผนกหลักสำหรับ Staff portal
+ * กำหนดขอบเขตแผนกสำหรับ Staff portal
  * - null = ไม่จำกัด (ไม่ใช่ staff หรือ role ไม่มีแถวใน app_staff_role_permission_departments)
  * - number[] (length >= 1) = เห็นได้เฉพาะแผนกเหล่านี้
  */
@@ -107,7 +107,7 @@ export class StaffDepartmentScopeService {
   }
 
   /**
-   * will-return ไม่ส่ง department_id แต่ส่ง sub_department_id — ตรวจว่าแผนกย่อยถูกต้องและ staff เข้าถึงแผนกหลักได้
+   * will-return ไม่ส่ง department_id แต่ส่ง sub_department_id — ตรวจว่าแผนกย่อยถูกต้องและ staff เข้าถึงแผนกได้
    */
   async assertStaffCanAccessSubDepartment(req: RequestLike, subDepartmentId: number): Promise<void> {
     const sub = await this.prisma.medicalSupplySubDepartment.findFirst({
@@ -198,7 +198,7 @@ export class StaffDepartmentScopeService {
     return { stockIds, usageDepartmentIds };
   }
 
-  /** แผนกย่อยต้องเป็นของแผนกหลักที่เลือก (ไม่ต้องมีตู้เดียว) — will-return แบบทุกตู้ */
+  /** แผนกย่อยต้องเป็นของแผนกที่เลือก (ไม่ต้องมีตู้เดียว) — will-return แบบทุกตู้ */
   async assertSubDepartmentBelongsToDepartment(
     subDepartmentId: number,
     departmentId: number,
@@ -212,7 +212,7 @@ export class StaffDepartmentScopeService {
     }
   }
 
-  /** แผนกย่อยต้องอยู่ภายใต้แผนกหลักที่ตู้นี้ผูกอยู่ (ACTIVE cabinet-departments) */
+  /** แผนกย่อยต้องอยู่ภายใต้แผนกที่ตู้นี้ผูกอยู่ (ACTIVE cabinet-departments) */
   async assertSubDepartmentCompatibleWithCabinet(cabinetId: number, subDepartmentId: number): Promise<void> {
     const sub = await this.prisma.medicalSupplySubDepartment.findFirst({
       where: { id: subDepartmentId, status: true },
@@ -226,7 +226,7 @@ export class StaffDepartmentScopeService {
       select: { id: true },
     });
     if (!cd) {
-      throw new BadRequestException('แผนกย่อยนี้ไม่อยู่ภายใต้แผนกหลักเดียวกับตู้ที่เลือก');
+      throw new BadRequestException('แผนกย่อยนี้ไม่อยู่ภายใต้แผนกเดียวกับตู้ที่เลือก');
     }
   }
 

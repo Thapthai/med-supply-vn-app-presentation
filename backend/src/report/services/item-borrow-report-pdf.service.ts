@@ -120,7 +120,7 @@ export class ItemBorrowReportPdfService {
             [
               { label: 'ค้นหา', value: filters.keyword?.trim() ? filters.keyword.trim() : 'ทั้งหมด' },
               {
-                label: 'Division (ที่ตั้งตู้)',
+                label: 'แผนก (ที่ตั้งตู้)',
                 value:
                   filters.departmentName ??
                   (filters.departmentId ? filters.departmentId : 'ทั้งหมด'),
@@ -132,7 +132,7 @@ export class ItemBorrowReportPdfService {
             ],
             [
               {
-                label: 'Division ที่ยืม',
+                label: 'แผนกที่ยืม',
                 value:
                   filters.borrowDepartmentName ??
                   (filters.borrowDepartmentId ? filters.borrowDepartmentId : 'ทั้งหมด'),
@@ -177,7 +177,7 @@ export class ItemBorrowReportPdfService {
           'รหัสอุปกรณ์',
           'ชื่ออุปกรณ์',
           'จำนวน',
-          'Division ที่ยืม',
+          'แผนกที่ยืม',
           'ตู้',
           'แก้ไขล่าสุด',
         ];

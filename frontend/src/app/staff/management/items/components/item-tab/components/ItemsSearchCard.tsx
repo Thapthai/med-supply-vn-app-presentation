@@ -90,12 +90,12 @@ export default function ItemsSearchCard({
 
           <div className="grid gap-3 md:grid-cols-2">
             <SearchableSelect
-              label="Division"
-              placeholder="เลือก Division"
+              label="แผนก"
+              placeholder="เลือกแผนก"
               value={departmentFilter}
               onValueChange={onDepartmentFilterChange}
               options={departmentOptions}
-              searchPlaceholder="ค้นหาชื่อ Division..."
+              searchPlaceholder="ค้นหาชื่อแผนก..."
             />
 
             <div className="space-y-1.5">
@@ -144,7 +144,7 @@ export default function ItemsSearchCard({
             ) : null}
             {departmentFilter !== 'all' && departmentLabel ? (
               <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                Division: {departmentLabel}
+                แผนก: {departmentLabel}
               </span>
             ) : null}
             {statusFilter !== 'all' ? (

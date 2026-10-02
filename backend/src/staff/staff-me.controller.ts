@@ -9,7 +9,7 @@ import { StaffService } from './staff.service';
 export class StaffMeController {
   constructor(private readonly staffService: StaffService) {}
 
-  /** แผนกหลักจาก app_staff_role_permission_departments ของ role ของ Staff ที่ล็อกอิน */
+  /** แผนกจาก app_staff_role_permission_departments ของ role ของ Staff ที่ล็อกอิน */
   @Get('departments')
   async myDepartments(
     @Req() req: Request,

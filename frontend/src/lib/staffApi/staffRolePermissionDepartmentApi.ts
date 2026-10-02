@@ -9,7 +9,7 @@ export type StaffPermissionDepartmentsResponse = {
   message?: string;
 };
 
-/** แผนกหลักที่ผู้ใช้ Staff เข้าถึงได้ — unrestricted = เห็นทุกแผนก */
+/** แผนกที่ผู้ใช้ Staff เข้าถึงได้ — unrestricted = เห็นทุกแผนก */
 export async function fetchStaffPermissionDepartments(
   userId: number,
 ): Promise<StaffPermissionDepartmentsResponse> {

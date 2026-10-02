@@ -38,7 +38,7 @@ import {
   machineIpHint,
   stockIdFromMachineIp,
 } from './cabinetTypes';
-import CabinetDivisionPicker, { type DivisionPick } from './CabinetDivisionPicker';
+import CabinetDivisionPicker, { type DivisionPick } from './CabinetแผนกPicker';
 
 const fieldInputClass = 'bg-white';
 
@@ -122,7 +122,7 @@ export default function CreateCabinetDialog({
           }
         }
         toast.success(
-          divisionIds.length > 0 ? 'เพิ่มตู้และเชื่อมโยง Division แล้ว' : 'เพิ่มตู้เรียบร้อยแล้ว',
+          divisionIds.length > 0 ? 'เพิ่มตู้และเชื่อมโยง แผนก แล้ว' : 'เพิ่มตู้เรียบร้อยแล้ว',
         );
         onOpenChange(false);
         onSuccess();

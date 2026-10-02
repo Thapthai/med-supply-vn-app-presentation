@@ -179,7 +179,7 @@ export class StaffRolePermissionsController {
   }
 }
 
-/** จำกัดแผนกหลักต่อผู้ใช้ Staff — ไม่มีแถว = ไม่จำกัด */
+/** จำกัดแผนกต่อผู้ใช้ Staff — ไม่มีแถว = ไม่จำกัด */
 @Controller('staff-permission-departments')
 export class StaffPermissionDepartmentsController {
   constructor(private readonly staffService: StaffService) {}

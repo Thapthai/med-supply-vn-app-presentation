@@ -26,7 +26,7 @@ interface Cabinet {
   cabinet_status?: string;
 }
 
-/** จำนวนการผูก Division (ACTIVE) ต่อตู้ — ตรงกับ backend */
+/** จำนวนการผูกแผนก (ACTIVE) ต่อตู้ — ตรงกับ backend */
 export const MAX_ACTIVE_DIVISION_LINKS_PER_CABINET = 3;
 
 function countActiveDivisionLinks(
@@ -36,7 +36,7 @@ function countActiveDivisionLinks(
   return mappings.filter((m) => m.cabinet_id === cabinetId && m.status === "ACTIVE").length;
 }
 
-/** Division ที่มีแถวผูกกับตู้นี้แล้ว (ทุกสถานะ — ตรงกับ backend ห้ามซ้ำคู่) */
+/** แผนกที่มีแถวผูกกับตู้นี้แล้ว (ทุกสถานะ — ตรงกับ backend ห้ามซ้ำคู่) */
 function departmentIdsMappedForCabinet(
   mappings: Array<{ cabinet_id: number; department_id?: number | null }>,
   cabinetId: number,
@@ -52,7 +52,7 @@ function departmentIdsMappedForCabinet(
 
 export interface CreateMappingFormData {
   cabinet_id: string;
-  /** แต่ละช่อง = Division หนึ่งรายการ (ว่างได้ถ้ามีอย่างน้อยหนึ่งช่องที่เลือก) */
+  /** แต่ละช่อง = แผนก หนึ่งรายการ (ว่างได้ถ้ามีอย่างน้อยหนึ่งช่องที่เลือก) */
   department_ids: string[];
   status: string;
   description: string;
@@ -82,10 +82,10 @@ export default function CreateMappingDialog({
   saving,
   existingMappings,
 }: CreateMappingDialogProps) {
-  /** รายการ Division ต่อช่อง — แยกกันเพื่อค้นหาในช่องหนึ่งไม่ทับช่องอื่น */
+  /** รายการ แผนก ต่อช่อง — แยกกันเพื่อค้นหาในช่องหนึ่งไม่ทับช่องอื่น */
   const [departmentOptionsBySlot, setDepartmentOptionsBySlot] = useState<Record<number, Department[]>>({});
   const [loadingDepartmentSlot, setLoadingDepartmentSlot] = useState<Record<number, boolean>>({});
-  /** แสดงชื่อ Division หลังเลือก แม้รายการ options จะเปลี่ยนจากการค้นหา */
+  /** แสดงชื่อแผนก หลังเลือก แม้รายการ options จะเปลี่ยนจากการค้นหา */
   const [slotDisplayByIndex, setSlotDisplayByIndex] = useState<
     Record<number, { label: string; subLabel?: string }>
   >({});
@@ -138,7 +138,7 @@ export default function CreateMappingDialog({
   }, [open, existingMappings, formData.cabinet_id, setFormData]);
 
   /**
-   * มี Division ที่ยังไม่ผูกกับตู้นี้หรือไม่ — ยิง API แบบไม่มี keyword (แบ่งหน้า)
+   * มีแผนกที่ยังไม่ผูกกับตู้นี้หรือไม่ — ยิง API แบบไม่มี keyword (แบ่งหน้า)
    * ไม่ใช้ความยาวของ `departments` หลังค้นหา เพราะจะทำให้จำนวนช่องลดเมื่อ filter เหลือ 1/0 รายการ
    */
   const [hasUnmappedDepartment, setHasUnmappedDepartment] = useState<boolean | null>(null);
@@ -386,7 +386,7 @@ export default function CreateMappingDialog({
       opts = [
         {
           value: currentId,
-          label: raw?.DepName || disp?.label || `Division #${currentId}`,
+          label: raw?.DepName || disp?.label || `แผนก #${currentId}`,
           subLabel: raw?.DepName2 || disp?.subLabel || "",
         },
         ...opts,
@@ -455,7 +455,7 @@ export default function CreateMappingDialog({
         <DialogHeader>
           <DialogTitle>เพิ่มการเชื่อมโยงใหม่</DialogTitle>
           <DialogDescription className="break-words">
-            เลือกตู้แล้วจะแสดง {MAX_ACTIVE_DIVISION_LINKS_PER_CABINET} ช่อง Division — เลือกได้เฉพาะช่องที่ตู้ยังมีโควต้า
+            เลือกตู้แล้วจะแสดง {MAX_ACTIVE_DIVISION_LINKS_PER_CABINET} ช่องแผนก — เลือกได้เฉพาะช่องที่ตู้ยังมีโควต้า
             ACTIVE ว่าง (ช่องที่เต็มจะถูกปิด) บันทึกได้เมื่อเลือกอย่างน้อยหนึ่งแผนก
           </DialogDescription>
         </DialogHeader>
@@ -489,10 +489,10 @@ export default function CreateMappingDialog({
           />
 
           {!formData.cabinet_id?.trim() ? (
-            <p className="text-sm text-muted-foreground">กรุณาเลือกตู้ก่อน จึงจะเลือก Division ได้</p>
+            <p className="text-sm text-muted-foreground">กรุณาเลือกตู้ก่อน จึงจะเลือกแผนก ได้</p>
           ) : divisionSlotCount === 0 ? (
             <p className="text-sm text-amber-700">
-              ตู้นี้ผูก Division ครบแล้ว หรือไม่มี Division เหลือให้ผูก
+              ตู้นี้ผูกแผนก ครบแล้ว หรือไม่มีแผนก เหลือให้ผูก
             </p>
           ) : (
             Array.from({ length: divisionSlotCount }, (_, slotIndex) => {
@@ -506,7 +506,7 @@ export default function CreateMappingDialog({
                   ? {
                       label:
                         existingRow.department?.DepName?.trim() ||
-                        `Division #${existingRow.department_id ?? "?"}`,
+                        `แผนก #${existingRow.department_id ?? "?"}`,
                       subLabel: existingRow.department?.DepName2?.trim() || undefined,
                     }
                   : undefined;
@@ -519,13 +519,13 @@ export default function CreateMappingDialog({
                   allowClear={!slotDisabled}
                   clearLabel="ล้างการเลือก (ว่างช่องนี้)"
                   initialDisplay={slotDepartmentDisplay(slotIndex)}
-                  label={`Division (${slotIndex + 1}/${MAX_ACTIVE_DIVISION_LINKS_PER_CABINET})`}
+                  label={`แผนก (${slotIndex + 1}/${MAX_ACTIVE_DIVISION_LINKS_PER_CABINET})`}
                   placeholder={
                     slotDisabled
                       ? "ช่องนี้เต็มตามโควต้า ACTIVE — เลือกได้เฉพาะช่องด้านบน"
                       : slotOpts.length === 0
                         ? "ไม่พบในรายการนี้ — ล้างค้นหาในกล่องด้านบน หรือค้นหาใหม่"
-                        : "เลือก Division (ว่างได้)"
+                        : "เลือกแผนก (ว่างได้)"
                   }
                   value={formData.department_ids[slotIndex] ?? ""}
                   onValueChange={(value) => handleDepartmentPick(slotIndex, value)}
@@ -533,7 +533,7 @@ export default function CreateMappingDialog({
                   loading={!!loadingDepartmentSlot[slotIndex]}
                   required={false}
                   onSearch={(keyword) => void loadDepartmentsForSlot(slotIndex, keyword)}
-                  searchPlaceholder="ค้นหาชื่อ Division..."
+                  searchPlaceholder="ค้นหาชื่อแผนก..."
                 />
               );
             })
@@ -570,7 +570,7 @@ export default function CreateMappingDialog({
 
           {divisionSlotCount > 0 ? (
             <p className="text-xs break-words text-muted-foreground">
-              เลือก Division อย่างน้อย 1 ช่องที่ใช้งานได้ แล้วกดบันทึก — ระบบจะสร้างการเชื่อมโยงตามแต่ละช่องที่เลือก
+              เลือกแผนก อย่างน้อย 1 ช่องที่ใช้งานได้ แล้วกดบันทึก — ระบบจะสร้างการเชื่อมโยงตามแต่ละช่องที่เลือก
             </p>
           ) : null}
         </div>

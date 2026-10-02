@@ -155,15 +155,15 @@ export function PrintStickerFilterBar({
               <Search className="h-4 w-4 text-amber-700" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-slate-900">กรอง Division และตู้</p>
-              <p className="text-xs text-slate-500">เลือก Division และตู้เพื่อโหลดรายการสติกเกอร์</p>
+              <p className="text-sm font-semibold text-slate-900">กรอง แผนก และตู้</p>
+              <p className="text-xs text-slate-500">เลือกแผนก และตู้เพื่อโหลดรายการสติกเกอร์</p>
             </div>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <SearchableSelect
-              label="Division"
-              placeholder="เลือก Division"
+              label="แผนก"
+              placeholder="เลือกแผนก"
               value={departmentId}
               onValueChange={(value) => {
                 onDepartmentIdChange(value);
@@ -179,12 +179,12 @@ export function PrintStickerFilterBar({
               ]}
               loading={loadingDepartments}
               onSearch={loadDepartments}
-              searchPlaceholder="ค้นหาชื่อ Division..."
+              searchPlaceholder="ค้นหาชื่อแผนก..."
             />
 
             <SearchableSelect
               label="ตู้ Cabinet"
-              placeholder={departmentId ? 'เลือกตู้ Cabinet' : 'กรุณาเลือก Division ก่อน'}
+              placeholder={departmentId ? 'เลือกตู้ Cabinet' : 'กรุณาเลือกแผนกก่อน'}
               value={cabinetId}
               onValueChange={onCabinetIdChange}
               options={[
@@ -199,7 +199,7 @@ export function PrintStickerFilterBar({
               onSearch={(kw) => {
                 void resolveCabinets(departmentId, kw);
               }}
-              searchPlaceholder={departmentId ? 'ค้นหารหัสหรือชื่อตู้…' : 'กรุณาเลือก Division ก่อน'}
+              searchPlaceholder={departmentId ? 'ค้นหารหัสหรือชื่อตู้…' : 'กรุณาเลือกแผนกก่อน'}
               disabled={!departmentId}
             />
           </div>
@@ -209,7 +209,7 @@ export function PrintStickerFilterBar({
               <span className="text-xs font-medium text-slate-500">กำลังกรอง:</span>
               {departmentId ? (
                 <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-900">
-                  Division: {selectedDept?.DepName || departmentId}
+                  แผนก: {selectedDept?.DepName || departmentId}
                 </span>
               ) : null}
               {cabinetId ? (

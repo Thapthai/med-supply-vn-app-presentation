@@ -131,7 +131,7 @@ export class ReturnToCabinetReportPdfService {
         const filterY = doc.y;
         const filterCells = [
           {
-            label: 'Division',
+            label: 'แผนก',
             value: filters.departmentName ?? (filters.departmentId ? filters.departmentId : 'ทั้งหมด'),
           },
           {
@@ -172,7 +172,7 @@ export class ReturnToCabinetReportPdfService {
           'จำนวน (หน่วย)',
           'วันที่เติม',
           'ตู้',
-          'Division',
+          'แผนก',
           'ชื่อผู้เติม',
         ];
 

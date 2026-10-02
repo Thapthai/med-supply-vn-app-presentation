@@ -110,13 +110,13 @@ export const adminMenuItems: StaffMenuItem[] = [
       {
         name: 'อุปกรณ์ยืม',
         href: '/admin/item-borrow',
-        description: 'รายการยืมจาก slot detail + Division จากตู้',
+        description: 'รายการยืมจาก slot detail + แผนก จากตู้',
         icon: BookMarked,
       },
       {
         name: 'เบิกอุปกรณ์ให้หน่วยงาน',
         href: '/admin/department-dispense',
-        description: 'เลือก Division → รายการเบิก → ตำแหน่ง Row/Rack/Shelf → เอกสารควบคุมการเบิก',
+        description: 'เลือกแผนก → รายการเบิก → ตำแหน่ง Row/Rack/Shelf → เอกสารควบคุมการเบิก',
         icon: ClipboardList,
       },
       {
@@ -195,16 +195,16 @@ export const adminMenuItems: StaffMenuItem[] = [
         description: 'จัดการ Roles Staff',
       },
       // {
-      //   name: 'จัดการ Division',
+      //   name: 'จัดการแผนก',
       //   href: '/admin/management/departments',
       //   icon: Building2,
-      //   description: 'ดู Division หลักและตั้งรหัส Division ย่อยจับคู่ Location คนไข้',
+      //   description: 'ดู แผนกและตั้งรหัสแผนกย่อยจับคู่ Location คนไข้',
       // },
       // {
-      //   name: 'Cabinet - Division',
+      //   name: 'Cabinet - แผนก',
       //   href: '/admin/management/cabinet-departments',
       //   icon: Network,
-      //   description: 'จัดการตู้ Cabinet และเชื่อมโยงกับ Division',
+      //   description: 'จัดการตู้ Cabinet และเชื่อมโยงกับแผนก',
       // },
 
       {

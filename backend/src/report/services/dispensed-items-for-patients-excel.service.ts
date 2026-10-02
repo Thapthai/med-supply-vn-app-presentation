@@ -98,7 +98,7 @@ export class DispensedItemsForPatientsExcelService {
     worksheet.getRow(3).height = 20;
 
     const filters = data.filters ?? {};
-    const filterLabels = ['วันที่เริ่ม', 'วันที่สิ้นสุด', 'Division', 'แผนกย่อย'];
+    const filterLabels = ['วันที่เริ่ม', 'วันที่สิ้นสุด', 'แผนก', 'แผนกย่อย'];
     const filterValues = [
       formatFilterDateSlashBE(filters.startDate),
       formatFilterDateSlashBE(filters.endDate),

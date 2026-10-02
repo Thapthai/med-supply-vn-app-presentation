@@ -258,8 +258,8 @@ export default function MedicalSuppliesTable({
                   <TableRow>
                     <TableHead className="w-10 sm:w-[80px] text-xs sm:text-sm whitespace-nowrap">ลำดับ</TableHead>
                     <TableHead className="min-w-[90px] text-xs sm:text-sm">HN / EN คนไข้</TableHead>
-                    <TableHead className="min-w-[80px] text-xs sm:text-sm">Division</TableHead>
-                    <TableHead className="min-w-[100px] text-xs sm:text-sm whitespace-nowrap">แผนก</TableHead>
+                    <TableHead className="min-w-[80px] text-xs sm:text-sm">แผนก</TableHead>
+                    <TableHead className="min-w-[100px] text-xs sm:text-sm whitespace-nowrap">แผนกย่อย</TableHead>
                     <TableHead className="min-w-[90px] text-xs sm:text-sm whitespace-nowrap">เวลาที่เบิก</TableHead>
                     <TableHead className="min-w-[90px] text-xs sm:text-sm whitespace-nowrap">วันเวลา</TableHead>
                     <TableHead className="min-w-[100px] text-xs sm:text-sm">วันที่ และเวลาที่พิมพ์บิล</TableHead>

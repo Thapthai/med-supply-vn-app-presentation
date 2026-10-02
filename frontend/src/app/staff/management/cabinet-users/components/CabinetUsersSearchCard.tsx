@@ -221,7 +221,7 @@ export function CabinetUsersSearchCard({
 
   const handleSearch = () => {
     if (!formFilters.departmentId.trim()) {
-      toast.error('กรุณาเลือก Division');
+      toast.error('กรุณาเลือกแผนก');
       return;
     }
     setAppliedFilters(formFilters);
@@ -263,15 +263,15 @@ export function CabinetUsersSearchCard({
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-slate-900">ค้นหาและกรอง</p>
             <p className="text-xs text-slate-500">
-              เลือก Division และตู้ Cabinet เพื่อกรองรายการผู้ใช้ในตู้ (ตามสิทธิ์ role)
+              เลือกแผนก และตู้ Cabinet เพื่อกรองรายการผู้ใช้ในตู้ (ตามสิทธิ์ role)
             </p>
           </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <SearchableSelect
-            label="Division"
-            placeholder="เลือก Division (บังคับ)"
+            label="แผนก"
+            placeholder="เลือกแผนก (บังคับ)"
             required
             value={formFilters.departmentId}
             onValueChange={(value) => {
@@ -280,7 +280,7 @@ export function CabinetUsersSearchCard({
             options={divisionSelectOptions}
             loading={loadingDepartments}
             onSearch={loadDepartments}
-            searchPlaceholder="ค้นหา Division..."
+            searchPlaceholder="ค้นหาแผนก..."
           />
 
           <SearchableSelect
@@ -288,7 +288,7 @@ export function CabinetUsersSearchCard({
             placeholder={
               cabinetSelectEnabled
                 ? 'ทั้งหมดหรือเลือกตู้ (ในแผนกนี้)'
-                : 'กรุณาเลือก Division ก่อน'
+                : 'กรุณาเลือกแผนกก่อน'
             }
             value={formFilters.cabinetId}
             onValueChange={(value) => {
@@ -307,7 +307,7 @@ export function CabinetUsersSearchCard({
               void resolveCabinets(formFilters.departmentId, searchKeyword);
             }}
             searchPlaceholder={
-              cabinetSelectEnabled ? 'ค้นหารหัสหรือชื่อตู้...' : 'กรุณาเลือก Division ก่อน'
+              cabinetSelectEnabled ? 'ค้นหารหัสหรือชื่อตู้...' : 'กรุณาเลือกแผนกก่อน'
             }
             disabled={!cabinetSelectEnabled}
           />
@@ -354,7 +354,7 @@ export function CabinetUsersSearchCard({
             <span className="text-xs font-medium text-slate-500">กำลังกรอง:</span>
             {appliedFilters.departmentId ? (
               <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-                Division: {appliedDept?.DepName || appliedFilters.departmentId}
+                แผนก: {appliedDept?.DepName || appliedFilters.departmentId}
               </span>
             ) : null}
             {appliedFilters.cabinetId ? (

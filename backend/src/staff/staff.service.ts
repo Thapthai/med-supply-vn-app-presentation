@@ -514,7 +514,7 @@ export class StaffService {
     return { success: true, message: 'อัพเดตสิทธิ์แล้ว', updatedCount: updated };
   }
 
-  /** ไม่มีแถว = ผู้ใช้คนนั้นไม่จำกัดแผนกหลัก (เห็นทุกแผนก) */
+  /** ไม่มีแถว = ผู้ใช้คนนั้นไม่จำกัดแผนก (เห็นทุกแผนก) */
   async findStaffPermissionDepartments(userId?: number) {
     if (userId == null || !Number.isInteger(userId) || userId < 1) {
       throw new BadRequestException('รหัสผู้ใช้งานต้องเป็นตัวเลขบวก');
@@ -551,7 +551,7 @@ export class StaffService {
     };
   }
 
-  /** แทนที่รายการแผนกหลักทั้งชุดของผู้ใช้ — ส่งว่างหรือลบทั้งหมด = ไม่จำกัดแผนก */
+  /** แทนที่รายการแผนกทั้งชุดของผู้ใช้ — ส่งว่างหรือลบทั้งหมด = ไม่จำกัดแผนก */
   async setStaffPermissionDepartments(dto: SetStaffPermissionDepartmentsDto) {
     const userId = dto.user_id;
     if (userId == null || !Number.isInteger(userId) || userId < 1) {
@@ -567,7 +567,7 @@ export class StaffService {
     for (const n of raw) {
       const v = Number(n);
       if (!Number.isInteger(v) || v < 1) {
-        throw new BadRequestException('รหัส Division หลักต้องเป็นตัวเลขบวก');
+        throw new BadRequestException('รหัสแผนกต้องเป็นตัวเลขบวก');
       }
     }
     const ids = [...new Set(raw.map((n) => Number(n)))];
@@ -578,7 +578,7 @@ export class StaffService {
         select: { ID: true },
       });
       if (found.length !== ids.length) {
-        throw new BadRequestException('ไม่พบ Division หลักที่ระบุ');
+        throw new BadRequestException('ไม่พบแผนกที่ระบุ');
       }
     }
 
@@ -595,7 +595,7 @@ export class StaffService {
 
     return {
       success: true,
-      message: 'เพิ่มสิทธิ์ Division หลักแล้ว',
+      message: 'เพิ่มสิทธิ์แผนกแล้ว',
       data: { user_id: userId, unrestricted: ids.length === 0, department_ids: ids },
     };
   }
@@ -604,7 +604,7 @@ export class StaffService {
    * Staff ปัจจุบัน → app_staff_permission_departments (user_id) → department
    * มีแถวใน permission_departments = รายการแผนกใน dropdown ตามที่ผู้ใช้ได้รับสิทธิ์เท่านั้น
    * ไม่มีแถว = unrestricted (API ข้อมูลไม่กรองแผนก); dropdown ใช้ with_cabinet → ทุกแผนกที่มีตู้ ACTIVE
-   * ไม่ใช้ app_users.department_id สำหรับรายการ Division
+   * ไม่ใช้ app_users.department_id สำหรับรายการ แผนก
    */
   async findMyPermissionDepartments(
     req: { headers: Record<string, string | string[] | undefined> },
@@ -672,7 +672,7 @@ export class StaffService {
     };
   }
 
-  /** แผนกหลักที่มีตู้ผูก ACTIVE อย่างน้อยหนึ่งตู้ */
+  /** แผนกที่มีตู้ผูก ACTIVE อย่างน้อยหนึ่งตู้ */
   private async listDepartmentsWithActiveCabinet(): Promise<
     Array<{ ID: number; DepName: string | null; DepName2: string | null; RefDepID: string | null }>
   > {

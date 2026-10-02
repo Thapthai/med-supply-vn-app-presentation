@@ -321,7 +321,7 @@ export default function FilterSection({
       const scopeAll =
         Array.isArray(allowed) && allowed.length > 0 && !filters.departmentId?.trim();
       if (!filters.departmentId?.trim() && !scopeAll) {
-        toast.error("กรุณาเลือก Division ก่อนค้นหา (หรือเลือกทั้งหมดเฉพาะเมื่อมีการจำกัดแผนกให้คุณ)");
+        toast.error("กรุณาเลือกแผนกก่อนค้นหา (หรือเลือกทั้งหมดเฉพาะเมื่อมีการจำกัดแผนกให้คุณ)");
         return;
       }
     }
@@ -403,11 +403,11 @@ export default function FilterSection({
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <SearchableSelect
-              label="Division"
+              label="แผนก"
               placeholder={
                 canPickAllScopedDepartments
-                  ? "เลือก Division หรือทั้งหมด (ตามสิทธิ์ของคุณ)"
-                  : "เลือก Division (บังคับ)"
+                  ? "เลือกแผนก หรือทั้งหมด (ตามสิทธิ์ของคุณ)"
+                  : "เลือกแผนก (บังคับ)"
               }
               required={!canPickAllScopedDepartments}
               value={filters.departmentId}
@@ -428,19 +428,19 @@ export default function FilterSection({
               options={divisionSelectOptions}
               loading={loadingDepartments}
               onSearch={loadDepartments}
-              searchPlaceholder="ค้นหาชื่อ Division..."
+              searchPlaceholder="ค้นหาชื่อแผนก..."
               disabled={departmentDisabled}
             />
             <SearchableSelect
-              label="แผนก"
+              label="แผนกย่อย"
               placeholder={
-                filters.departmentId ? "เลือกแผนก ..." : "กรุณาเลือก Division ก่อน"
+                filters.departmentId ? "เลือกแผนกย่อย ..." : "กรุณาเลือกแผนกก่อน"
               }
               value={filters.subDepartmentId}
               onValueChange={(value) => onFilterChange("subDepartmentId", value)}
               options={subDepartmentOptions}
               disabled={!filters.departmentId || departmentDisabled}
-              searchPlaceholder="ค้นหารหัสหรือชื่อแผนก ..."
+              searchPlaceholder="ค้นหารหัสหรือชื่อแผนกย่อย ..."
             />
           </div>
 
@@ -452,7 +452,7 @@ export default function FilterSection({
                   ? "เลือกตู้ Cabinet (ไม่บังคับ — ว่าง = ทั้งหมด)"
                   : canPickAllScopedDepartments
                     ? "เลือกตู้"
-                    : "เลือก Division ก่อน"
+                    : "เลือกแผนกก่อน"
               }
               value={filters.cabinetId}
               onValueChange={(value) => onFilterChange("cabinetId", value)}
@@ -507,12 +507,12 @@ export default function FilterSection({
             ) : null}
             {appliedFilters.departmentId ? (
               <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-900">
-                Division: {appliedDept?.DepName || appliedFilters.departmentId}
+                แผนก: {appliedDept?.DepName || appliedFilters.departmentId}
               </span>
             ) : null}
             {appliedFilters.subDepartmentId ? (
               <span className="inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-900">
-                แผนก: {appliedSubDept?.code || appliedFilters.subDepartmentId}
+                แผนกย่อย: {appliedSubDept?.code || appliedFilters.subDepartmentId}
               </span>
             ) : null}
             {appliedFilters.cabinetId ? (

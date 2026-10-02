@@ -17,7 +17,7 @@ export default function CabinetsPage() {
             <div>
               <h1 className="text-2xl font-bold text-slate-900">จัดการตู้ Cabinet</h1>
               <p className="mt-0.5 text-sm text-slate-600">
-                ดูและแก้ไขตู้ เชื่อมโยง Division และจัดการแผนกได้จากหน้าเดียว
+                ดูและแก้ไขตู้ เชื่อมโยง แผนก และจัดการแผนกได้จากหน้าเดียว
               </p>
             </div>
           </div>

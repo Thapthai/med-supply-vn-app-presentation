@@ -35,7 +35,7 @@ interface CabinetGroup {
 }
 
 function divisionLabel(m: CabinetDepartment): string {
-  return m.department?.DepName?.trim() || `Division #${m.department_id}`;
+  return m.department?.DepName?.trim() || `แผนก #${m.department_id}`;
 }
 
 function groupMappingsByCabinet(rows: CabinetDepartment[]): CabinetGroup[] {
@@ -67,7 +67,7 @@ interface MappingTableProps {
   onCreateClick?: () => void;
 }
 
-/** คอลัมน์หลัก: ลูกศร + ลำดับ + ตู้ + Division + สถานะ + หมายเหตุ + จัดการ */
+/** คอลัมน์หลัก: ลูกศร + ลำดับ + ตู้ + แผนก + สถานะ + หมายเหตุ + จัดการ */
 const COLUMN_COUNT = 7;
 const itemsPerPage = 5;
 
@@ -148,7 +148,7 @@ export default function MappingTable({
                   <TableHead className="px-3 py-3.5 text-slate-600 sm:px-4 sm:py-4">ลำดับ</TableHead>
                   <TableHead className="px-3 py-3.5 text-slate-600 sm:px-4 sm:py-4">ตู้ Cabinet</TableHead>
                   <TableHead className="min-w-[160px] px-3 py-3.5 text-slate-600 sm:px-4 sm:py-4">
-                    Division ที่เชื่อมโยง
+                    แผนกที่เชื่อมโยง
                   </TableHead>
 
 
@@ -215,14 +215,14 @@ export default function MappingTable({
                               <div>
                                 <h4 className="mb-3 flex items-center gap-2 font-semibold text-gray-700">
                                   <Package className="h-4 w-4" />
-                                  Division ที่เชื่อมโยงกับตู้นี้ ({group.mappings.length} รายการ)
+                                  แผนกที่เชื่อมโยงกับตู้นี้ ({group.mappings.length} รายการ)
                                 </h4>
                                 <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
                                   <Table>
                                     <TableHeader>
                                       <TableRow className="border-b border-slate-200 bg-slate-50 hover:bg-slate-50">
                                         <TableHead className="w-14 text-slate-600">ลำดับ</TableHead>
-                                        <TableHead className="text-slate-600">Division</TableHead>
+                                        <TableHead className="text-slate-600">แผนก</TableHead>
                                         <TableHead className="text-slate-600">สถานะ</TableHead>
                                         <TableHead className="text-slate-600">หมายเหตุ</TableHead>
                                         <TableHead className="text-right text-slate-600">จัดการ</TableHead>

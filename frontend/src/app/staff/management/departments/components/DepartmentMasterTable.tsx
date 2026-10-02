@@ -108,7 +108,7 @@ export default function DepartmentMasterTable({
       <CardHeader className="border-b border-slate-100 bg-slate-50/50">
         <CardTitle className="text-slate-800 flex items-center gap-2">
           <Building2 className="h-5 w-5 text-cyan-600" />
-          แผนกหลักและรหัสแผนกย่อย ({departments.length} แผนกตามสิทธิ์)
+          แผนกและรหัสแผนกย่อย ({departments.length} แผนกตามสิทธิ์)
         </CardTitle>
       </CardHeader>
       <CardContent className="p-2">
@@ -118,8 +118,8 @@ export default function DepartmentMasterTable({
               <TableRow className="bg-slate-100/80 hover:bg-slate-100/80 border-b border-slate-200">
                 <TableHead className="w-12" />
                 <TableHead className="text-slate-600 font-semibold w-16">ลำดับ</TableHead>
-                <TableHead className="text-slate-600 font-semibold">รหัส Division</TableHead>
-                <TableHead className="text-slate-600 font-semibold">ชื่อ Division</TableHead>
+                <TableHead className="text-slate-600 font-semibold">รหัสแผนก</TableHead>
+                <TableHead className="text-slate-600 font-semibold">ชื่อแผนก</TableHead>
                 <TableHead className="text-slate-600 font-semibold">ชื่อย่อ</TableHead>
                 <TableHead className="text-center text-slate-600 font-semibold">จำนวนรหัสแผนกย่อย</TableHead>
                 <TableHead className="w-[120px] text-right text-slate-600 font-semibold">จัดการ</TableHead>
@@ -183,7 +183,7 @@ export default function DepartmentMasterTable({
                             size="sm"
                             variant="outline"
                             onClick={() => onEditMainDepartment(dept)}
-                            aria-label="แก้ไขแผนกหลัก"
+                            aria-label="แก้ไขแผนก"
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>

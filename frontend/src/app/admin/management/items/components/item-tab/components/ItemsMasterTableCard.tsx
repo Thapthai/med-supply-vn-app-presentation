@@ -18,7 +18,7 @@ export interface ItemsMasterTableCardProps {
   total: number;
   totalPages: number;
   deptMap: Map<number, DeptRow>;
-  /** กรองเฉพาะ Division ที่เลือก (undefined = ทุก Division) */
+  /** กรองเฉพาะแผนกที่เลือก (undefined = ทุกแผนก) */
   departmentFilter?: number;
   onEdit: (item: Item) => void;
   onDelete: (item: Item) => void;
@@ -40,7 +40,7 @@ export default function ItemsMasterTableCard({
   onUploadClick,
   onPageChange,
 }: ItemsMasterTableCardProps) {
-  // เลือก Division เจาะจง → แสดงเฉพาะ item ของ Division นั้น (รวม "ทุกแผนก" ที่ไม่ระบุแผนก)
+  // เลือกแผนก เจาะจง → แสดงเฉพาะ item ของ แผนก นั้น (รวม "ทุกแผนก" ที่ไม่ระบุแผนก)
   const visibleItems = useMemo(() => {
     if (departmentFilter == null) return items;
     return items.filter((it) => {
@@ -134,7 +134,7 @@ export default function ItemsMasterTableCard({
                     <TableHead>รหัส Item</TableHead>
                     <TableHead className="min-w-[200px]">ชื่ออุปกรณ์</TableHead>
                     <TableHead>บาร์โค้ด</TableHead>
-                    <TableHead>Division</TableHead>
+                    <TableHead>แผนก</TableHead>
                     <TableHead>สถานะ</TableHead>
                     <TableHead>หน่วย</TableHead>
                     <TableHead>หน่วยการเบิก</TableHead>

@@ -35,7 +35,7 @@ function toFileResponse(buffer: Buffer, filename: string, contentType: string) {
 export class DepartmentDispenseController {
   constructor(private readonly service: DepartmentDispenseService) {}
 
-  /** รายการ Item ที่ mapping ตำแหน่งแล้ว (ไม่ต้องผูกกับ Division) */
+  /** รายการ Item ที่ mapping ตำแหน่งแล้ว (ไม่ต้องผูกกับแผนก) */
   @Get('department-items')
   listDepartmentItems(
     @Query('department_id', ParseIntPipe) departmentId: number,

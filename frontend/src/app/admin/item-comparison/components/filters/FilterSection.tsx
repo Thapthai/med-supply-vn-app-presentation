@@ -117,14 +117,14 @@ export function FilterSection({
   }, [cabinets, cabinetSearch]);
 
   const divisionTriggerLabel = () => {
-    if (!departmentCode) return 'เลือก Division...';
+    if (!departmentCode) return 'เลือกแผนก...';
     const d = departments.find((x) => String(x.ID) === departmentCode);
-    return d?.DepName || d?.DepName2 || `Division ${departmentCode}`;
+    return d?.DepName || d?.DepName2 || `แผนก ${departmentCode}`;
   };
 
   const subDepartmentTriggerLabel = () => {
     const idStr = subDepartmentId?.trim();
-    if (!idStr) return 'เลือกแผนก ...';
+    if (!idStr) return 'เลือกแผนกย่อย ...';
     const id = parseInt(idStr, 10);
     if (Number.isNaN(id)) return idStr;
     const sub = subDepartments.find((s) => s.id === id);
@@ -234,7 +234,7 @@ export function FilterSection({
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div className="min-w-0 space-y-1.5">
-              <span className="text-xs font-medium text-slate-600">Division</span>
+              <span className="text-xs font-medium text-slate-600">แผนก</span>
               <DropdownMenu open={departmentDropdownOpen} onOpenChange={setDepartmentDropdownOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className={dropdownTriggerClass} type="button">
@@ -248,7 +248,7 @@ export function FilterSection({
                 >
                   <div className="px-2 pb-2">
                     <Input
-                      placeholder="ค้นหา Division..."
+                      placeholder="ค้นหาแผนก..."
                       value={departmentSearch}
                       onChange={(e) => setDepartmentSearch(e.target.value)}
                       className="h-8"
@@ -267,7 +267,7 @@ export function FilterSection({
                         setDepartmentSearch('');
                       }}
                     >
-                      -- ทุก Division --
+                      -- ทุกแผนก --
                     </button>
                     {filteredDepartments.map((dept) => (
                       <button
@@ -291,7 +291,7 @@ export function FilterSection({
             </div>
 
             <div className="min-w-0 space-y-1.5">
-              <span className="text-xs font-medium text-slate-600">แผนก</span>
+              <span className="text-xs font-medium text-slate-600">แผนกย่อย</span>
               <DropdownMenu
                 open={subDepartmentDropdownOpen}
                 onOpenChange={setSubDepartmentDropdownOpen}
@@ -313,7 +313,7 @@ export function FilterSection({
                 >
                   <div className="px-2 pb-2">
                     <Input
-                      placeholder="ค้นหารหัสหรือชื่อแผนก ..."
+                      placeholder="ค้นหารหัสหรือชื่อแผนกย่อย ..."
                       value={subDepartmentSearch}
                       onChange={(e) => setSubDepartmentSearch(e.target.value)}
                       className="h-8"
@@ -335,7 +335,7 @@ export function FilterSection({
                     </button>
                     {!hasMainDepartment ? (
                       <div className="px-2 py-3 text-center text-xs text-muted-foreground">
-                        เลือกแผนก (Division) ก่อน
+                        เลือกแผนก (แผนก) ก่อน
                       </div>
                     ) : filteredSubDepartments.length === 0 ? (
                       <div className="px-2 py-3 text-center text-xs text-muted-foreground">ไม่พบรายการ</div>
@@ -467,12 +467,12 @@ export function FilterSection({
             ) : null}
             {appliedFilters.departmentCode ? (
               <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-900">
-                Division: {appliedDept?.DepName || appliedFilters.departmentCode}
+                แผนก: {appliedDept?.DepName || appliedFilters.departmentCode}
               </span>
             ) : null}
             {appliedFilters.subDepartmentId ? (
               <span className="inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-900">
-                แผนก: {appliedSubDept?.code || appliedFilters.subDepartmentId}
+                แผนกย่อย: {appliedSubDept?.code || appliedFilters.subDepartmentId}
               </span>
             ) : null}
             {appliedFilters.cabinetId ? (

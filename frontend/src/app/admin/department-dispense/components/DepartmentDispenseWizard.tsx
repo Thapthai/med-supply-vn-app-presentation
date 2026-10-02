@@ -321,7 +321,7 @@ export default function DepartmentDispenseWizard() {
         </CardHeader>
         <CardContent className="space-y-4">
           <SearchableSelect
-            label="หน่วยงาน (Division)"
+            label="หน่วยงาน (แผนก)"
             placeholder="เลือกหน่วยงาน"
             value={departmentId}
             onValueChange={setDepartmentId}

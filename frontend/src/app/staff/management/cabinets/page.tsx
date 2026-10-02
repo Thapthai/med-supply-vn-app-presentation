@@ -6,8 +6,8 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import CabinetTab from './components/cabinet-tab/CabinetTab';
-import DivisionTab from './components/division-tab/DivisionTab';
-import CabinetDivisionTab from './components/cabinet-division-tab/CabinetDivisionTab';
+import DivisionTab from './components/division-tab/แผนกTab';
+import CabinetDivisionTab from './components/cabinet-division-tab/CabinetแผนกTab';
 
 const TABS = [
   {
@@ -18,13 +18,13 @@ const TABS = [
   },
   {
     value: 'division',
-    label: 'จัดการ Division',
+    label: 'จัดการแผนก',
     icon: Building2,
     iconClass: 'bg-cyan-100 text-cyan-700',
   },
   {
     value: 'cabinet-division',
-    label: 'จัดการตู้ Cabinet - Division',
+    label: 'จัดการตู้ Cabinet - แผนก',
     icon: Network,
     iconClass: 'bg-purple-100 text-purple-700',
   },
@@ -41,8 +41,8 @@ export default function CabinetsPage() {
           <Package className="h-6 w-6 text-blue-600" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">จัดการ Cabinet และ Division</h1>
-          <p className="text-sm text-gray-500">จัดการตู้ Cabinet, Division และการเชื่อมโยง</p>
+          <h1 className="text-2xl font-bold text-gray-900">จัดการ Cabinet และแผนก</h1>
+          <p className="text-sm text-gray-500">จัดการตู้ Cabinet, แผนก และการเชื่อมโยง</p>
         </div>
       </div>
 

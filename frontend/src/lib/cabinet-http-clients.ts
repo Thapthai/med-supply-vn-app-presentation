@@ -11,7 +11,7 @@ export function createCabinetUsersApi(http: AxiosInstance) {
       page?: number;
       limit?: number;
       keyword?: string;
-      /** Division = department.ID */
+      /** แผนก = department.ID */
       department_id?: number;
       /** ตู้ = app_cabinets.id (backend แปลงไป stock_id ให้) */
       cabinet_id?: number;

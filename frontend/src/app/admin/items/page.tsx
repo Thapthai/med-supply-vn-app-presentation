@@ -245,7 +245,7 @@ export default function ItemsPage() {
     const deptId = parseInt(activeFilters.departmentId, 10);
     const cabId = parseInt(activeFilters.cabinetId, 10);
     if (Number.isNaN(deptId) || Number.isNaN(cabId)) {
-      toast.error('กรุณาเลือก Division และตู้ Cabinet ก่อนพิมพ์สติ๊กเกอร์');
+      toast.error('กรุณาเลือกแผนก และตู้ Cabinet ก่อนพิมพ์สติ๊กเกอร์');
       return;
     }
 

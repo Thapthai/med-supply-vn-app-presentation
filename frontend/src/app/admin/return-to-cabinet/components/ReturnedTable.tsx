@@ -149,7 +149,7 @@ export default function ReturnedTable({
                     </TableHead>
                     <TableHead>วันที่เติม</TableHead>
                     <TableHead>ตู้</TableHead>
-                    <TableHead>Division</TableHead>
+                    <TableHead>แผนก</TableHead>
                     <TableHead>ชื่อผู้เติม</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -230,7 +230,7 @@ export default function ReturnedTable({
                                           </span>
                                         </TableHead>
                                         <TableHead>วันที่เติม</TableHead>
-                                        <TableHead>Division</TableHead>
+                                        <TableHead>แผนก</TableHead>
                                         {/* <TableHead>RFID Code</TableHead> */}
                                       </TableRow>
                                     </TableHeader>

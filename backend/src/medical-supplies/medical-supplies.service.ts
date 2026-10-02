@@ -3159,7 +3159,7 @@ export class MedicalSuppliesService {
        * Staff portal: จาก role → app_staff_role_permission_departments
        * - undefined = ไม่ใช้ขอบเขต (รายงาน / เรียกภายใน)
        * - null = role ไม่จำกัดแผนก
-       * - number[] = จำกัดตู้ให้มี mapping ACTIVE ไปยังแผนกเหล่านั้น
+       * - number[] = จำกัดตู้ให้มี mapping ACTIVE ไปยังแผนกย่อยเหล่านั้น
        */
       staffAllowedDepartmentIds?: number[] | null | undefined;
     },
@@ -3241,7 +3241,7 @@ export class MedicalSuppliesService {
       }
 
 
-      // SupplyItemReturnRecord เก็บ itemCode (อ้างอิง) — include cabinet สำหรับแสดงตู้/แผนก
+      // SupplyItemReturnRecord เก็บ itemCode (อ้างอิง) — include cabinet สำหรับแสดงตู้/แผนกย่อย
       const [records, total] = await Promise.all([
         this.prisma.supplyItemReturnRecord.findMany({
           where,
@@ -3477,9 +3477,9 @@ export class MedicalSuppliesService {
   }
 
   /**
-   * JOIN หนึ่งแถวต่อตู้สำหรับชื่อ Division ในผลลัพธ์ — ต้องสอดคล้องกับตัวกรอง WHERE:
-   * เดิมใช้ MIN(id) ของทุก ACTIVE mapping ทำให้ตู้ที่ผูกหลายแผนกแสดงชื่อแผนกที่ไม่อยู่ใน role
-   * หรือไม่ตรงกับ Division ที่ผู้ใช้เลือก แม้แถวผ่าน EXISTS แล้ว
+   * JOIN หนึ่งแถวต่อตู้สำหรับชื่อแผนก ในผลลัพธ์ — ต้องสอดคล้องกับตัวกรอง WHERE:
+   * เดิมใช้ MIN(id) ของทุก ACTIVE mapping ทำให้ตู้ที่ผูกหลายแผนกย่อยแสดงชื่อแผนกย่อยที่ไม่อยู่ใน role
+   * หรือไม่ตรงกับแผนกที่ผู้ใช้เลือก แม้แถวผ่าน EXISTS แล้ว
    */
   private buildDispensedItemsCabinetOneDeptJoin(filters?: {
     departmentId?: string;
@@ -3616,7 +3616,7 @@ export class MedicalSuppliesService {
       const whereClause = Prisma.join(sqlConditions, ' AND ');
       const cdOneJoin = this.buildDispensedItemsCabinetOneDeptJoin(filters);
 
-      // Get total count first — เชื่อม Division แถวเดียวต่อตู้ (ไม่คูณแถวจากหลาย app_cabinet_departments)
+      // Get total count first — เชื่อม แผนก แถวเดียวต่อตู้ (ไม่คูณแถวจากหลาย app_cabinet_departments)
       const countResult: any[] = await this.prisma.$queryRaw`
         SELECT COUNT(*) as total
         FROM itemstock ist
@@ -3793,7 +3793,7 @@ export class MedicalSuppliesService {
 
   /**
    * รายการเบิกจากตู้ — อ่านจาก itemslotincabinet_detail (Sign = '-')
-   * HnCode = HN ผู้ป่วย, UserID = ผู้เบิก, DepID = แผนกที่ยืม
+   * HnCode = HN ผู้ป่วย, UserID = ผู้เบิก, DepID = แผนกย่อยที่ยืม
    */
   async getDispensedItemsFromSlotDetail(filters?: {
     keyword?: string;
@@ -4087,7 +4087,7 @@ export class MedicalSuppliesService {
       const whereClause = Prisma.join(sqlConditions, ' AND ');
       const cdOneJoin = this.buildDispensedItemsCabinetOneDeptJoin(filters);
 
-      // Get total count — โครงสร้างเดียวกับ main query; เชื่อม Division แถวเดียวต่อตู้ (ไม่คูณแถว)
+      // Get total count — โครงสร้างเดียวกับ main query; เชื่อม แผนก แถวเดียวต่อตู้ (ไม่คูณแถว)
       const countResult: any[] = await this.prisma.$queryRaw`
         SELECT COUNT(*) as total
         FROM itemstock ist
@@ -4511,7 +4511,7 @@ export class MedicalSuppliesService {
         }
       };
 
-      // Filter by departmentCode (รหัสแผนก = Department.ID)
+      // Filter by departmentCode (รหัสแผนกย่อย = Department.ID)
       if (filters?.departmentCode) {
         const di = parseInt(filters.departmentCode, 10);
         if (!Number.isNaN(di)) {
@@ -4609,7 +4609,7 @@ export class MedicalSuppliesService {
         },
       });
 
-      // ดึงชื่อแผนกจาก department (department_id = Department.ID)
+      // ดึงชื่อแผนกย่อยจาก department (department_id = Department.ID)
       const deptCodes = [...new Set(usageRecords.map((u) => u.department_id).filter((id): id is number => id != null))].map(
         String,
       );

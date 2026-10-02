@@ -2,7 +2,7 @@
 
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AppLayout from '@/components/AppLayout';
-import DivisionTab from '@/app/admin/management/cabinets/components/division-tab/DivisionTab';
+import DivisionTab from '@/app/admin/management/cabinets/components/division-tab/แผนกTab';
 
 export default function DepartmentManagementPage() {
   return (

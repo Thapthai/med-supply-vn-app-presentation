@@ -318,7 +318,7 @@ export class ItemStockController {
     return this.itemService.createItemStocksForPrint(body.lines);
   }
 
-  /** สร้าง itemstock จาก stock_id โดย map cabinet/department อัตโนมัติ (ไม่ต้องเลือก Division/ตู้) */
+  /** สร้าง itemstock จาก stock_id โดย map cabinet/department อัตโนมัติ (ไม่ต้องเลือกแผนก/ตู้) */
   @Post('for-print-by-stock')
   async createForPrintByStock(@Body() body: CreateItemStocksForPrintByStockDto) {
     return this.itemService.createItemStocksForPrintByStock(body.lines, body.department_id);
@@ -330,7 +330,7 @@ export class ItemStockController {
     return this.itemService.deleteItemStocksForPrint(body.rowIds);
   }
 
-  /** รายการยืมจาก itemslotincabinet_detail (IsBorrow) + ตู้จาก StockID + Division จาก cabinet→department */
+  /** รายการยืมจาก itemslotincabinet_detail (IsBorrow) + ตู้จาก StockID + แผนก จาก cabinet→department */
   @Get('borrow')
   async findBorrow(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,

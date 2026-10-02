@@ -2,7 +2,7 @@
 
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AppLayout from '@/components/AppLayout';
-import CabinetDivisionTab from '@/app/admin/management/cabinets/components/cabinet-division-tab/CabinetDivisionTab';
+import CabinetDivisionTab from '@/app/admin/management/cabinets/components/cabinet-division-tab/CabinetแผนกTab';
 
 export default function ItemStockDepartmentsPage() {
   return (

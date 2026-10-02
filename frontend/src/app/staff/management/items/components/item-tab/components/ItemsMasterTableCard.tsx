@@ -19,7 +19,7 @@ export interface ItemsMasterTableCardProps {
   total: number;
   totalPages: number;
   deptMap: Map<number, DeptRow>;
-  /** กรองเฉพาะ Division ที่เลือก (undefined = ทุก Division ที่สังกัด) */
+  /** กรองเฉพาะแผนกที่เลือก (undefined = ทุกแผนกที่สังกัด) */
   departmentFilter?: number;
   onEdit: (item: Item) => void;
   onDelete: (item: Item) => void;
@@ -42,12 +42,12 @@ export default function ItemsMasterTableCard({
   onPageChange,
 }: ItemsMasterTableCardProps) {
   // แสดงเฉพาะ "ทุกแผนก" (ไม่มีแผนกระบุ) และแผนกที่ผู้ใช้สังกัด (deptMap = แผนกที่ scope มาแล้ว)
-  // ถ้าเลือก Division เจาะจง → แสดงเฉพาะ item ของ Division นั้น (รวม "ทุกแผนก")
+  // ถ้าเลือกแผนก เจาะจง → แสดงเฉพาะ item ของ แผนก นั้น (รวม "ทุกแผนก")
   const visibleItems = useMemo(() => {
     const allowedIds = new Set(deptMap.keys());
     return items.filter((it) => {
       const ids = (it.department_ids ?? []).filter((n) => n != null && n > 0);
-      if (ids.length === 0) return true; // ทุกแผนก — ใช้ได้ทุก Division
+      if (ids.length === 0) return true; // ทุกแผนก — ใช้ได้ทุกแผนก
       if (!ids.some((id) => allowedIds.has(id))) return false;
       if (departmentFilter != null) return ids.includes(departmentFilter);
       return true;
@@ -58,7 +58,7 @@ export default function ItemsMasterTableCard({
   const visibleTotalPages = Math.max(1, Math.ceil(visibleTotal / itemsPerPage));
   const effectivePage = Math.min(Math.max(1, currentPage), visibleTotalPages);
 
-  // แสดงทุก Division ที่ item นั้นสังกัด (เพื่อให้ทราบว่า item อยู่แผนกไหนบ้าง)
+  // แสดงทุกแผนกที่ item นั้นสังกัด (เพื่อให้ทราบว่า item อยู่แผนกไหนบ้าง)
   const renderDivisionLabel = (it: Item): string => {
     const ids = (it.department_ids ?? []).filter((n) => n != null && n > 0);
     if (ids.length === 0) return 'ทุกแผนก';
@@ -127,7 +127,7 @@ export default function ItemsMasterTableCard({
                     <TableHead>รหัส Item</TableHead>
                     <TableHead className="min-w-[200px]">ชื่ออุปกรณ์</TableHead>
                     <TableHead>บาร์โค้ด</TableHead>
-                    <TableHead>Division</TableHead>
+                    <TableHead>แผนก</TableHead>
                     <TableHead>สถานะ</TableHead>
                     <TableHead>หน่วย</TableHead>
                     <TableHead>หน่วยการเบิก</TableHead>

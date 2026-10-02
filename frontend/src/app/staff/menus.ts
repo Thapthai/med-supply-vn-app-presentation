@@ -93,37 +93,37 @@ export const staffMenuItems = [
             {
                 name: 'สต๊อกอุปกรณ์ในตู้',
                 href: '/staff/items',
-                description: 'กรองแบบทั้งหมดเป็นค่าเริ่มต้น — แคบด้วย Division / ตู้ได้',
+                description: 'กรองแบบทั้งหมดเป็นค่าเริ่มต้น — แคบด้วย แผนก / ตู้ได้',
                 icon: Package,
             },
             {
                 name: 'อุปกรณ์ยืม',
                 href: '/staff/item-borrow',
-                description: 'รายการยืมจาก slot detail พร้อม Division ที่ยืม/ที่ตั้งตู้',
+                description: 'รายการยืมจาก slot detail พร้อมแผนกที่ยืม/ที่ตั้งตู้',
                 icon: BookMarked,
             },
             {
                 name: 'เบิกอุปกรณ์ให้หน่วยงาน',
                 href: '/staff/department-dispense',
-                description: 'เลือก Division → รายการเบิก → ตำแหน่ง → เอกสารควบคุมการเบิก',
+                description: 'เลือกแผนก → รายการเบิก → ตำแหน่ง → เอกสารควบคุมการเบิก',
                 icon: ClipboardList,
             },
             {
                 name: 'เบิกอุปกรณ์จากตู้',
                 href: '/staff/dispense-from-cabinet',
-                description: 'กรองแบบทั้งหมดเป็นค่าเริ่มต้น — แคบด้วย Division / ตู้ได้',
+                description: 'กรองแบบทั้งหมดเป็นค่าเริ่มต้น — แคบด้วย แผนก / ตู้ได้',
                 icon: FileBarChart,
             },
             {
                 name: 'เติมอุปกรณ์เข้าตู้',
                 href: '/staff/return-to-cabinet',
-                description: 'กรองแบบทั้งหมดเป็นค่าเริ่มต้น — แคบด้วย Division / ตู้ได้',
+                description: 'กรองแบบทั้งหมดเป็นค่าเริ่มต้น — แคบด้วย แผนก / ตู้ได้',
                 icon: FileBarChart,
             },
             {
                 name: 'บันทึกใช้อุปกรณ์กับคนไข้',
                 href: '/staff/medical-supplies',
-                description: 'ประวัติการเบิกจากตู้ SmartCabinet — Division เริ่มที่ทั้งหมด แคบลงได้',
+                description: 'ประวัติการเบิกจากตู้ SmartCabinet — แผนก เริ่มที่ทั้งหมด แคบลงได้',
                 icon: History,
             },
             {
@@ -136,7 +136,7 @@ export const staffMenuItems = [
             {
                 name: 'เปรียบเทียบตามเวชภัณฑ์',
                 href: '/staff/item-comparison',
-                description: 'เปรียบเทียบการเบิกกับการใช้งาน — Division เริ่มที่ทั้งหมด แคบลงได้',
+                description: 'เปรียบเทียบการเบิกกับการใช้งาน — แผนก เริ่มที่ทั้งหมด แคบลงได้',
                 icon: FileBarChart,
             },
 
@@ -181,10 +181,10 @@ export const staffMenuItems = [
                 description: 'กำหนดสิทธิ์การเข้าถึงเมนู Roles Staff',
             },
             // {
-            //     name: 'Cabinet - Division',
+            //     name: 'Cabinet - แผนก',
             //     href: '/staff/management/cabinet-departments',
             //     icon: Network,
-            //     description: 'จัดการตู้ Cabinet และเชื่อมโยงกับ Division — กรอง Division เริ่มที่ทั้งหมด',
+            //     description: 'จัดการตู้ Cabinet และเชื่อมโยงกับแผนก — กรอง แผนก เริ่มที่ทั้งหมด',
             // },
 
             {
@@ -206,10 +206,10 @@ export const staffMenuItems = [
             //     description: 'พิมพ์สติ๊กเกอร์ผ่านเครื่อง SATO (SBPL)',
             // },
             // {
-            //     name: 'จัดการ Division',
+            //     name: 'จัดการแผนก',
             //     href: '/staff/management/departments',
             //     icon: Building2,
-            //     description: 'ดู Division หลักและตั้งรหัส Division ย่อยจับคู่ Location คนไข้',
+            //     description: 'ดู แผนกและตั้งรหัสแผนกย่อยจับคู่ Location คนไข้',
             // },
 
             // {

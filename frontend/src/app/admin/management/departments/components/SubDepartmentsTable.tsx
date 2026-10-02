@@ -30,7 +30,7 @@ export default function SubDepartmentsTable({
             ? 'กำลังโหลด...'
             : totalLoaded === 0
               ? 'ยังไม่มีรหัส — กด «เพิ่มรหัส» จากตารางแผนกด้านบน หรือปุ่ม «เพิ่มรหัสแผนกย่อย»'
-              : `แสดง ${rows.length} รายการ${rows.length !== totalLoaded ? ` จากทั้งหมด ${totalLoaded}` : ''} · แต่ละรหัสผูกกับแผนกหลักหนึ่งแผนก`}
+              : `แสดง ${rows.length} รายการ${rows.length !== totalLoaded ? ` จากทั้งหมด ${totalLoaded}` : ''} · แต่ละรหัสผูกกับแผนกหนึ่งแผนก`}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -46,7 +46,7 @@ export default function SubDepartmentsTable({
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-14 text-center">ลำดับ</TableHead>
-                  <TableHead>แผนกหลัก</TableHead>
+                  <TableHead>แผนก</TableHead>
                   <TableHead>รหัส (code)</TableHead>
                   <TableHead>ชื่อ</TableHead>
                   <TableHead>รายละเอียด</TableHead>

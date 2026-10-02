@@ -72,7 +72,7 @@ export default function DashboardMappingsTable({ mappings, loading }: DashboardM
                     <TableRow className="border-b border-slate-200 bg-slate-100/80 hover:bg-slate-100/80">
                       <TableHead className="px-3 py-3.5 text-slate-600 sm:px-4 sm:py-4">ลำดับ</TableHead>
                       <TableHead className="px-3 py-3.5 text-slate-600 sm:px-4 sm:py-4">ชื่อตู้</TableHead>
-                      <TableHead className="px-3 py-3.5 text-slate-600 sm:px-4 sm:py-4">Division</TableHead>
+                      <TableHead className="px-3 py-3.5 text-slate-600 sm:px-4 sm:py-4">แผนก</TableHead>
                         {/* <TableHead className="px-3 py-3.5 text-center text-slate-600 sm:px-4 sm:py-4">
                           จำนวนอุปกรณ์
                         </TableHead> */}

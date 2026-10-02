@@ -15,7 +15,7 @@ export type DivisionPick = {
 };
 
 function deptLabel(d: Dept): string {
-  return d.DepName?.trim() || d.DepName2?.trim() || `Division #${d.ID}`;
+  return d.DepName?.trim() || d.DepName2?.trim() || `แผนก #${d.ID}`;
 }
 
 function uniqueIds(ids: string[]): string[] {
@@ -90,9 +90,9 @@ export default function CabinetDivisionPicker({
   return (
     <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3">
       <div>
-        <p className="text-sm font-medium text-slate-900">เชื่อมโยง Division</p>
+        <p className="text-sm font-medium text-slate-900">เชื่อมโยง แผนก</p>
         <p className="text-xs text-slate-500">
-          เลือกได้สูงสุด {MAX_ACTIVE_DIVISION_LINKS_PER_CABINET} แผนก ตู้ใหม่จะใช้ Division แรกช่วยสร้างรหัสตู้
+          เลือกได้สูงสุด {MAX_ACTIVE_DIVISION_LINKS_PER_CABINET} แผนก ตู้ใหม่จะใช้ แผนก แรกช่วยสร้างรหัสตู้
         </p>
       </div>
       <div className="space-y-2">
@@ -101,9 +101,9 @@ export default function CabinetDivisionPicker({
           return (
             <SearchableSelect
               key={`division-slot-${index}`}
-              label={index === 0 ? 'Division หลัก' : `Division ที่ ${index + 1}`}
+              label={index === 0 ? 'แผนก' : `แผนกที่ ${index + 1}`}
               placeholder="ค้นหาแล้วเลือกแผนก"
-              searchPlaceholder="ค้นหาชื่อ Division"
+              searchPlaceholder="ค้นหาชื่อแผนก"
               value={slot.id}
               onValueChange={(v) => setSlot(index, v)}
               options={options
@@ -132,7 +132,7 @@ export default function CabinetDivisionPicker({
           onClick={() => onChange([...values.filter((v) => v.id), { id: '', label: '' }])}
         >
           <Plus className="h-4 w-4" />
-          เพิ่ม Division
+          เพิ่ม แผนก
         </Button>
       ) : null}
       {filledCount === 0 ? (

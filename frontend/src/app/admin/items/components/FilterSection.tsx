@@ -221,7 +221,7 @@ export default function FilterSection({
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-slate-900">ค้นหาและกรอง</p>
             <p className="text-xs text-slate-500">
-              ค้นจากรหัส/ชื่อเวชภัณฑ์ · เลือก Division และตู้ Cabinet
+              ค้นจากรหัส/ชื่อเวชภัณฑ์ · เลือกแผนก และตู้ Cabinet
             </p>
           </div>
         </div>
@@ -251,8 +251,8 @@ export default function FilterSection({
 
           <div className="grid gap-3 md:grid-cols-2">
             <SearchableSelect
-              label="Division"
-              placeholder="— เลือก Division —"
+              label="แผนก"
+              placeholder="— เลือกแผนก —"
               value={formFilters.departmentId}
               onValueChange={(value) => {
                 setFormFilters({
@@ -271,12 +271,12 @@ export default function FilterSection({
               ]}
               loading={loadingDepartments}
               onSearch={loadDepartments}
-              searchPlaceholder="ค้นหา Division..."
+              searchPlaceholder="ค้นหาแผนก..."
             />
 
             <SearchableSelect
               label="ตู้ Cabinet"
-              placeholder={formFilters.departmentId ? "เลือกตู้ Cabinet" : "กรุณาเลือก Division ก่อน"}
+              placeholder={formFilters.departmentId ? "เลือกตู้ Cabinet" : "กรุณาเลือกแผนกก่อน"}
               value={formFilters.cabinetId}
               onValueChange={(value) => setFormFilters({ ...formFilters, cabinetId: value })}
               options={[
@@ -292,7 +292,7 @@ export default function FilterSection({
                 void resolveCabinets(formFilters.departmentId, searchKeyword);
               }}
               searchPlaceholder={
-                formFilters.departmentId ? "ค้นหารหัสหรือชื่อตู้..." : "กรุณาเลือก Division ก่อน"
+                formFilters.departmentId ? "ค้นหารหัสหรือชื่อตู้..." : "กรุณาเลือกแผนกก่อน"
               }
               disabled={!formFilters.departmentId}
             />
@@ -329,7 +329,7 @@ export default function FilterSection({
             ) : null}
             {appliedFilters.departmentId ? (
               <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-900">
-                Division: {appliedDept?.DepName || appliedFilters.departmentId}
+                แผนก: {appliedDept?.DepName || appliedFilters.departmentId}
               </span>
             ) : null}
             {appliedFilters.cabinetId ? (

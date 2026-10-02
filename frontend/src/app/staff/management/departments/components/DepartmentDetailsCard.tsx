@@ -79,7 +79,7 @@ export default function DepartmentDetailsCard({
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" onClick={onEditMain}>
               <Pencil className="h-4 w-4 mr-1" />
-              แก้ไขแผนกหลัก
+              แก้ไขแผนก
             </Button>
             <Button size="sm" className="bg-gradient-to-r from-cyan-500 to-teal-600" onClick={onAdd}>
               <Plus className="h-4 w-4 mr-1" />

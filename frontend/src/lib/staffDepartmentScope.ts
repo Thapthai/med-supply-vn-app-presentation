@@ -95,7 +95,7 @@ export async function getStaffRestrictedDepartmentsFromMe(): Promise<StaffMeDepa
 }
 
 /**
- * รายการ Division สำหรับ dropdown/filter ทุกหน้า Staff
+ * รายการ แผนก สำหรับ dropdown/filter ทุกหน้า Staff
  * อิงจาก GET /staff/me/departments เท่านั้น (user → app_staff_permission_departments)
  * ไม่ดึง GET /departments ทั้งโรงพยาบาล
  */
@@ -104,7 +104,7 @@ export async function fetchStaffDepartmentsForFilter(opts?: {
   page?: number;
   limit?: number;
   allowedDepartmentIds?: number[] | null | undefined;
-  /** เฉพาะ Division ที่มีตู้ Cabinet ผูก ACTIVE */
+  /** เฉพาะแผนกที่มีตู้ Cabinet ผูก ACTIVE */
   withCabinet?: boolean;
 }): Promise<StaffMeDepartmentRow[]> {
   const rawKw = opts?.keyword?.trim() ?? '';

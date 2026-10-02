@@ -36,7 +36,7 @@ export class CabinetUsersService {
 
   /**
    * ดึง `stock_id` จาก `app_cabinets` ผ่านแถว `app_cabinet_departments` (cabinet_id = PK ตู้)
-   * ใช้เมื่อมี `cabinet_id` หรือเมื่อกรอง Division แล้วต้องการ stock_id ของตู้ใน mapping
+   * ใช้เมื่อมี `cabinet_id` หรือเมื่อกรอง แผนก แล้วต้องการ stock_id ของตู้ใน mapping
    */
   private async stockIdFromActiveCabinetDepartment(opts: {
     cabinetPk: number;
@@ -178,7 +178,7 @@ export class CabinetUsersService {
       return { success: true, data: [], total: 0, page, limit, lastPage: 1 };
     }
 
-    /** Staff ที่ role จำกัดแผนก — ต้องเลือก Division ก่อน (ไม่ดึงทั้ง role อัตโนมัติ) */
+    /** Staff ที่ role จำกัดแผนก — ต้องเลือกแผนกก่อน (ไม่ดึงทั้ง role อัตโนมัติ) */
     if (allowedDepartmentIds != null && allowedDepartmentIds.length > 0 && deptId == null) {
       return { success: true, data: [], total: 0, page, limit, lastPage: 1 };
     }

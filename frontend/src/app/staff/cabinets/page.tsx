@@ -136,7 +136,7 @@ export default function CabinetsPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">จัดการตู้ Cabinet</h1>
-            <p className="text-sm text-gray-500">แสดงตู้ตามสิทธิ์ Division ของ role</p>
+            <p className="text-sm text-gray-500">แสดงตู้ตามสิทธิ์แผนก ของ role</p>
           </div>
         </div>
 

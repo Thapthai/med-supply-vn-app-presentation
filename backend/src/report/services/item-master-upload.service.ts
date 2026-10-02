@@ -71,7 +71,7 @@ const COLUMNS: TemplateColumn[] = [
     header: 'แผนกที่ใช้ 1',
     width: 24,
     dropdown: 'department',
-    note: 'แผนก/Division ที่ใช้ Item นี้ — เลือกจากรายการ (เว้นว่าง = ทุกแผนก)',
+    note: 'แผนกที่ใช้ Item นี้ — เลือกจากรายการ (เว้นว่าง = ทุกแผนก)',
   },
   {
     key: 'department2',
@@ -204,7 +204,7 @@ export class ItemMasterUploadService {
         if (!inScope) continue;
       }
 
-      // แสดงทุกแผนกที่ item นั้นสังกัด (ให้ตรงกับคอลัมน์ Division บนหน้าเว็บ)
+      // แสดงทุกแผนกที่ item นั้นสังกัด (ให้ตรงกับคอลัมน์ แผนก บนหน้าเว็บ)
       const departments = ids
         .map((id) => deptNameById.get(id))
         .filter((n): n is string => !!n)

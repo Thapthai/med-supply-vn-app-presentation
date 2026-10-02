@@ -148,7 +148,7 @@ export default function DispensedTable({
                     </TableHead>
                     <TableHead>วันที่เบิก</TableHead>
                     <TableHead>ตู้</TableHead>
-                    <TableHead>Division</TableHead>
+                    <TableHead>แผนก</TableHead>
                     <TableHead>ชื่อผู้เบิก</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -233,7 +233,7 @@ export default function DispensedTable({
                                           </span>
                                         </TableHead>
                                         <TableHead>วันที่เบิก</TableHead>
-                                        <TableHead>Division</TableHead>
+                                        <TableHead>แผนก</TableHead>
                                       </TableRow>
                                     </TableHeader>
                                     <TableBody>

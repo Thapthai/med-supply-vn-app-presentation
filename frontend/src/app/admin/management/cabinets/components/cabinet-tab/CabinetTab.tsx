@@ -15,7 +15,7 @@ import EditCabinetDialog from '../EditCabinetDialog';
 import DeleteCabinetDialog from '../DeleteCabinetDialog';
 import CabinetsTable from '../CabinetsTable';
 import CabinetsSearchCard from '../CabinetsSearchCard';
-import DivisionTab from '../division-tab/DivisionTab';
+import DivisionTab from '../division-tab/แผนกTab';
 import { normalizeCabinetType, type CabinetRow, type CabinetTypeCode } from '../cabinetTypes';
 
 type MappingRow = {
@@ -238,8 +238,8 @@ export default function CabinetTab() {
         <DialogContent className="flex max-h-[90vh] max-w-6xl flex-col gap-0 overflow-hidden p-0">
           <div className="border-b px-6 py-4">
             <DialogHeader>
-              <DialogTitle>จัดการ Division</DialogTitle>
-              <DialogDescription>เพิ่ม แก้ไข Division และรหัสแผนกย่อย โดยไม่ต้องสลับแท็บ</DialogDescription>
+              <DialogTitle>จัดการแผนก</DialogTitle>
+              <DialogDescription>เพิ่ม แก้ไข แผนก และรหัสแผนกย่อย โดยไม่ต้องสลับแท็บ</DialogDescription>
             </DialogHeader>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">

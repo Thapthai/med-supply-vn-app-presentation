@@ -883,7 +883,7 @@ export class ItemService {
         if (!linked) {
           return {
             success: false,
-            message: 'Division ที่เลือกไม่ได้ผูก ACTIVE กับตู้นี้',
+            message: 'แผนกที่เลือกไม่ได้ผูก ACTIVE กับตู้นี้',
             data: [],
             total: 0,
             page,
@@ -1807,7 +1807,7 @@ export class ItemService {
   /**
    * รายการ ItemSlotInCabinetDetail ที่ IsBorrow = true
    * DepID → department.ID (แผนกที่ยืม)
-   * StockID → app_cabinets.stock_id → app_cabinet_departments → department(s) (Division ที่ตั้งตู้ / ที่อยู่)
+   * StockID → app_cabinets.stock_id → app_cabinet_departments → department(s) (แผนกที่ตั้งตู้ / ที่อยู่)
    */
   async findBorrowItemStocks(params: {
     page?: number;
@@ -2022,7 +2022,7 @@ export class ItemService {
               cabinet_code: cab.cabinet_code,
             }
             : null,
-          /** Division ที่ตั้งตู้ (StockID → ตู้ → แผนกที่ผูกตู้) */
+          /** แผนกที่ตั้งตู้ (StockID → ตู้ → แผนกที่ผูกตู้) */
           cabinetDivisions,
         };
       });
@@ -2475,7 +2475,7 @@ export class ItemService {
         if (!link) {
           return {
             success: false,
-            message: `Division ไม่ได้ผูกกับตู้นี้ (department_id=${line.department_id}, cabinet_id=${line.cabinet_id})`,
+            message: `แผนก ไม่ได้ผูกกับตู้นี้ (department_id=${line.department_id}, cabinet_id=${line.cabinet_id})`,
           };
         }
 
@@ -2621,7 +2621,7 @@ export class ItemService {
             if (!deptLink?.department_id) {
               return {
                 success: false,
-                message: `ไม่พบ Division ID ${deptIdPrefer} ที่ผูก ACTIVE กับตู้ stock_id=${stockId}`,
+                message: `ไม่พบแผนก ID ${deptIdPrefer} ที่ผูก ACTIVE กับตู้ stock_id=${stockId}`,
               };
             }
             finalDeptId = deptLink.department_id;
@@ -2638,7 +2638,7 @@ export class ItemService {
             if (!activeDept?.department_id) {
               return {
                 success: false,
-                message: `ไม่พบ Division (ACTIVE) ของตู้ stock_id=${stockId}`,
+                message: `ไม่พบแผนก (ACTIVE) ของตู้ stock_id=${stockId}`,
               };
             }
             finalDeptId = activeDept.department_id;

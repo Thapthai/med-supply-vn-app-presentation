@@ -135,7 +135,7 @@ export function UsageItemsTable({
                     <TableHead>HN</TableHead>
                     <TableHead>ชื่อคนไข้</TableHead>
                     <TableHead>EN</TableHead>
-                    <TableHead>แผนก</TableHead>
+                    <TableHead>แผนกย่อย</TableHead>
                     <TableHead>วันที่ใช้</TableHead>
                     <TableHead>สถานะ</TableHead>
                     <TableHead className="text-right">จำนวนใช้</TableHead>

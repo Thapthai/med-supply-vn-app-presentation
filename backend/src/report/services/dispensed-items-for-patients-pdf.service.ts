@@ -129,7 +129,7 @@ export class DispensedItemsForPatientsPdfService {
           { label: 'วันที่เริ่ม', value: formatFilterDateOnly(filters.startDate) },
           { label: 'วันที่สิ้นสุด', value: formatFilterDateOnly(filters.endDate) },
           {
-            label: 'Division',
+            label: 'แผนก',
             value: (filters as { departmentName?: string }).departmentName ?? filters.departmentCode ?? 'ทั้งหมด',
           },
           {

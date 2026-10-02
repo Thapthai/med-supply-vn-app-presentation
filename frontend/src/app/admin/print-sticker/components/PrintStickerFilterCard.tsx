@@ -96,13 +96,13 @@ export default function PrintStickerFilterCard({
         >
           <div className="mb-3 flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between">
             <p className="text-sm font-semibold text-slate-900">
-              {mode === 'auto' ? 'ระบุ Division และตู้' : 'กรองตู้'}
+              {mode === 'auto' ? 'ระบุ แผนก และตู้' : 'กรองตู้'}
             </p>
           </div>
           <div className="grid gap-4 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
             <SearchableSelect
-              label="Division"
-              placeholder={mode === 'manual' ? 'ไม่เลือก = โหลด Item ใช้งาน' : 'เลือก Division'}
+              label="แผนก"
+              placeholder={mode === 'manual' ? 'ไม่เลือก = โหลด Item ใช้งาน' : 'เลือกแผนก'}
               value={departmentId}
               required={mode === 'auto'}
               allowClear={mode === 'manual'}
@@ -115,7 +115,7 @@ export default function PrintStickerFilterCard({
             <SearchableSelect
               label="ตู้"
               placeholder={
-                departmentId ? 'เลือกตู้' : mode === 'manual' ? 'เลือก Division' : 'เลือก Division ก่อน'
+                departmentId ? 'เลือกตู้' : mode === 'manual' ? 'เลือกแผนก' : 'เลือกแผนกก่อน'
               }
               value={cabinetId}
               required={mode === 'auto'}
@@ -139,7 +139,7 @@ export default function PrintStickerFilterCard({
           </div>
           {manualFilterIncomplete && (
             <p className="mt-2 text-xs font-medium text-amber-900">
-              เลือก Division อยู่ — เลือกตู้เพื่อโหลดรายการในตู้ หรือค้นหา Item ทั้งระบบได้โดยไม่ต้องเลือกตู้
+              เลือกแผนก อยู่ — เลือกตู้เพื่อโหลดรายการในตู้ หรือค้นหา Item ทั้งระบบได้โดยไม่ต้องเลือกตู้
             </p>
           )}
         </div>

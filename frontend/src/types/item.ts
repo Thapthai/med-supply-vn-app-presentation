@@ -289,7 +289,7 @@ export interface GetItemsQuery {
   item_status?: number;
   itemtypeID?: number;
   warehouseID?: number;
-  /** Division (แผนกหลัก) */
+  /** แผนก (แผนก) */
   department_id?: number;
   cabinet_id?: number;
   status?: string;

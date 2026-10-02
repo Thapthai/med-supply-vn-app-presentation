@@ -28,7 +28,7 @@ export class MedicalSupplySubDepartmentService {
 
   /**
    * @param allowedDepartmentIds null = ไม่จำกัด (admin หรือ staff role ไม่มีแถว permission)
-   * number[] = เฉพาะแผนกหลักเหล่านี้
+   * number[] = เฉพาะแผนกเหล่านี้
    */
   async findAll(allowedDepartmentIds?: number[] | null) {
     try {

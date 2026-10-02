@@ -43,8 +43,8 @@ function cabinetLabel(mapping: CabinetDepartmentMapping | null | undefined): str
 }
 
 function departmentLabel(mapping: CabinetDepartmentMapping | null | undefined): string {
-  if (!mapping?.department) return mapping ? `Division #${mapping.department_id}` : "—";
-  return mapping.department.DepName || mapping.department.DepName2 || `Division #${mapping.department_id}`;
+  if (!mapping?.department) return mapping ? `แผนก #${mapping.department_id}` : "—";
+  return mapping.department.DepName || mapping.department.DepName2 || `แผนก #${mapping.department_id}`;
 }
 
 export default function DeleteMappingDialog({
@@ -73,7 +73,7 @@ export default function DeleteMappingDialog({
 
         <div className="py-4">
           <p className="text-sm text-gray-600">
-            คุณแน่ใจหรือไม่ที่จะลบการเชื่อมโยงระหว่างตู้และ Division นี้?
+            คุณแน่ใจหรือไม่ที่จะลบการเชื่อมโยงระหว่างตู้และแผนก นี้?
           </p>
           {selectedMapping && (
             <div className="mt-4 space-y-2 rounded-lg bg-gray-50 p-4">
@@ -82,7 +82,7 @@ export default function DeleteMappingDialog({
                 <span className="font-medium text-right">{cabinetLabel(selectedMapping)}</span>
               </div>
               <div className="flex justify-between gap-4 text-sm">
-                <span className="text-gray-500 shrink-0">Division</span>
+                <span className="text-gray-500 shrink-0">แผนก</span>
                 <span className="font-medium text-right">{departmentLabel(selectedMapping)}</span>
               </div>
               <div className="flex justify-between gap-4 text-sm">

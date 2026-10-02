@@ -123,7 +123,7 @@ export default function DispensedTable({
                       <span className="block text-xs font-normal text-muted-foreground">หน่วยการเบิก</span>
                     </TableHead>
                     <TableHead>วันที่เบิก</TableHead>
-                    <TableHead>Division</TableHead>
+                    <TableHead>แผนก</TableHead>
                     <TableHead>ชื่อผู้เบิก</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -203,8 +203,8 @@ export default function DispensedTable({
                                           </span>
                                         </TableHead>
                                         <TableHead>วันที่เบิก</TableHead>
-                                        <TableHead>Division (ที่ตั้งตู้)</TableHead>
-                                        <TableHead className="min-w-[120px]">Division ที่ยืม</TableHead>
+                                        <TableHead>แผนก (ที่ตั้งตู้)</TableHead>
+                                        <TableHead className="min-w-[120px]">แผนกที่ยืม</TableHead>
                                         <TableHead className="w-[88px] text-center">หมายเหตุ</TableHead>
                                       </TableRow>
                                     </TableHeader>

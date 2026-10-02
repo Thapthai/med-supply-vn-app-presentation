@@ -51,7 +51,7 @@ export default function DispensedVsUsageChartCard({
               <p className="text-lg font-bold leading-tight">{cabinets}</p>
             </div>
             <div className="rounded-lg bg-white/25 px-3 py-1.5">
-              <p className="text-[11px] font-medium text-white/80">Division</p>
+              <p className="text-[11px] font-medium text-white/80">แผนก</p>
               <p className="text-lg font-bold leading-tight">{departments}</p>
             </div>
           </div>

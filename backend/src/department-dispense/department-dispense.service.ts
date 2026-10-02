@@ -46,14 +46,14 @@ export class DepartmentDispenseService {
 
   /**
    * รายการที่ mapping ตำแหน่งแล้ว (ไม่ต้องผูก Item กับหน่วยงาน)
-   * departmentId ใช้ตรวจว่ามี Division และแนบกลับใน response
+   * departmentId ใช้ตรวจว่ามีแผนก และแนบกลับใน response
    */
   async listDepartmentItems(departmentId: number, keyword?: string) {
     const dept = await this.prisma.department.findUnique({
       where: { ID: departmentId },
       select: { ID: true, DepName: true, DepName2: true, RefDepID: true },
     });
-    if (!dept) throw new NotFoundException('ไม่พบ Division');
+    if (!dept) throw new NotFoundException('ไม่พบแผนก');
 
     const kw = keyword?.trim();
     const itemWhere: Prisma.ItemWhereInput = {
@@ -158,7 +158,7 @@ export class DepartmentDispenseService {
       where: { ID: dto.department_id },
       select: { ID: true },
     });
-    if (!dept) throw new NotFoundException('ไม่พบ Division');
+    if (!dept) throw new NotFoundException('ไม่พบแผนก');
 
     const lines = dto.lines ?? [];
     if (lines.length === 0) {

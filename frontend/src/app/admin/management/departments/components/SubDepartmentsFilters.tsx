@@ -60,7 +60,7 @@ export default function SubDepartmentsFilters({
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-slate-900">ค้นหาและกรอง</p>
             <p className="text-xs text-slate-500">
-              ค้นหา Division หรือรหัสแผนกย่อย (code, ชื่อ, รายละเอียด)
+              ค้นหาแผนก หรือรหัสแผนกย่อย (code, ชื่อ, รายละเอียด)
             </p>
           </div>
         </div>
@@ -68,7 +68,7 @@ export default function SubDepartmentsFilters({
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_160px] lg:items-end">
           <div className="space-y-1.5">
             <label htmlFor="dept-keyword" className="text-xs font-medium text-slate-600">
-              ค้นหา Division
+              ค้นหาแผนก
             </label>
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -139,7 +139,7 @@ export default function SubDepartmentsFilters({
             <span className="text-xs font-medium text-slate-500">กำลังกรอง:</span>
             {activeDeptKeyword.trim() ? (
               <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-900">
-                Division: {activeDeptKeyword.trim()}
+                แผนก: {activeDeptKeyword.trim()}
               </span>
             ) : null}
             {activeSubKeyword.trim() ? (

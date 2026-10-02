@@ -160,8 +160,8 @@ export default function EditMappingDialog({
           />
 
           <SearchableSelect
-            label="Division"
-            placeholder="เลือก Division"
+            label="แผนก"
+            placeholder="เลือกแผนก"
             value={formData.department_id}
             onValueChange={(value) => setFormData({ ...formData, department_id: value })}
             options={departments.map((dept) => ({
@@ -172,7 +172,7 @@ export default function EditMappingDialog({
             loading={loadingDepartments}
             required
             onSearch={loadDepartments}
-            searchPlaceholder="ค้นหาชื่อ Division..."
+            searchPlaceholder="ค้นหาชื่อแผนก..."
             initialDisplay={
               selectedMapping?.department
                 ? {

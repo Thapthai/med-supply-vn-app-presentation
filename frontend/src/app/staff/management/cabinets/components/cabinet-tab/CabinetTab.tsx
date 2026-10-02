@@ -128,7 +128,7 @@ export default function CabinetTab() {
         </div>
         <div>
           <h2 className="text-xl font-bold text-gray-900">จัดการตู้ Cabinet</h2>
-          <p className="text-sm text-gray-500">แสดงตู้ตามสิทธิ์ Division ของคุณ</p>
+          <p className="text-sm text-gray-500">แสดงตู้ตามสิทธิ์แผนก ของคุณ</p>
         </div>
       </div>
 

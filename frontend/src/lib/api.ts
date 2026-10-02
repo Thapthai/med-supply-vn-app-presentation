@@ -1991,7 +1991,7 @@ export const staffRolePermissionApi = {
   },
 };
 
-/** จำกัดแผนกหลักต่อผู้ใช้ Staff — ไม่มีแถว = ไม่จำกัด */
+/** จำกัดแผนกต่อผู้ใช้ Staff — ไม่มีแถว = ไม่จำกัด */
 export const staffPermissionDepartmentApi = {
   getByUser: async (params: { user_id: number }): Promise<{
     success?: boolean;
@@ -2106,7 +2106,7 @@ export const categoriesApi = {
   },
 };
 
-/** Master แผนกย่อย (เช่น emergency-opd) ต่อแผนกหลัก — backend รองรับทั้ง /medical-supply-sub-departments และ /medical-supply-usage-types */
+/** Master แผนกย่อย (เช่น emergency-opd) ต่อแผนก — backend รองรับทั้ง /medical-supply-sub-departments และ /medical-supply-usage-types */
 export const medicalSupplySubDepartmentsApi = {
   getAll: async (): Promise<{
     success: boolean;
@@ -2221,7 +2221,7 @@ export const itemStockApi = {
     return response.data;
   },
 
-  /** รายการยืมจาก ItemSlotInCabinetDetail (IsBorrow) + ตู้ (StockID) + Division(s) */
+  /** รายการยืมจาก ItemSlotInCabinetDetail (IsBorrow) + ตู้ (StockID) + แผนก(s) */
   getBorrowList: async (params?: {
     page?: number;
     limit?: number;

@@ -400,7 +400,7 @@ export function ComparisonTable({
                                 HN/EN :<br /> {usage.patient_hn} <br /> {usage.patient_en}
                               </TableCell>
                               <TableCell className="text-sm text-gray-800">
-                                แผนก: {usage.department_name || usage.department_code || '-'}
+                                แผนกย่อย: {usage.department_name || usage.department_code || '-'}
                               </TableCell>
                               <TableCell className="text-sm text-gray-600">
                                 {usage.created_at ? formatUtcDateTime(String(usage.created_at)) : '-'}

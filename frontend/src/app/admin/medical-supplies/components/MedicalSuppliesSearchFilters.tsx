@@ -108,14 +108,14 @@ export default function MedicalSuppliesSearchFilters({
     activeFilters.endDate !== today;
 
   const divisionTriggerLabel = () => {
-    if (!formFilters.departmentCode) return 'เลือก Division...';
+    if (!formFilters.departmentCode) return 'เลือกแผนก...';
     const d = departments.find((x) => String(x.ID) === formFilters.departmentCode);
-    return d?.DepName || d?.DepName2 || `Division ${formFilters.departmentCode}`;
+    return d?.DepName || d?.DepName2 || `แผนก ${formFilters.departmentCode}`;
   };
 
   const subDepartmentTriggerLabel = () => {
     const code = formFilters.usageType?.trim();
-    if (!code) return 'เลือกแผนก ...';
+    if (!code) return 'เลือกแผนกย่อย ...';
     const sub = subDepartments.find((s) => s.code === code);
     if (sub) {
       const n = sub.name?.trim();
@@ -190,7 +190,7 @@ export default function MedicalSuppliesSearchFilters({
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div className="min-w-0 space-y-1.5">
-              <span className="text-xs font-medium text-slate-600">Division</span>
+              <span className="text-xs font-medium text-slate-600">แผนก</span>
               <DropdownMenu open={departmentDropdownOpen} onOpenChange={setDepartmentDropdownOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className={dropdownTriggerClass} type="button">
@@ -204,7 +204,7 @@ export default function MedicalSuppliesSearchFilters({
                 >
                   <div className="px-2 pb-2">
                     <Input
-                      placeholder="ค้นหา Division..."
+                      placeholder="ค้นหาแผนก..."
                       value={departmentSearch}
                       onChange={(e) => setDepartmentSearch(e.target.value)}
                       className="h-8"
@@ -221,7 +221,7 @@ export default function MedicalSuppliesSearchFilters({
                         setDepartmentSearch('');
                       }}
                     >
-                      -- ทุก Division --
+                      -- ทุกแผนก --
                     </button>
                     {filteredDepartments.map((dept) => (
                       <button
@@ -243,7 +243,7 @@ export default function MedicalSuppliesSearchFilters({
             </div>
 
             <div className="min-w-0 space-y-1.5">
-              <span className="text-xs font-medium text-slate-600">แผนก</span>
+              <span className="text-xs font-medium text-slate-600">แผนกย่อย</span>
               <DropdownMenu open={subDepartmentDropdownOpen} onOpenChange={setSubDepartmentDropdownOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -262,7 +262,7 @@ export default function MedicalSuppliesSearchFilters({
                 >
                   <div className="px-2 pb-2">
                     <Input
-                      placeholder="ค้นหารหัสหรือชื่อแผนก ..."
+                      placeholder="ค้นหารหัสหรือชื่อแผนกย่อย ..."
                       value={subDepartmentSearch}
                       onChange={(e) => setSubDepartmentSearch(e.target.value)}
                       className="h-8"
@@ -283,7 +283,7 @@ export default function MedicalSuppliesSearchFilters({
                     </button>
                     {!hasMainDepartment ? (
                       <div className="px-2 py-3 text-center text-xs text-muted-foreground">
-                        เลือกแผนก (Division) ก่อน
+                        เลือกแผนก (แผนก) ก่อน
                       </div>
                     ) : filteredSubDepartments.length === 0 ? (
                       <div className="px-2 py-3 text-center text-xs text-muted-foreground">ไม่พบรายการ</div>
@@ -390,12 +390,12 @@ export default function MedicalSuppliesSearchFilters({
             ) : null}
             {activeFilters.departmentCode ? (
               <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-900">
-                Division: {appliedDept?.DepName || activeFilters.departmentCode}
+                แผนก: {appliedDept?.DepName || activeFilters.departmentCode}
               </span>
             ) : null}
             {activeFilters.usageType ? (
               <span className="inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-900">
-                แผนก: {appliedSubDept?.code || activeFilters.usageType}
+                แผนกย่อย: {appliedSubDept?.code || activeFilters.usageType}
               </span>
             ) : null}
             <Button

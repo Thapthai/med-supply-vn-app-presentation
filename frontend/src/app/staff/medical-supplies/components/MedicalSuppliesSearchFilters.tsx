@@ -119,18 +119,18 @@ export default function MedicalSuppliesSearchFilters({
     if (!formFilters.departmentCode?.trim()) {
       if (canPickAllRoleDepartments) {
         return roleScopeDivisionSummary
-          ? `ทั้งหมด · ${roleScopeDivisionSummary}`
+          ? `ทั้งหมด · ${roleScopeแผนกSummary}`
           : "ทั้งหมด (ตาม role)";
       }
-      return "เลือก Division (บังคับ)";
+      return "เลือกแผนก (บังคับ)";
     }
     const d = departments.find((x) => String(x.ID) === formFilters.departmentCode);
-    return d?.DepName || d?.DepName2 || `Division ${formFilters.departmentCode}`;
+    return d?.DepName || d?.DepName2 || `แผนก ${formFilters.departmentCode}`;
   };
 
   const subDepartmentTriggerLabel = () => {
     const code = formFilters.usageType?.trim();
-    if (!code) return "เลือกแผนก ...";
+    if (!code) return "เลือกแผนกย่อย ...";
     const sub = subDepartmentsMaster.find((s) => s.code === code);
     if (sub) {
       const n = sub.name?.trim();
@@ -142,7 +142,7 @@ export default function MedicalSuppliesSearchFilters({
   const loadDepartments = useCallback(async (keyword?: string) => {
     try {
       setLoadingDepartments(true);
-      /** ref ยังเป็น undefined ได้ถ้า user เปิดค้นหา Division ก่อน effect แรกเสร็จ — โหลด scope ก่อน */
+      /** ref ยังเป็น undefined ได้ถ้า user เปิดค้นหาแผนก ก่อน effect แรกเสร็จ — โหลด scope ก่อน */
       let allowed = allowedDepartmentIdsRef.current;
       if (allowed === undefined) {
         allowed = await getStaffAllowedDepartmentIds();
@@ -202,7 +202,7 @@ export default function MedicalSuppliesSearchFilters({
       const roleScopeAll =
         Array.isArray(allowed) && allowed.length > 0 && !formFilters.departmentCode?.trim();
       if (!formFilters.departmentCode?.trim() && !roleScopeAll) {
-        toast.error("กรุณาเลือก Division ก่อนค้นหา (หรือเลือกทั้งหมดเฉพาะเมื่อ role จำกัดแผนก)");
+        toast.error("กรุณาเลือกแผนกก่อนค้นหา (หรือเลือกทั้งหมดเฉพาะเมื่อ role จำกัดแผนก)");
         return;
       }
     }
@@ -287,7 +287,7 @@ export default function MedicalSuppliesSearchFilters({
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div className="min-w-0 space-y-1.5">
-              <Label className="text-xs font-medium text-slate-600">Division</Label>
+              <Label className="text-xs font-medium text-slate-600">แผนก</Label>
               <DropdownMenu open={departmentDropdownOpen} onOpenChange={setDepartmentDropdownOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -306,7 +306,7 @@ export default function MedicalSuppliesSearchFilters({
               >
                 <div className="px-2 pb-2">
                   <Input
-                    placeholder="ค้นหา Division..."
+                    placeholder="ค้นหาแผนก..."
                     value={departmentSearch}
                     onChange={(e) => {
                       setDepartmentSearch(e.target.value);
@@ -328,7 +328,7 @@ export default function MedicalSuppliesSearchFilters({
                         setDepartmentSearch("");
                       }}
                     >
-                      -- ทุก Division --
+                      -- ทุกแผนก --
                       {roleScopeDivisionSummary ? (
                         <span className="mt-0.5 block text-xs text-muted-foreground truncate">
                           {roleScopeDivisionSummary}
@@ -363,7 +363,7 @@ export default function MedicalSuppliesSearchFilters({
           </div>
 
           <div className="min-w-0 space-y-1.5">
-            <Label className="text-xs font-medium text-slate-600">แผนก</Label>
+            <Label className="text-xs font-medium text-slate-600">แผนกย่อย</Label>
             <DropdownMenu open={subDepartmentDropdownOpen} onOpenChange={setSubDepartmentDropdownOpen}>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -382,7 +382,7 @@ export default function MedicalSuppliesSearchFilters({
               >
                 <div className="px-2 pb-2">
                   <Input
-                    placeholder="ค้นหารหัสหรือชื่อแผนก ..."
+                    placeholder="ค้นหารหัสหรือชื่อแผนกย่อย ..."
                     value={subDepartmentSearch}
                     onChange={(e) => setSubDepartmentSearch(e.target.value)}
                     className="h-8"
@@ -403,7 +403,7 @@ export default function MedicalSuppliesSearchFilters({
                   </button>
                   {!hasMainDepartment ? (
                     <div className="px-2 py-3 text-center text-xs text-muted-foreground">
-                      เลือกแผนก (Division) ก่อน
+                      เลือกแผนก (แผนก) ก่อน
                     </div>
                   ) : filteredSubDepartments.length === 0 ? (
                     <div className="px-2 py-3 text-center text-xs text-muted-foreground">ไม่พบรายการ</div>
@@ -510,12 +510,12 @@ export default function MedicalSuppliesSearchFilters({
             ) : null}
             {activeFilters.departmentCode ? (
               <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-900">
-                Division: {appliedDept?.DepName || activeFilters.departmentCode}
+                แผนก: {appliedDept?.DepName || activeFilters.departmentCode}
               </span>
             ) : null}
             {activeFilters.usageType ? (
               <span className="inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-900">
-                แผนก: {appliedSubDept?.code || activeFilters.usageType}
+                แผนกย่อย: {appliedSubDept?.code || activeFilters.usageType}
               </span>
             ) : null}
             <Button

@@ -69,7 +69,7 @@ export class ItemBorrowReportExcelService {
     worksheet.getRow(3).height = 20;
 
     const filters = data.filters ?? {};
-    const filterRow1Labels = ['ค้นหา', 'Division (ที่ตั้งตู้)', 'ตู้ Cabinet'];
+    const filterRow1Labels = ['ค้นหา', 'แผนก (ที่ตั้งตู้)', 'ตู้ Cabinet'];
     const filterRow1Values = [
       filters.keyword?.trim() ? filters.keyword.trim() : 'ทั้งหมด',
       filters.departmentName ?? (filters.departmentId ? filters.departmentId : 'ทั้งหมด'),
@@ -99,7 +99,7 @@ export class ItemBorrowReportExcelService {
     });
     worksheet.getRow(4).height = 20;
 
-    const filterRow2Labels = ['Division ที่ยืม', 'วันที่เริ่ม', 'วันที่สิ้นสุด'];
+    const filterRow2Labels = ['แผนกที่ยืม', 'วันที่เริ่ม', 'วันที่สิ้นสุด'];
     const filterRow2Values = [
       filters.borrowDepartmentName ??
         (filters.borrowDepartmentId ? filters.borrowDepartmentId : 'ทั้งหมด'),
@@ -136,7 +136,7 @@ export class ItemBorrowReportExcelService {
       'รหัสอุปกรณ์',
       'ชื่ออุปกรณ์',
       'จำนวน',
-      'Division ที่ยืม',
+      'แผนกที่ยืม',
       'ตู้',
       'แก้ไขล่าสุด',
     ];

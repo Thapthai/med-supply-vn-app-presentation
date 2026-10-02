@@ -134,7 +134,7 @@ export default function PermissionUsersTableCard({
                         disabled={!canEdit}
                         title={
                           canEdit
-                            ? 'จัดการสิทธิ์ Division หลักของผู้ใช้รายนี้'
+                            ? 'จัดการสิทธิ์แผนกของผู้ใช้รายนี้'
                             : 'ไม่มีสิทธิ์จัดการผู้ใช้รายนี้'
                         }
                       >

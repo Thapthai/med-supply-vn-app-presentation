@@ -35,7 +35,7 @@ interface SearchableSelectProps {
   /** แสดงแถวล้างค่าในรายการ (เมื่อมีค่าแล้ว) เพื่อให้เปลี่ยนใจไม่เลือกได้ */
   allowClear?: boolean;
   clearLabel?: string;
-  /** เมื่อ disabled และไม่มี value — แสดงข้อความนี้แทน placeholder (เช่น Division ที่ผูก ACTIVE อยู่แล้ว) */
+  /** เมื่อ disabled และไม่มี value — แสดงข้อความนี้แทน placeholder (เช่น แผนกที่ผูก ACTIVE อยู่แล้ว) */
   disabledDisplay?: { label: string; subLabel?: string };
 }
 

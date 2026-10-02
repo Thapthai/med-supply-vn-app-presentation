@@ -85,7 +85,7 @@ export default function CabinetsSearchCard({
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-slate-900">ค้นหาและกรอง</p>
-            <p className="text-xs text-slate-500">ค้นจากชื่อตู้ รหัสตู้ และกรองตาม Division / ประเภท</p>
+            <p className="text-xs text-slate-500">ค้นจากชื่อตู้ รหัสตู้ และกรองตาม แผนก / ประเภท</p>
           </div>
         </div>
 
@@ -110,9 +110,9 @@ export default function CabinetsSearchCard({
           <div className="grid gap-3 md:grid-cols-2">
             {onDivisionIdChange ? (
               <SearchableSelect
-                label="Division"
-                placeholder="— เลือก Division —"
-                searchPlaceholder="ค้นหา Division..."
+                label="แผนก"
+                placeholder="— เลือกแผนก —"
+                searchPlaceholder="ค้นหาแผนก..."
                 value={divisionId}
                 onValueChange={onDivisionIdChange}
                 options={[
@@ -186,7 +186,7 @@ export default function CabinetsSearchCard({
             ) : null}
             {activeDivisionId.trim() ? (
               <span className="inline-flex items-center gap-1 rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-0.5 text-xs font-medium text-cyan-900">
-                Division: {appliedDept?.DepName || appliedDept?.DepName2 || activeDivisionId}
+                แผนก: {appliedDept?.DepName || appliedDept?.DepName2 || activeDivisionId}
               </span>
             ) : null}
             <Button

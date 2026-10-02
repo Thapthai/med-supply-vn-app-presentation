@@ -218,7 +218,7 @@ export default function ReturnHistoryFilter({
     const roleScopeAll =
       Array.isArray(allowed) && allowed.length > 0 && !departmentCode?.trim();
     if (!departmentCode?.trim() && !roleScopeAll) {
-      toast.error('กรุณาเลือก Division ก่อนค้นหา (หรือเลือกทั้งหมดเฉพาะเมื่อ role จำกัดแผนก)');
+      toast.error('กรุณาเลือกแผนกก่อนค้นหา (หรือเลือกทั้งหมดเฉพาะเมื่อ role จำกัดแผนก)');
       return;
     }
     onSearch();
@@ -226,7 +226,7 @@ export default function ReturnHistoryFilter({
 
   const hasMainDepartment = Boolean(departmentCode?.trim());
   const cabinetPlaceholder = !hasMainDepartment
-    ? 'เลือก Division (แผนกหลัก) ก่อน'
+    ? 'เลือกแผนก (แผนก) ก่อน'
     : cabinets.length === 0
       ? 'ไม่มีตู้ในแผนกนี้'
       : 'เลือกตู้หรือทุกตู้';
@@ -307,11 +307,11 @@ export default function ReturnHistoryFilter({
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <SearchableSelect
-              label="Division"
+              label="แผนก"
               placeholder={
                 canPickAllRoleDepartments
-                  ? 'เลือก Division หรือทั้งหมด (ตาม role)'
-                  : 'เลือก Division (บังคับ)'
+                  ? 'เลือกแผนก หรือทั้งหมด (ตาม role)'
+                  : 'เลือกแผนก (บังคับ)'
               }
               required={!canPickAllRoleDepartments}
               value={departmentCode}
@@ -331,21 +331,21 @@ export default function ReturnHistoryFilter({
               options={divisionSelectOptions}
               loading={loadingDepartments}
               onSearch={loadDepartments}
-              searchPlaceholder="ค้นหาชื่อ Division..."
+              searchPlaceholder="ค้นหาชื่อแผนก..."
             />
 
             <SearchableSelect
-              label="แผนก"
+              label="แผนกย่อย"
               placeholder={
                 departmentCode?.trim()
-                  ? 'เลือกแผนก ...'
-                  : 'เลือก Division เฉพาะก่อน ถ้าต้องการกรองแผนกย่อย'
+                  ? 'เลือกแผนกย่อย ...'
+                  : 'เลือกแผนก เฉพาะก่อน ถ้าต้องการกรองแผนกย่อย'
               }
               value={subDepartmentId}
               onValueChange={onSubDepartmentChange}
               options={subDepartmentOptions}
               disabled={!hasMainDepartment}
-              searchPlaceholder="ค้นหารหัสหรือชื่อแผนก ..."
+              searchPlaceholder="ค้นหารหัสหรือชื่อแผนกย่อย ..."
             />
           </div>
 
@@ -354,7 +354,7 @@ export default function ReturnHistoryFilter({
               <>
                 <Label className="text-xs font-medium text-slate-600">ตู้ Cabinet</Label>
                 <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted/40 px-3 text-sm text-muted-foreground shadow-sm">
-                  เลือก Division (แผนกหลัก) ก่อน
+                  เลือกแผนก (แผนก) ก่อน
                 </div>
               </>
             ) : (
@@ -425,12 +425,12 @@ export default function ReturnHistoryFilter({
             ) : null}
             {appliedFilters.departmentCode ? (
               <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-900">
-                Division: {appliedDept?.DepName || appliedFilters.departmentCode}
+                แผนก: {appliedDept?.DepName || appliedFilters.departmentCode}
               </span>
             ) : null}
             {appliedFilters.subDepartmentId ? (
               <span className="inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-900">
-                แผนก: {appliedSubDept?.code || appliedFilters.subDepartmentId}
+                แผนกย่อย: {appliedSubDept?.code || appliedFilters.subDepartmentId}
               </span>
             ) : null}
             {appliedFilters.cabinetId ? (

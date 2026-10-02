@@ -103,7 +103,7 @@ export class DispensedItemsExcelService {
 
     // ---- แถว 4: Filter summary (แผนก | ตู้ | วันที่เริ่ม | วันที่สิ้นสุด) ----
     const filters = data.filters ?? {};
-    const filterLabels = ['Division', 'ตู้ Cabinet', 'วันที่เริ่ม', 'วันที่สิ้นสุด'];
+    const filterLabels = ['แผนก', 'ตู้ Cabinet', 'วันที่เริ่ม', 'วันที่สิ้นสุด'];
     const filterValues = [
       filters.departmentName ?? (filters.departmentId ? filters.departmentId : 'ทั้งหมด'),
       filters.cabinetName ?? (filters.cabinetId ? filters.cabinetId : 'ทั้งหมด'),
@@ -137,8 +137,8 @@ export class DispensedItemsExcelService {
       'ชื่ออุปกรณ์',
       'จำนวน (หน่วยการเบิก)',
       'วันที่เบิก',
-      'Division ที่ตั้งตู้',
-      'Division ที่ยืม',
+      'แผนกที่ตั้งตู้',
+      'แผนกที่ยืม',
       'หมายเหตุ',
       'ชื่อผู้เบิก',
     ];

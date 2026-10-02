@@ -156,14 +156,14 @@ export default function FilterSection({ onSearch, onBeforeSearch }: FilterSectio
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-slate-900">ค้นหาและกรอง</p>
-            <p className="text-xs text-slate-500">เลือก Division และตู้ Cabinet เพื่อกรองรายการเชื่อมโยง</p>
+            <p className="text-xs text-slate-500">เลือกแผนก และตู้ Cabinet เพื่อกรองรายการเชื่อมโยง</p>
           </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <SearchableSelect
-            label="Division"
-            placeholder="— เลือก Division —"
+            label="แผนก"
+            placeholder="— เลือกแผนก —"
             value={formFilters.departmentId}
             onValueChange={(value) => {
               setFormFilters({
@@ -182,12 +182,12 @@ export default function FilterSection({ onSearch, onBeforeSearch }: FilterSectio
             ]}
             loading={loadingDepartments}
             onSearch={loadDepartments}
-            searchPlaceholder="ค้นหา Division..."
+            searchPlaceholder="ค้นหาแผนก..."
           />
 
           <SearchableSelect
             label="ตู้ Cabinet"
-            placeholder={formFilters.departmentId ? "เลือกตู้ Cabinet" : "กรุณาเลือก Division ก่อน"}
+            placeholder={formFilters.departmentId ? "เลือกตู้ Cabinet" : "กรุณาเลือกแผนกก่อน"}
             value={formFilters.cabinetId}
             onValueChange={(value) => setFormFilters({ ...formFilters, cabinetId: value })}
             options={[
@@ -207,7 +207,7 @@ export default function FilterSection({ onSearch, onBeforeSearch }: FilterSectio
               }
             }}
             searchPlaceholder={
-              formFilters.departmentId ? "ค้นหารหัสหรือชื่อตู้..." : "กรุณาเลือก Division ก่อน"
+              formFilters.departmentId ? "ค้นหารหัสหรือชื่อตู้..." : "กรุณาเลือกแผนกก่อน"
             }
             disabled={!formFilters.departmentId}
           />
@@ -234,7 +234,7 @@ export default function FilterSection({ onSearch, onBeforeSearch }: FilterSectio
             <span className="text-xs font-medium text-slate-500">กำลังกรอง:</span>
             {appliedFilters.departmentId ? (
               <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-900">
-                Division: {appliedDept?.DepName || appliedFilters.departmentId}
+                แผนก: {appliedDept?.DepName || appliedFilters.departmentId}
               </span>
             ) : null}
             {appliedFilters.cabinetId ? (

@@ -80,7 +80,7 @@ export function usePrintStickerTab(options?: {
         setDepartments(response.data as DepartmentOpt[]);
       }
     } catch {
-      toast.error('โหลด Division ไม่สำเร็จ');
+      toast.error('โหลด แผนก ไม่สำเร็จ');
     } finally {
       setLoadingDepartments(false);
     }
@@ -245,13 +245,13 @@ export function usePrintStickerTab(options?: {
     }
 
     if (!departmentId || !cabinetId) {
-      toast.error('เลือก Division และตู้');
+      toast.error('เลือกแผนก และตู้');
       return;
     }
     const dep = parseInt(departmentId, 10);
     const cab = parseInt(cabinetId, 10);
     if (Number.isNaN(dep) || Number.isNaN(cab)) {
-      toast.error('Division หรือตู้ไม่ถูกต้อง');
+      toast.error('แผนก หรือตู้ไม่ถูกต้อง');
       return;
     }
 
@@ -518,11 +518,11 @@ export function usePrintStickerTab(options?: {
     () => [
       {
         value: '',
-        label: '— ไม่เลือก Division —',
+        label: '— ไม่เลือกแผนก —',
         subLabel:
           mode === 'manual'
             ? 'โหลดรายการ Item ที่ใช้งาน (ไม่กรองตามแผนก/ตู้)'
-            : 'ในโหมด Auto ต้องเลือก Division จริง',
+            : 'ในโหมด Auto ต้องเลือกแผนก จริง',
       },
       ...departments.map((d) => ({
         value: String(d.ID),
@@ -551,7 +551,7 @@ export function usePrintStickerTab(options?: {
       }
       targetStockId = cabinetStockId;
     } else if (mode === 'auto') {
-      toast.error('โหมด Auto ต้องเลือก Division และตู้ก่อน');
+      toast.error('โหมด Auto ต้องเลือกแผนก และตู้ก่อน');
       return null;
     }
 

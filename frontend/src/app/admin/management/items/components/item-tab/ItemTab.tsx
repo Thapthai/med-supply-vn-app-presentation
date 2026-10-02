@@ -71,7 +71,7 @@ export default function ItemTab() {
 
   const departmentOptions = useMemo(
     () => [
-      { value: 'all', label: 'ทุก Division' },
+      { value: 'all', label: 'ทุกแผนก' },
       ...departments.map((d) => ({
         value: String(d.ID),
         label: (d.DepName || d.DepName2 || `แผนก #${d.ID}`).trim(),

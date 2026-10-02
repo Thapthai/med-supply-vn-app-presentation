@@ -216,7 +216,7 @@ export default function ItemsPage() {
 
   const handleDownloadCabinetStockExcel = async () => {
     if (!activeFilters.departmentId?.trim()) {
-      toast.error('กรุณาเลือก Division ก่อนดาวน์โหลดรายงาน');
+      toast.error('กรุณาเลือกแผนกก่อนดาวน์โหลดรายงาน');
       return;
     }
     if (!activeFilters.cabinetId?.trim()) {
@@ -241,7 +241,7 @@ export default function ItemsPage() {
 
   const handleDownloadCabinetStockPdf = async () => {
     if (!activeFilters.departmentId?.trim()) {
-      toast.error('กรุณาเลือก Division ก่อนดาวน์โหลดรายงาน');
+      toast.error('กรุณาเลือกแผนกก่อนดาวน์โหลดรายงาน');
       return;
     }
     if (!activeFilters.cabinetId?.trim()) {

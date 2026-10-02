@@ -94,7 +94,7 @@ export class ReturnToCabinetReportExcelService {
     worksheet.getRow(3).height = 20;
 
     const filters = data.filters ?? {};
-    const filterLabels = ['Division', 'ตู้ Cabinet', 'วันที่เริ่ม', 'วันที่สิ้นสุด'];
+    const filterLabels = ['แผนก', 'ตู้ Cabinet', 'วันที่เริ่ม', 'วันที่สิ้นสุด'];
     const filterValues = [
       filters.departmentName ?? (filters.departmentId ? filters.departmentId : 'ทั้งหมด'),
       filters.cabinetName ?? (filters.cabinetId ? filters.cabinetId : 'ทั้งหมด'),
@@ -134,7 +134,7 @@ export class ReturnToCabinetReportExcelService {
       'จำนวน (หน่วย)',
       'วันที่เติม',
       'ตู้',
-      'Division',
+      'แผนก',
       'ชื่อผู้เติม',
     ];
     const headerRow = worksheet.getRow(tableStartRow);

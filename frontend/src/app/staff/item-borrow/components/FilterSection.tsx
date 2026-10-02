@@ -135,7 +135,7 @@ export default function FilterSection({
   const loadDepartments = useCallback(async (keyword?: string) => {
     try {
       setLoadingDepartments(true);
-      /** ref ยังเป็น undefined ได้ถ้า user เปิดค้นหา Division ก่อน effect แรกเสร็จ — โหลด scope ก่อน */
+      /** ref ยังเป็น undefined ได้ถ้า user เปิดค้นหาแผนก ก่อน effect แรกเสร็จ — โหลด scope ก่อน */
       let allowed = allowedDepartmentIdsRef.current;
       if (allowed === undefined) {
         allowed = await getStaffAllowedDepartmentIds();
@@ -275,7 +275,7 @@ export default function FilterSection({
       const scopeAll =
         Array.isArray(allowed) && allowed.length > 0 && !filters.departmentId?.trim();
       if (!filters.departmentId?.trim() && !scopeAll) {
-        toast.error('กรุณาเลือก Division ก่อนค้นหา (หรือเลือกทั้งหมดเฉพาะเมื่อมีการจำกัดแผนกให้คุณ)');
+        toast.error('กรุณาเลือกแผนกก่อนค้นหา (หรือเลือกทั้งหมดเฉพาะเมื่อมีการจำกัดแผนกให้คุณ)');
         return;
       }
     }
@@ -355,11 +355,11 @@ export default function FilterSection({
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <SearchableSelect
-              label="Division (ที่ตั้งตู้)"
+              label="แผนก (ที่ตั้งตู้)"
               placeholder={
                 canPickAllScopedDepartments
-                  ? 'เลือก Division หรือทั้งหมด (ตามสิทธิ์ของคุณ)'
-                  : 'เลือก Division (บังคับ)'
+                  ? 'เลือกแผนก หรือทั้งหมด (ตามสิทธิ์ของคุณ)'
+                  : 'เลือกแผนก (บังคับ)'
               }
               required={!canPickAllScopedDepartments}
               value={filters.departmentId}
@@ -379,7 +379,7 @@ export default function FilterSection({
               options={divisionSelectOptions}
               loading={loadingDepartments}
               onSearch={loadDepartments}
-              searchPlaceholder="ค้นหาชื่อ Division..."
+              searchPlaceholder="ค้นหาชื่อแผนก..."
               disabled={departmentDisabled}
             />
             <SearchableSelect
@@ -389,7 +389,7 @@ export default function FilterSection({
                   ? 'เลือกตู้'
                   : canPickAllScopedDepartments
                     ? 'เลือกตู้'
-                    : 'เลือก Division ก่อน'
+                    : 'เลือกแผนกก่อน'
               }
               value={filters.cabinetId}
               onValueChange={(value) => onFilterChange('cabinetId', value)}
@@ -412,8 +412,8 @@ export default function FilterSection({
 
           <div className="grid grid-cols-1 gap-3">
             <SearchableSelect
-              label="Division ที่ยืม"
-              placeholder="เลือก Division ที่ยืม"
+              label="แผนกที่ยืม"
+              placeholder="เลือกแผนกที่ยืม"
               value={filters.borrowDepartmentId}
               onValueChange={(value) => onFilterChange('borrowDepartmentId', value)}
               options={[
@@ -426,7 +426,7 @@ export default function FilterSection({
               ]}
               loading={loadingDepartments}
               onSearch={loadDepartments}
-              searchPlaceholder="ค้นหาชื่อ Division ที่ยืม..."
+              searchPlaceholder="ค้นหาชื่อแผนกที่ยืม..."
             />
           </div>
         </div>

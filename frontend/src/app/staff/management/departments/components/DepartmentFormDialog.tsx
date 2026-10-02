@@ -69,7 +69,7 @@ export default function DepartmentFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{mode === 'edit' ? 'แก้ไขแผนกหลัก' : 'เพิ่มแผนกหลัก'}</DialogTitle>
+          <DialogTitle>{mode === 'edit' ? 'แก้ไขแผนก' : 'เพิ่มแผนก'}</DialogTitle>
           {mode === 'create' && (
             <DialogDescription>
               กรอกชื่อแผนกหรือชื่อย่ออย่างน้อยหนึ่งช่อง (รหัสแผนก ID สร้างอัตโนมัติ)

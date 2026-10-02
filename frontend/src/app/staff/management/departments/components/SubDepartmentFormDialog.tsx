@@ -71,7 +71,7 @@ export default function SubDepartmentFormDialog({
           </DialogHeader>
           <div className="grid gap-3 py-2 overflow-y-auto flex-1 pr-1 min-h-0">
             <SearchableSelect
-              label="แผนกหลัก"
+              label="แผนก"
               portalTargetRef={dropdownSlotRef}
               placeholder="เลือกแผนก (เฉพาะแผนกตามสิทธิ์)"
               value={formDepartmentId != null ? String(formDepartmentId) : ''}

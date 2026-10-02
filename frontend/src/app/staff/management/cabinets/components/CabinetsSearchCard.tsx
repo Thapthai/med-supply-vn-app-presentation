@@ -174,7 +174,7 @@ export default function CabinetsSearchCard({
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-slate-900">ค้นหาและกรอง</p>
             <p className="text-xs text-slate-500">
-              เลือก Division ตามสิทธิ์ role และค้นหาตู้ Cabinet
+              เลือกแผนก ตามสิทธิ์ role และค้นหาตู้ Cabinet
             </p>
           </div>
         </div>
@@ -198,11 +198,11 @@ export default function CabinetsSearchCard({
           </div>
 
           <SearchableSelect
-            label="Division"
+            label="แผนก"
             placeholder={
               canPickAllRoleDepartments
-                ? 'เลือก Division หรือทั้งหมด (ตาม role)'
-                : 'เลือก Division (บังคับ)'
+                ? 'เลือกแผนก หรือทั้งหมด (ตาม role)'
+                : 'เลือกแผนก (บังคับ)'
             }
             required={!canPickAllRoleDepartments}
             value={formFilters.departmentId}
@@ -220,7 +220,7 @@ export default function CabinetsSearchCard({
             options={divisionSelectOptions}
             loading={loadingDepartments}
             onSearch={loadDepartments}
-            searchPlaceholder="ค้นหา Division..."
+            searchPlaceholder="ค้นหาแผนก..."
           />
         </div>
 
@@ -246,11 +246,11 @@ export default function CabinetsSearchCard({
             <span className="text-xs font-medium text-slate-500">กำลังกรอง:</span>
             {appliedFilters.departmentId ? (
               <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-                Division: {appliedDept?.DepName || appliedFilters.departmentId}
+                แผนก: {appliedDept?.DepName || appliedFilters.departmentId}
               </span>
             ) : canPickAllRoleDepartments ? (
               <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-                Division: ทั้งหมด (ตาม role)
+                แผนก: ทั้งหมด (ตาม role)
               </span>
             ) : null}
             {appliedFilters.keyword.trim() ? (

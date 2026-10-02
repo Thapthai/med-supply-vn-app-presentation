@@ -104,7 +104,7 @@ export default function PrintStickerHistoryFilterCard({
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <SearchableSelect
-            label="Division"
+            label="แผนก"
             placeholder="ทั้งหมด"
             value={formFilters.departmentId}
             allowClear
@@ -116,7 +116,7 @@ export default function PrintStickerHistoryFilterCard({
           />
           <SearchableSelect
             label="ตู้"
-            placeholder={formFilters.departmentId ? 'ทั้งหมด' : 'เลือก Division ก่อน'}
+            placeholder={formFilters.departmentId ? 'ทั้งหมด' : 'เลือกแผนกก่อน'}
             value={formFilters.cabinetId}
             allowClear={!!formFilters.departmentId}
             clearLabel="ทั้งหมด"
@@ -243,7 +243,7 @@ export default function PrintStickerHistoryFilterCard({
             ) : null}
             {activeFilters.departmentId ? (
               <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-                Division:{' '}
+                แผนก:{' '}
                 {departmentOptions.find((o) => o.value === activeFilters.departmentId)?.label ||
                   activeFilters.departmentId}
               </span>

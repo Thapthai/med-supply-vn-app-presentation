@@ -183,7 +183,7 @@ export function CabinetUsersSearchCard({
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-slate-900">ค้นหาและกรอง</p>
             <p className="text-xs text-slate-500">
-              ค้นจาก UserName / EmpCode · เลือก Division และตู้ Cabinet
+              ค้นจาก UserName / EmpCode · เลือกแผนก และตู้ Cabinet
             </p>
           </div>
         </div>
@@ -213,8 +213,8 @@ export function CabinetUsersSearchCard({
 
           <div className="grid gap-3 md:grid-cols-2">
             <SearchableSelect
-              label="Division"
-              placeholder="— เลือก Division —"
+              label="แผนก"
+              placeholder="— เลือกแผนก —"
               value={departmentId}
               onValueChange={(value) => {
                 onDepartmentIdChange(value);
@@ -230,12 +230,12 @@ export function CabinetUsersSearchCard({
               ]}
               loading={loadingDepartments}
               onSearch={loadDepartments}
-              searchPlaceholder="ค้นหา Division..."
+              searchPlaceholder="ค้นหาแผนก..."
             />
 
             <SearchableSelect
               label="ตู้ Cabinet"
-              placeholder={departmentId ? "เลือกตู้ Cabinet" : "กรุณาเลือก Division ก่อน"}
+              placeholder={departmentId ? "เลือกตู้ Cabinet" : "กรุณาเลือกแผนกก่อน"}
               value={cabinetId}
               onValueChange={onCabinetIdChange}
               options={[
@@ -251,7 +251,7 @@ export function CabinetUsersSearchCard({
                 void resolveCabinets(departmentId, searchKeyword);
               }}
               searchPlaceholder={
-                departmentId ? "ค้นหารหัสหรือชื่อตู้..." : "กรุณาเลือก Division ก่อน"
+                departmentId ? "ค้นหารหัสหรือชื่อตู้..." : "กรุณาเลือกแผนกก่อน"
               }
               disabled={!departmentId}
             />
@@ -285,7 +285,7 @@ export function CabinetUsersSearchCard({
             ) : null}
             {activeDepartmentId ? (
               <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-900">
-                Division: {appliedDept?.DepName || activeDepartmentId}
+                แผนก: {appliedDept?.DepName || activeDepartmentId}
               </span>
             ) : null}
             {activeCabinetId ? (

@@ -34,7 +34,7 @@ export function MedicalSupplyDetailInfoGrid({
         <p className="font-semibold">{recordedBy}</p>
       </div>
       <div>
-        <p className="text-sm text-gray-500">Division</p>
+        <p className="text-sm text-gray-500">แผนก</p>
         <p className="font-semibold">{department}</p>
       </div>
       <div>

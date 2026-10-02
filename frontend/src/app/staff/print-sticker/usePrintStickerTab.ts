@@ -126,7 +126,7 @@ export function usePrintStickerTab(options?: {
 
     if (!cabinetId) {
       if (mode === 'auto') {
-        toast.error('เลือก Division และตู้');
+        toast.error('เลือกแผนก และตู้');
       }
       setItems([]);
       setTotal(0);
@@ -188,7 +188,7 @@ export function usePrintStickerTab(options?: {
     }
 
     if (mode === 'auto' && !depParam) {
-      toast.error('โหมด Auto ต้องเลือก Division');
+      toast.error('โหมด Auto ต้องเลือกแผนก');
       return;
     }
 

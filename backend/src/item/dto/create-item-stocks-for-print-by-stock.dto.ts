@@ -47,7 +47,7 @@ export class CreateItemStocksForPrintByStockLineDto {
 }
 
 export class CreateItemStocksForPrintByStockDto {
-  /** Division ที่เลือกกับตู้ (ACTIVE) — ถ้าส่งจะใช้แทนการหยิบ Division ตัวแรกของตู้ */
+  /** แผนกที่เลือกกับตู้ (ACTIVE) — ถ้าส่งจะใช้แทนการหยิบ แผนก ตัวแรกของตู้ */
   @IsOptional()
   @IsInt()
   @Min(1)

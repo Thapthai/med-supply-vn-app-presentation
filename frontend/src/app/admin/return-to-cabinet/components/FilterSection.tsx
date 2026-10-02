@@ -289,8 +289,8 @@ export default function FilterSection({
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <SearchableSelect
-              label="Division"
-              placeholder="เลือก Division"
+              label="แผนก"
+              placeholder="เลือกแผนก"
               value={filters.departmentId}
               onValueChange={(value) => {
                 onFilterChange("departmentId", value);
@@ -307,18 +307,18 @@ export default function FilterSection({
               ]}
               loading={loadingDepartments}
               onSearch={loadDepartments}
-              searchPlaceholder="ค้นหาชื่อ Division..."
+              searchPlaceholder="ค้นหาชื่อแผนก..."
             />
             <SearchableSelect
-              label="แผนก"
+              label="แผนกย่อย"
               placeholder={
-                filters.departmentId ? "เลือกแผนก ..." : "กรุณาเลือก Division ก่อน"
+                filters.departmentId ? "เลือกแผนกย่อย ..." : "กรุณาเลือกแผนกก่อน"
               }
               value={filters.subDepartmentId}
               onValueChange={(value) => onFilterChange("subDepartmentId", value)}
               options={subDepartmentOptions}
               disabled={!filters.departmentId}
-              searchPlaceholder="ค้นหารหัสหรือชื่อแผนก ..."
+              searchPlaceholder="ค้นหารหัสหรือชื่อแผนกย่อย ..."
             />
           </div>
 
@@ -326,7 +326,7 @@ export default function FilterSection({
             <SearchableSelect
               label="ตู้ Cabinet"
               placeholder={
-                filters.departmentId ? "เลือกตู้ Cabinet" : "เลือกตู้ (ทุก Division ที่มีการเชื่อม)"
+                filters.departmentId ? "เลือกตู้ Cabinet" : "เลือกตู้ (ทุกแผนกที่มีการเชื่อม)"
               }
               value={filters.cabinetId}
               onValueChange={(value) => onFilterChange("cabinetId", value)}
@@ -380,12 +380,12 @@ export default function FilterSection({
             ) : null}
             {appliedFilters.departmentId ? (
               <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-900">
-                Division: {appliedDept?.DepName || appliedFilters.departmentId}
+                แผนก: {appliedDept?.DepName || appliedFilters.departmentId}
               </span>
             ) : null}
             {appliedFilters.subDepartmentId ? (
               <span className="inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-900">
-                แผนก: {appliedSubDept?.code || appliedFilters.subDepartmentId}
+                แผนกย่อย: {appliedSubDept?.code || appliedFilters.subDepartmentId}
               </span>
             ) : null}
             {appliedFilters.cabinetId ? (

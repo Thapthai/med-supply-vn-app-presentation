@@ -39,7 +39,7 @@ type Props = {
   onSelectDepartment: (dept: DeptRow | null) => void;
   /** false = ซ่อนแถบค้นหาในการ์ด (ใช้เมื่อย้ายฟอร์มค้นหาไปไว้หน้าแม่) */
   showFilterToolbar?: boolean;
-  /** แก้ไขแผนกหลักจากแถวตาราง */
+  /** แก้ไขแผนกจากแถวตาราง */
   onEditMainDepartment?: (dept: DeptRow) => void;
   onCreateSubDepartment?: () => void;
   onCreateMainDepartment?: () => void;
@@ -117,7 +117,7 @@ export default function DepartmentMasterTable({
         <div className="flex flex-row flex-wrap items-start justify-between gap-3">
           <CardTitle className="text-slate-800 flex items-center gap-2">
             <Building2 className="h-5 w-5 text-cyan-600" />
-            แผนกหลักและรหัสแผนกย่อย ({departments.length} แผนก)
+            แผนกและรหัสแผนกย่อย ({departments.length} แผนก)
           </CardTitle>
           {(onCreateSubDepartment || onCreateMainDepartment) ? (
             <div className="flex flex-wrap justify-end gap-2 shrink-0">
@@ -138,7 +138,7 @@ export default function DepartmentMasterTable({
                   onClick={onCreateMainDepartment}
                 >
                   <Plus className="h-4 w-4 shrink-0" />
-                  เพิ่มแผนกหลัก
+                  เพิ่มแผนก
                 </Button>
               ) : null}
             </div>
@@ -199,8 +199,8 @@ export default function DepartmentMasterTable({
               <TableRow className="bg-slate-100/80 hover:bg-slate-100/80 border-b border-slate-200">
                 <TableHead className="w-12" />
                 <TableHead className="text-slate-600 font-semibold w-16">ลำดับ</TableHead>
-                <TableHead className="text-slate-600 font-semibold">รหัส Division</TableHead>
-                <TableHead className="text-slate-600 font-semibold">ชื่อ Division</TableHead>
+                <TableHead className="text-slate-600 font-semibold">รหัสแผนก</TableHead>
+                <TableHead className="text-slate-600 font-semibold">ชื่อแผนก</TableHead>
                 <TableHead className="text-slate-600 font-semibold">ชื่อย่อ</TableHead>
                 <TableHead className="text-center text-slate-600 font-semibold">จำนวนรหัสแผนกย่อย</TableHead>
                 {onEditMainDepartment ? (
@@ -267,7 +267,7 @@ export default function DepartmentMasterTable({
                               size="sm"
                               variant="outline"
                               onClick={() => onEditMainDepartment(dept)}
-                              aria-label="แก้ไขแผนกหลัก"
+                              aria-label="แก้ไขแผนก"
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>

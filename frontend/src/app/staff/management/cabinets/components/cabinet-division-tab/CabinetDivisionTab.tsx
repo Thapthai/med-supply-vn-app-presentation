@@ -274,10 +274,10 @@ export default function CabinetDivisionTab() {
           </div>
           <div>
             <h2 className="text-xl font-bold tracking-tight text-gray-900">
-              จัดการตู้ Cabinet - Division
+              จัดการตู้ Cabinet - แผนก
             </h2>
             <p className="mt-0.5 text-sm text-gray-500">
-              จัดการตู้ Cabinet และเชื่อมโยงกับ Division
+              จัดการตู้ Cabinet และเชื่อมโยงกับแผนก
             </p>
           </div>
         </div>

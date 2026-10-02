@@ -99,7 +99,7 @@ export default function CabinetsTable({
           {onManageDivisions ? (
             <Button type="button" variant="outline" className="gap-2" onClick={onManageDivisions}>
               <Building2 className="h-4 w-4" />
-              จัดการ Division
+              จัดการแผนก
             </Button>
           ) : null}
           {onExportExcel ? (
@@ -145,7 +145,7 @@ export default function CabinetsTable({
                     <TableHead>ชื่อตู้</TableHead>
                     <TableHead>รหัสตู้</TableHead>
                     <TableHead>ประเภท</TableHead>
-                    <TableHead>Division</TableHead>
+                    <TableHead>แผนก</TableHead>
                     <TableHead>IP เครื่อง</TableHead>
                     <TableHead className="whitespace-nowrap">อุณหภูมิ (°C)</TableHead>
                     <TableHead className="whitespace-nowrap">ความชื้น (%)</TableHead>
@@ -227,14 +227,14 @@ export default function CabinetsTable({
                               <div className="space-y-3">
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                   <p className="text-sm font-medium text-slate-800">
-                                    Division ที่เชื่อมกับ {cabinet.cabinet_name || cabinet.cabinet_code || `ตู้ #${cabinet.id}`}
+                                    แผนกที่เชื่อมกับ {cabinet.cabinet_name || cabinet.cabinet_code || `ตู้ #${cabinet.id}`}
                                   </p>
                                   <Button size="sm" variant="outline" onClick={() => onEdit(cabinet)}>
                                     แก้ไขการเชื่อมโยง
                                   </Button>
                                 </div>
                                 {links.length === 0 ? (
-                                  <p className="text-sm text-slate-500">ยังไม่มี Division บนตู้นี้ — กดแก้ไขตู้เพื่อเลือกแผนก</p>
+                                  <p className="text-sm text-slate-500">ยังไม่มีแผนก บนตู้นี้ — กดแก้ไขตู้เพื่อเลือกแผนก</p>
                                 ) : (
                                   <div className="space-y-2">
                                     {links.map((link) => (

@@ -61,7 +61,7 @@ export default function StaffUserDepartmentDialog({
       );
     } catch (e: unknown) {
       console.error(e);
-      toast.error('โหลดรายการ Division ไม่สำเร็จ');
+      toast.error('โหลดรายการ แผนก ไม่สำเร็จ');
     } finally {
       setLoadingDepartments(false);
     }
@@ -148,10 +148,10 @@ export default function StaffUserDepartmentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>จัดการสิทธิ์ Division หลัก</DialogTitle>
+          <DialogTitle>จัดการสิทธิ์แผนก</DialogTitle>
           <DialogDescription>
             {user
-              ? `${user.fname} ${user.lname} (${user.email}) — ติ๊กเฉพาะ Division ที่อนุญาต, ไม่ติ๊กเลย = เห็นทุก Division`
+              ? `${user.fname} ${user.lname} (${user.email}) — ติ๊กเฉพาะแผนกที่อนุญาต, ไม่ติ๊กเลย = เห็นทุกแผนก`
               : 'เลือกผู้ใช้'}
           </DialogDescription>
         </DialogHeader>
@@ -161,17 +161,17 @@ export default function StaffUserDepartmentDialog({
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             <Input
               type="search"
-              placeholder="ค้นหา ID หรือชื่อ Division…"
+              placeholder="ค้นหา ID หรือชื่อแผนก…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className={cn('pl-9', fieldInputClass)}
               disabled={busy}
-              aria-label="ค้นหา Division"
+              aria-label="ค้นหาแผนก"
             />
           </div>
           <div className="flex gap-2">
             <Button type="button" variant="secondary" size="sm" onClick={selectAll} disabled={busy || saving}>
-              เลือกทุก Division
+              เลือกทุกแผนก
             </Button>
             <Button type="button" variant="secondary" size="sm" onClick={clearAll} disabled={busy || saving}>
               ล้างทั้งหมด
@@ -181,7 +181,7 @@ export default function StaffUserDepartmentDialog({
 
         {!busy && unrestrictedFromServer && selected.size === 0 && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            ผู้ใช้นี้<strong> ไม่จำกัด Division หลัก</strong> (เห็นทุก Division) — ติ๊กด้านล่างเพื่อจำกัด
+            ผู้ใช้นี้<strong> ไม่จำกัดแผนก</strong> (เห็นทุกแผนก) — ติ๊กด้านล่างเพื่อจำกัด
           </div>
         )}
 
@@ -192,7 +192,7 @@ export default function StaffUserDepartmentDialog({
             </div>
           ) : filteredDepartments.length === 0 ? (
             <p className="py-6 text-center text-sm text-slate-500">
-              {search.trim() ? `ไม่พบรายการที่ตรงกับ "${search.trim()}"` : 'ไม่มีข้อมูลแผนกหลัก'}
+              {search.trim() ? `ไม่พบรายการที่ตรงกับ "${search.trim()}"` : 'ไม่มีข้อมูลแผนก'}
             </p>
           ) : (
             <ul className="grid gap-2 sm:grid-cols-2">

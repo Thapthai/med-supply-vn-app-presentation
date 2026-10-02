@@ -43,7 +43,7 @@ function stockIdFromMachineIp(raw?: string | null): number | null {
 export class DepartmentService {
   private readonly logger = new Logger(DepartmentService.name);
   private readonly HOSPITAL_PREFIX = 'VTN';
-  /** จำนวน Division (ACTIVE) ที่ตู้หนึ่งเครื่องผูกได้สูงสุด */
+  /** จำนวน แผนก (ACTIVE) ที่ตู้หนึ่งเครื่องผูกได้สูงสุด */
   private readonly MAX_ACTIVE_CABINET_DEPARTMENT_LINKS = 3;
 
   constructor(private prisma: PrismaService) { }
@@ -143,10 +143,10 @@ export class DepartmentService {
         },
         select: { ID: true, DepName: true, DepName2: true, RefDepID: true },
       });
-      return { success: true, message: 'สร้างแผนกหลักสำเร็จ', data: row };
+      return { success: true, message: 'สร้างแผนกสำเร็จ', data: row };
     } catch (err: any) {
       this.logger.error(`createDepartment: ${err?.message ?? err}`);
-      return { success: false, message: err?.message || 'ไม่สามารถสร้างแผนกหลักได้' };
+      return { success: false, message: err?.message || 'ไม่สามารถสร้างแผนกได้' };
     }
   }
 
@@ -156,7 +156,7 @@ export class DepartmentService {
       select: { ID: true, DepName: true, DepName2: true, RefDepID: true },
     });
     if (!existing) {
-      return { success: false, message: 'ไม่พบแผนกหลัก' };
+      return { success: false, message: 'ไม่พบแผนก' };
     }
 
     const mergedName =
@@ -182,10 +182,10 @@ export class DepartmentService {
         },
         select: { ID: true, DepName: true, DepName2: true, RefDepID: true },
       });
-      return { success: true, message: 'อัปเดตแผนกหลักแล้ว', data: row };
+      return { success: true, message: 'อัปเดตแผนกแล้ว', data: row };
     } catch (err: any) {
       this.logger.error(`updateDepartment: ${err?.message ?? err}`);
-      return { success: false, message: err?.message || 'ไม่สามารถอัปเดตแผนกหลักได้' };
+      return { success: false, message: err?.message || 'ไม่สามารถอัปเดตแผนกได้' };
     }
   }
 
@@ -476,7 +476,7 @@ export class DepartmentService {
         },
       });
       if (dupPair) {
-        return { success: false, message: 'ตู้นี้เชื่อมโยงกับ Division นี้แล้ว' };
+        return { success: false, message: 'ตู้นี้เชื่อมโยงกับแผนก นี้แล้ว' };
       }
 
       const activeCount = await this.prisma.cabinetDepartment.count({
@@ -486,7 +486,7 @@ export class DepartmentService {
       if (incomingActive && activeCount >= this.MAX_ACTIVE_CABINET_DEPARTMENT_LINKS) {
         return {
           success: false,
-          message: `ตู้นี้ผูก Division ที่ใช้งานได้สูงสุด ${this.MAX_ACTIVE_CABINET_DEPARTMENT_LINKS} แผนกแล้ว`,
+          message: `ตู้นี้ผูกแผนกที่ใช้งานได้สูงสุด ${this.MAX_ACTIVE_CABINET_DEPARTMENT_LINKS} แผนกย่อยแล้ว`,
         };
       }
 
@@ -635,7 +635,7 @@ export class DepartmentService {
         },
       });
       if (dupOther) {
-        return { success: false, message: 'ตู้นี้เชื่อมโยงกับ Division นี้แล้ว' };
+        return { success: false, message: 'ตู้นี้เชื่อมโยงกับแผนก นี้แล้ว' };
       }
 
       if (currentMapping.cabinet_id === data.cabinet_id) {
@@ -650,7 +650,7 @@ export class DepartmentService {
           if (otherActive >= this.MAX_ACTIVE_CABINET_DEPARTMENT_LINKS) {
             return {
               success: false,
-              message: `ตู้นี้ผูก Division ที่ใช้งานได้สูงสุด ${this.MAX_ACTIVE_CABINET_DEPARTMENT_LINKS} แผนกแล้ว`,
+              message: `ตู้นี้ผูกแผนกที่ใช้งานได้สูงสุด ${this.MAX_ACTIVE_CABINET_DEPARTMENT_LINKS} แผนกย่อยแล้ว`,
             };
           }
         }
@@ -673,7 +673,7 @@ export class DepartmentService {
         if (otherActiveOnTarget >= this.MAX_ACTIVE_CABINET_DEPARTMENT_LINKS) {
           return {
             success: false,
-            message: `ตู้นี้ผูก Division ที่ใช้งานได้สูงสุด ${this.MAX_ACTIVE_CABINET_DEPARTMENT_LINKS} แผนกแล้ว`,
+            message: `ตู้นี้ผูกแผนกที่ใช้งานได้สูงสุด ${this.MAX_ACTIVE_CABINET_DEPARTMENT_LINKS} แผนกย่อยแล้ว`,
           };
         }
       }

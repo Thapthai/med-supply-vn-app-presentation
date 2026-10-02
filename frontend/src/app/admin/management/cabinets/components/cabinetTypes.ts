@@ -48,7 +48,7 @@ export function divisionLinkLabel(link: CabinetDivisionLink): string {
   return (
     link.department?.DepName?.trim() ||
     link.department?.DepName2?.trim() ||
-    `Division #${link.department_id}`
+    `แผนก #${link.department_id}`
   );
 }
 

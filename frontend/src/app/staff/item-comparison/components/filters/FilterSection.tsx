@@ -217,7 +217,7 @@ export function FilterSection({
     (canPickAllRoleDepartments && !filters.departmentCode?.trim());
 
   const cabinetPlaceholder = !hasMainDepartment
-    ? 'เลือก Division (แผนกหลัก) ก่อน'
+    ? 'เลือกแผนก (แผนก) ก่อน'
     : cabinets.length === 0
       ? 'ไม่มีตู้ในแผนกนี้'
       : 'เลือกตู้หรือทุกตู้';
@@ -228,7 +228,7 @@ export function FilterSection({
       const roleScopeAll =
         Array.isArray(allowed) && allowed.length > 0 && !filters.departmentCode?.trim();
       if (!filters.departmentCode?.trim() && !roleScopeAll) {
-        toast.error('กรุณาเลือก Division ก่อนค้นหา (หรือเลือกทั้งหมดเฉพาะเมื่อ role จำกัดแผนก)');
+        toast.error('กรุณาเลือกแผนกก่อนค้นหา (หรือเลือกทั้งหมดเฉพาะเมื่อ role จำกัดแผนก)');
         return;
       }
     }
@@ -343,18 +343,18 @@ export function FilterSection({
             <div className="min-w-0 space-y-1.5">
               {departmentDisabled ? (
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-600">Division</label>
+                  <label className="text-xs font-medium text-slate-600">แผนก</label>
                   <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted/40 px-3 text-sm text-muted-foreground shadow-sm">
                     <span className="truncate">{lockedDeptLabel}</span>
                   </div>
                 </div>
               ) : (
                 <SearchableSelect
-                  label="Division"
+                  label="แผนก"
                   placeholder={
                     canPickAllRoleDepartments
-                      ? 'เลือก Division'
-                      : 'เลือก Division'
+                      ? 'เลือกแผนก'
+                      : 'เลือกแผนก'
                   }
                   required={!canPickAllRoleDepartments}
                   value={filters.departmentCode}
@@ -374,17 +374,17 @@ export function FilterSection({
                   options={divisionSelectOptions}
                   loading={loadingDepartments}
                   onSearch={loadDepartments}
-                  searchPlaceholder="ค้นหาชื่อ Division..."
+                  searchPlaceholder="ค้นหาชื่อแผนก..."
                 />
               )}
             </div>
 
             <SearchableSelect
-              label="แผนก"
+              label="แผนกย่อย"
               placeholder={
                 filters.departmentCode?.trim()
-                  ? 'เลือกแผนก ...'
-                  : 'เลือก Division เฉพาะก่อน ถ้าต้องการกรองแผนกย่อย'
+                  ? 'เลือกแผนกย่อย ...'
+                  : 'เลือกแผนก เฉพาะก่อน ถ้าต้องการกรองแผนกย่อย'
               }
               value={filters.subDepartmentId}
               onValueChange={(value) => {
@@ -393,7 +393,7 @@ export function FilterSection({
               }}
               options={subDepartmentOptions}
               disabled={departmentDisabled || !filters.departmentCode?.trim()}
-              searchPlaceholder="ค้นหารหัสหรือชื่อแผนก ..."
+              searchPlaceholder="ค้นหารหัสหรือชื่อแผนกย่อย ..."
             />
           </div>
 
@@ -402,7 +402,7 @@ export function FilterSection({
               <>
                 <label className="text-xs font-medium text-slate-600">ตู้ Cabinet</label>
                 <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted/40 px-3 text-sm text-muted-foreground shadow-sm">
-                  เลือก Division (แผนกหลัก) ก่อน
+                  เลือกแผนก (แผนก) ก่อน
                 </div>
               </>
             ) : (
@@ -457,12 +457,12 @@ export function FilterSection({
             ) : null}
             {appliedFilters.departmentCode ? (
               <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-900">
-                Division: {appliedDept?.DepName || appliedFilters.departmentCode}
+                แผนก: {appliedDept?.DepName || appliedFilters.departmentCode}
               </span>
             ) : null}
             {appliedFilters.subDepartmentId ? (
               <span className="inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-900">
-                แผนก: {appliedSubDept?.code || appliedFilters.subDepartmentId}
+                แผนกย่อย: {appliedSubDept?.code || appliedFilters.subDepartmentId}
               </span>
             ) : null}
             {appliedFilters.cabinetId ? (

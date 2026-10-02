@@ -178,7 +178,7 @@ export default function ReturnToCabinetPage() {
 
   const handleExportReport = async (format: 'excel' | 'pdf') => {
     if (!filters.departmentId?.trim()) {
-      toast.error('กรุณาเลือก Division ก่อนส่งออกรายงาน');
+      toast.error('กรุณาเลือกแผนกก่อนส่งออกรายงาน');
       return;
     }
     if (!filters.cabinetId?.trim()) {

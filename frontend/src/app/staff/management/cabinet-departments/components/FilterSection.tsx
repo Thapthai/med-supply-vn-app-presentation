@@ -312,18 +312,18 @@ export default function FilterSection({
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-slate-900">ค้นหาและกรอง</p>
             <p className="text-xs text-slate-500">
-              เลือก Division และตู้ Cabinet เพื่อกรองรายการเชื่อมโยง (ตามสิทธิ์ role)
+              เลือกแผนก และตู้ Cabinet เพื่อกรองรายการเชื่อมโยง (ตามสิทธิ์ role)
             </p>
           </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <SearchableSelect
-            label="Division"
+            label="แผนก"
             placeholder={
               canPickAllRoleDepartments
-                ? "เลือก Division หรือทั้งหมด (ตาม role)"
-                : "เลือก Division (บังคับ)"
+                ? "เลือกแผนก หรือทั้งหมด (ตาม role)"
+                : "เลือกแผนก (บังคับ)"
             }
             required={!canPickAllRoleDepartments}
             value={formFilters.departmentId}
@@ -346,7 +346,7 @@ export default function FilterSection({
             options={divisionSelectOptions}
             loading={loadingDepartments}
             onSearch={loadDepartments}
-            searchPlaceholder="ค้นหา Division..."
+            searchPlaceholder="ค้นหาแผนก..."
             disabled={departmentDisabled}
           />
 
@@ -357,7 +357,7 @@ export default function FilterSection({
                 ? formFilters.departmentId?.trim()
                   ? "ทั้งหมดหรือเลือกตู้ (ในแผนกนี้)"
                   : "ทั้งหมดหรือเลือกตู้ (ตาม role)"
-                : "กรุณาเลือก Division ก่อน"
+                : "กรุณาเลือกแผนกก่อน"
             }
             value={formFilters.cabinetId}
             onValueChange={(value) => setFormFilters({ ...formFilters, cabinetId: value })}
@@ -374,7 +374,7 @@ export default function FilterSection({
               void resolveCabinets(formFilters.departmentId, searchKeyword);
             }}
             searchPlaceholder={
-              cabinetSelectEnabled ? "ค้นหารหัสหรือชื่อตู้..." : "กรุณาเลือก Division ก่อน"
+              cabinetSelectEnabled ? "ค้นหารหัสหรือชื่อตู้..." : "กรุณาเลือกแผนกก่อน"
             }
             disabled={!cabinetSelectEnabled}
           />
@@ -392,7 +392,7 @@ export default function FilterSection({
             <span className="text-xs font-medium text-slate-500">กำลังกรอง:</span>
             {appliedFilters.departmentId ? (
               <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-                Division: {appliedDept?.DepName || appliedFilters.departmentId}
+                แผนก: {appliedDept?.DepName || appliedFilters.departmentId}
               </span>
             ) : null}
             {appliedFilters.cabinetId ? (

@@ -215,7 +215,7 @@ export default function StaffItemBorrowPage() {
                     <TableHead>รหัสอุปกรณ์</TableHead>
                     <TableHead className="min-w-[140px]">ชื่ออุปกรณ์</TableHead>
                     <TableHead className="text-center w-[56px]">จำนวน</TableHead>
-                    <TableHead className="min-w-[180px]">Division ที่ยืม</TableHead>
+                    <TableHead className="min-w-[180px]">แผนกที่ยืม</TableHead>
                     <TableHead className="min-w-[150px]">ตู้</TableHead>
                     <TableHead className="min-w-[132px] whitespace-nowrap">แก้ไขล่าสุด</TableHead>
                   </TableRow>

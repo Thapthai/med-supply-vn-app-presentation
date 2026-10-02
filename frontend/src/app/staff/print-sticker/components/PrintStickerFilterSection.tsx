@@ -244,19 +244,19 @@ export default function PrintStickerFilterSection({
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-slate-900">
-            {mode === 'auto' ? 'ระบุ Division และตู้' : 'กรองตู้ (ตาม role)'}
+            {mode === 'auto' ? 'ระบุ แผนก และตู้' : 'กรองตู้ (ตาม role)'}
           </p>
-          <p className="text-xs text-slate-500">แสดงเฉพาะ Division และตู้ที่ role อนุญาต</p>
+          <p className="text-xs text-slate-500">แสดงเฉพาะแผนก และตู้ที่ role อนุญาต</p>
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <SearchableSelect
-          label="Division"
+          label="แผนก"
           placeholder={
             canPickAllRoleDepartments
-              ? 'เลือก Division หรือทั้งหมด (ตาม role)'
-              : 'เลือก Division (บังคับ)'
+              ? 'เลือกแผนก หรือทั้งหมด (ตาม role)'
+              : 'เลือกแผนก (บังคับ)'
           }
           required={divisionRequired}
           value={departmentId}
@@ -275,7 +275,7 @@ export default function PrintStickerFilterSection({
           options={divisionSelectOptions}
           loading={loadingDepartments}
           onSearch={loadDepartments}
-          searchPlaceholder="ค้นหา Division..."
+          searchPlaceholder="ค้นหาแผนก..."
         />
 
         <SearchableSelect
@@ -285,7 +285,7 @@ export default function PrintStickerFilterSection({
               ? mode === 'auto'
                 ? 'เลือกตู้ (บังคับ)'
                 : 'เลือกตู้ (ไม่บังคับ)'
-              : 'กรุณาเลือก Division ก่อน'
+              : 'กรุณาเลือกแผนกก่อน'
           }
           required={mode === 'auto'}
           value={cabinetId}
@@ -295,7 +295,7 @@ export default function PrintStickerFilterSection({
           loading={loadingCabinets}
           onSearch={(kw) => void resolveCabinets(departmentId, kw)}
           searchPlaceholder={
-            cabinetSelectEnabled ? 'ค้นหารหัสหรือชื่อตู้...' : 'กรุณาเลือก Division ก่อน'
+            cabinetSelectEnabled ? 'ค้นหารหัสหรือชื่อตู้...' : 'กรุณาเลือกแผนกก่อน'
           }
         />
       </div>
@@ -310,7 +310,7 @@ export default function PrintStickerFilterSection({
           ) : cabinetId ? (
             <span className="text-amber-800">กำลังโหลด Stock ID...</span>
           ) : mode === 'auto' ? (
-            <span>เลือกตู้เมื่อเลือก Division แล้ว</span>
+            <span>เลือกตู้เมื่อเลือกแผนก แล้ว</span>
           ) : null}
         </div>
       )}

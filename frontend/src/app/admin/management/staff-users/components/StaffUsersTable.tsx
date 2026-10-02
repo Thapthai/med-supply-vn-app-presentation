@@ -126,7 +126,7 @@ export function StaffUsersTable({
                         <Button size="icon" variant="outline" onClick={() => onEdit(staff)} title="แก้ไข">
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="outline" onClick={() => onManageDepartments(staff)} title="จัดการสิทธิ์ Division หลัก">
+                        <Button size="icon" variant="outline" onClick={() => onManageDepartments(staff)} title="จัดการสิทธิ์แผนก">
                           <Building2 className="h-4 w-4" />
                         </Button>
                         <Button size="icon" variant="outline" onClick={() => onRegenerateSecret(staff.id)} title="สร้าง Client Secret ใหม่">

@@ -162,7 +162,7 @@ export default function CreateMappingDialog({
         <DialogHeader>
           <DialogTitle>เพิ่มการเชื่อมโยงใหม่</DialogTitle>
           <DialogDescription className="break-words">
-            เลือกตู้ที่ยังผูก Division (ACTIVE) ไม่ครบ {MAX_ACTIVE_DIVISION_LINKS_PER_CABINET} แผนก จากนั้นเลือก Division
+            เลือกตู้ที่ยังผูกแผนก (ACTIVE) ไม่ครบ {MAX_ACTIVE_DIVISION_LINKS_PER_CABINET} แผนก จากนั้นเลือกแผนก
             ที่ยังไม่เคยเชื่อมโยงกับตู้นั้น
           </DialogDescription>
         </DialogHeader>
@@ -194,12 +194,12 @@ export default function CreateMappingDialog({
 
           <SearchableSelect
             portalTargetRef={dialogContentRef}
-            label="Division"
+            label="แผนก"
             placeholder={
               formData.cabinet_id?.trim()
                 ? unmappedDepartments.length === 0
-                  ? "ทุก Division ผูกกับตู้นี้แล้ว"
-                  : "เลือก Division (ยังไม่เคยผูกกับตู้นี้)"
+                  ? "ทุกแผนก ผูกกับตู้นี้แล้ว"
+                  : "เลือกแผนก (ยังไม่เคยผูกกับตู้นี้)"
                 : "กรุณาเลือกตู้ก่อน"
             }
             value={formData.department_id}
@@ -212,7 +212,7 @@ export default function CreateMappingDialog({
             loading={loadingDepartments}
             required
             onSearch={loadDepartments}
-            searchPlaceholder="ค้นหาชื่อ Division..."
+            searchPlaceholder="ค้นหาชื่อแผนก..."
             disabled={!formData.cabinet_id?.trim()}
           />
 

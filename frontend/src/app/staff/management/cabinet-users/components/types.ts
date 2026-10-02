@@ -5,7 +5,7 @@ export type CabinetUsersApiClient = {
     page?: number;
     limit?: number;
     keyword?: string;
-    /** `department.ID` (Division) */
+    /** `department.ID` (แผนก) */
     department_id?: number;
     /** `app_cabinets.id` — ตรงกับ backend / ค่าใน SearchableSelect ตู้ */
     cabinet_id?: number;
