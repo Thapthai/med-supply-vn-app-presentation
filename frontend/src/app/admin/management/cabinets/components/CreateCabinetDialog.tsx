@@ -38,7 +38,7 @@ import {
   machineIpHint,
   stockIdFromMachineIp,
 } from './cabinetTypes';
-import CabinetDivisionPicker, { type DivisionPick } from './CabinetแผนกPicker';
+import CabinetDivisionPicker, { type DivisionPick } from './CabinetDivisionPicker';
 
 const fieldInputClass = 'bg-white';
 

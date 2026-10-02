@@ -6,8 +6,8 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import CabinetTab from './components/cabinet-tab/CabinetTab';
-import DivisionTab from './components/division-tab/แผนกTab';
-import CabinetDivisionTab from './components/cabinet-division-tab/CabinetแผนกTab';
+import DivisionTab from './components/division-tab/DivisionTab';
+import CabinetDivisionTab from './components/cabinet-division-tab/CabinetDivisionTab';
 
 const TABS = [
   {

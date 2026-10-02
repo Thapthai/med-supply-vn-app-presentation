@@ -15,7 +15,7 @@ import EditCabinetDialog from '../EditCabinetDialog';
 import DeleteCabinetDialog from '../DeleteCabinetDialog';
 import CabinetsTable from '../CabinetsTable';
 import CabinetsSearchCard from '../CabinetsSearchCard';
-import DivisionTab from '../division-tab/แผนกTab';
+import DivisionTab from '../division-tab/DivisionTab';
 import { normalizeCabinetType, type CabinetRow, type CabinetTypeCode } from '../cabinetTypes';
 
 type MappingRow = {

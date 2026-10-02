@@ -43,7 +43,7 @@ import {
   stockIdFromMachineIp,
   type CabinetDivisionLink,
 } from './cabinetTypes';
-import CabinetDivisionPicker, { type DivisionPick } from './CabinetแผนกPicker';
+import CabinetDivisionPicker, { type DivisionPick } from './CabinetDivisionPicker';
 
 function cabinetStatusToFormValue(status?: string): 'ACTIVE' | 'INACTIVE' {
   return status?.toUpperCase() === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';

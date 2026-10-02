@@ -119,7 +119,7 @@ export default function MedicalSuppliesSearchFilters({
     if (!formFilters.departmentCode?.trim()) {
       if (canPickAllRoleDepartments) {
         return roleScopeDivisionSummary
-          ? `ทั้งหมด · ${roleScopeแผนกSummary}`
+          ? `ทั้งหมด · ${roleScopeDivisionSummary}`
           : "ทั้งหมด (ตาม role)";
       }
       return "เลือกแผนก (บังคับ)";
