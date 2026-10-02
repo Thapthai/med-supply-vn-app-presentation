@@ -104,7 +104,7 @@ export const adminMenuItems: StaffMenuItem[] = [
       {
         name: 'สต๊อกอุปกรณ์ตามตู้',
         href: '/admin/items-stock',
-        description: 'เลือกตู้ — ตู้ชั่งแสดงช่อง/สล็อต ตู้ RFID แสดงวันหมดอายุและแท็ก',
+        description: 'เลือกตู้ — ตู้ชั่งแสดงช่อง/สล็อต ตู้ RFID แสดงวันหมดอายุ ตู้นาโคติกแสดงผังลิ้นชัก',
         icon: Package,
       },
       {

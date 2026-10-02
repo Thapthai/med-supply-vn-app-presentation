@@ -65,6 +65,7 @@ interface Cabinet {
   cabinet_code?: string;
   cabinet_type?: string;
   stock_id?: number;
+  trolley_id?: number | null;
   machine_ip?: string | null;
   cabinet_status?: string;
   temp_min?: number | string | null;
@@ -140,6 +141,8 @@ export default function EditCabinetDialog({
     }
   }, [open, cabinet, form]);
 
+  const cabinetType = form.watch('cabinet_type');
+
   const handleSubmit = async (values: CabinetEditFormData) => {
     if (!cabinet) return;
 
@@ -164,8 +167,10 @@ export default function EditCabinetDialog({
         hum_min: climatePayload(values.hum_min),
         hum_max: climatePayload(values.hum_max),
       };
-      const stockId = stockIdFromMachineIp(values.machine_ip);
-      if (stockId != null) data.stock_id = stockId;
+      if (values.cabinet_type !== 'NARCOTIC') {
+        const stockId = stockIdFromMachineIp(values.machine_ip);
+        if (stockId != null) data.stock_id = stockId;
+      }
       data.machine_ip = values.machine_ip?.trim() || null;
 
       const response = await cabinetApi.update(cabinet.id, data);
@@ -373,7 +378,7 @@ export default function EditCabinetDialog({
                     />
                   </FormControl>
                   <p className="text-xs text-muted-foreground">
-                    {machineIpHint(field.value, cabinet.stock_id)}
+                    {machineIpHint(field.value, cabinet.stock_id, cabinetType, cabinet.trolley_id)}
                   </p>
                   <FormMessage />
                 </FormItem>

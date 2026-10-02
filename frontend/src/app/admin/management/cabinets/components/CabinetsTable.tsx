@@ -65,6 +65,9 @@ export default function CabinetsTable({
     if (code === 'WEIGHING') {
       return <Badge className="border-amber-200 bg-amber-100 text-amber-950 hover:bg-amber-100">WEIGHING</Badge>;
     }
+    if (code === 'NARCOTIC') {
+      return <Badge className="border-rose-200 bg-rose-100 text-rose-900 hover:bg-rose-100">ตู้นาโคติก</Badge>;
+    }
     return <span className="text-muted-foreground">{type || '-'}</span>;
   };
 
@@ -167,7 +170,17 @@ export default function CabinetsTable({
                           </TableCell>
                           <TableCell className="font-medium">{cabinet.cabinet_name || '-'}</TableCell>
                           <TableCell>{cabinet.cabinet_code || '-'}</TableCell>
-                          <TableCell>{getTypeBadge(cabinet.cabinet_type)}</TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              {getTypeBadge(cabinet.cabinet_type)}
+                              {normalizeCabinetType(cabinet.cabinet_type) === 'NARCOTIC' &&
+                              cabinet.trolley_id != null ? (
+                                <div className="text-xs text-muted-foreground">
+                                  Trolley {cabinet.trolley_id}
+                                </div>
+                              ) : null}
+                            </div>
+                          </TableCell>
                           <TableCell>
                             {links.length === 0 ? (
                               <span className="text-xs text-muted-foreground">ยังไม่เชื่อมโยง</span>

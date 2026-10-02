@@ -10,6 +10,7 @@ export interface CabinetTabCabinet {
   cabinet_name?: string | null;
   cabinet_code?: string | null;
   stock_id?: number | null;
+  trolley_id?: number | null;
   cabinet_type?: string | null;
   cabinetTypeDef?: {
     code: string;
@@ -27,25 +28,29 @@ export interface CabinetTabCabinet {
   }[];
 }
 
-/** ค่าตรงกับ code ใน master ประเภทตู้ (WEIGHING / RFID) */
-export type CabinetStockTableMode = 'WEIGHING' | 'RFID';
+/** ค่าตรงกับ code ใน master ประเภทตู้ (WEIGHING / RFID / NARCOTIC) */
+export type CabinetStockTableMode = 'WEIGHING' | 'RFID' | 'NARCOTIC';
+
+function normalizeStockMode(code: string): CabinetStockTableMode | null {
+  const raw = code.trim().toUpperCase();
+  if (raw === 'WEIGHING') return 'WEIGHING';
+  if (raw === 'RFID') return 'RFID';
+  if (raw === 'NARCOTIC' || raw.includes('NARCOTIC')) return 'NARCOTIC';
+  return null;
+}
 
 export function cabinetStockTableMode(cabinet: CabinetTabCabinet | null): CabinetStockTableMode {
   if (!cabinet) return 'WEIGHING';
 
   const def = cabinet.cabinetTypeDef;
   if (def?.code) {
-    const code = def.code.trim().toUpperCase();
-    if (code === 'WEIGHING') return 'WEIGHING';
-    if (code === 'RFID') return 'RFID';
+    const fromDef = normalizeStockMode(def.code);
+    if (fromDef) return fromDef;
     if (def.show_rfid_code === true) return 'RFID';
     return 'WEIGHING';
   }
 
-  const raw = (cabinet.cabinet_type ?? '').toString().trim().toUpperCase();
-  if (raw === 'WEIGHING') return 'WEIGHING';
-  if (raw === 'RFID') return 'RFID';
-  return 'WEIGHING';
+  return normalizeStockMode((cabinet.cabinet_type ?? '').toString()) ?? 'WEIGHING';
 }
 
 /** ชิป «หมดอายุ / ใกล้หมดอายุ (30 วัน)» ใช้เฉพาะตู้ประเภท RFID เท่านั้น */
@@ -53,12 +58,26 @@ export function cabinetTypeShowsExpiryFilters(cabinet: CabinetTabCabinet | null)
   return cabinetStockTableMode(cabinet) === 'RFID';
 }
 
+export function resolveNarcoticTrolleyId(cabinet: CabinetTabCabinet | null): number | null {
+  if (!cabinet) return null;
+  if (cabinet.trolley_id != null && Number(cabinet.trolley_id) > 0) return Number(cabinet.trolley_id);
+  if (cabinet.stock_id != null && Number(cabinet.stock_id) > 0) return Number(cabinet.stock_id);
+  return null;
+}
+
+function cabinetHasSelectableKey(cabinet: CabinetTabCabinet): boolean {
+  if (cabinetStockTableMode(cabinet) === 'NARCOTIC') {
+    return resolveNarcoticTrolleyId(cabinet) != null;
+  }
+  return cabinet.stock_id != null && Number(cabinet.stock_id) > 0;
+}
+
 /** ตู้แรกที่เลือกอัตโนมัติ: ถ้ามี preferredMode ใช้ประเภทนั้นก่อน */
 export function pickDefaultCabinet(
   sorted: CabinetTabCabinet[],
   preferredMode?: CabinetStockTableMode,
 ): CabinetTabCabinet | null {
-  const ws = sorted.filter((c) => c.stock_id != null && Number(c.stock_id) > 0);
+  const ws = sorted.filter(cabinetHasSelectableKey);
   if (ws.length === 0) return null;
   if (preferredMode) {
     return ws.find((c) => cabinetStockTableMode(c) === preferredMode) ?? null;
@@ -90,6 +109,9 @@ function typeBadgeText(c: CabinetTabCabinet): string {
 }
 
 function cabinetTitle(c: CabinetTabCabinet): string {
+  if (cabinetStockTableMode(c) === 'NARCOTIC') {
+    return (c.cabinet_name || c.cabinet_code || `Trolley ${c.trolley_id ?? c.stock_id ?? ''}`).trim();
+  }
   return (c.cabinet_name || c.cabinet_code || `Stock ${c.stock_id ?? ''}`).trim();
 }
 
@@ -98,6 +120,11 @@ function typeBadgeClass(mode: CabinetStockTableMode, selected: boolean) {
     return selected
       ? 'border-violet-400 bg-violet-100/90 text-violet-900'
       : 'border-violet-300/90 bg-violet-50 text-violet-900';
+  }
+  if (mode === 'NARCOTIC') {
+    return selected
+      ? 'border-rose-400 bg-rose-100/90 text-rose-900'
+      : 'border-rose-300/90 bg-rose-50 text-rose-900';
   }
   return selected
     ? 'border-amber-400 bg-amber-100/80 text-amber-950'
@@ -206,41 +233,39 @@ function TypeModeSwitch({
   typeMode,
   weighingCount,
   rfidCount,
+  narcoticCount,
   onTypeModeChange,
 }: {
   typeMode: CabinetStockTableMode;
   weighingCount: number;
   rfidCount: number;
+  narcoticCount: number;
   onTypeModeChange: (mode: CabinetStockTableMode) => void;
 }) {
+  const tab = (
+    mode: CabinetStockTableMode,
+    label: string,
+    count: number,
+    activeClass: string,
+  ) => (
+    <button
+      type="button"
+      onClick={() => onTypeModeChange(mode)}
+      className={cn(
+        'inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-all',
+        typeMode === mode ? activeClass : 'text-slate-600 hover:bg-white',
+      )}
+    >
+      {label}
+      <span className="text-xs font-medium tabular-nums opacity-70">({count})</span>
+    </button>
+  );
+
   return (
-    <div className="inline-flex w-fit max-w-full items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50/80 p-1">
-      <button
-        type="button"
-        onClick={() => onTypeModeChange('WEIGHING')}
-        className={cn(
-          'inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-all',
-          typeMode === 'WEIGHING'
-            ? 'bg-amber-100 text-amber-950 shadow-sm ring-1 ring-amber-400/70'
-            : 'text-slate-600 hover:bg-white',
-        )}
-      >
-        WEIGHING
-        <span className="text-xs font-medium tabular-nums opacity-70">({weighingCount})</span>
-      </button>
-      <button
-        type="button"
-        onClick={() => onTypeModeChange('RFID')}
-        className={cn(
-          'inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-all',
-          typeMode === 'RFID'
-            ? 'bg-violet-100 text-violet-950 shadow-sm ring-1 ring-violet-400/70'
-            : 'text-slate-600 hover:bg-white',
-        )}
-      >
-        RFID
-        <span className="text-xs font-medium tabular-nums opacity-70">({rfidCount})</span>
-      </button>
+    <div className="inline-flex w-fit max-w-full flex-wrap items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50/80 p-1">
+      {tab('WEIGHING', 'WEIGHING', weighingCount, 'bg-amber-100 text-amber-950 shadow-sm ring-1 ring-amber-400/70')}
+      {tab('RFID', 'RFID', rfidCount, 'bg-violet-100 text-violet-950 shadow-sm ring-1 ring-violet-400/70')}
+      {tab('NARCOTIC', 'ตู้นาโคติก', narcoticCount, 'bg-rose-100 text-rose-950 shadow-sm ring-1 ring-rose-400/70')}
     </div>
   );
 }
@@ -253,10 +278,22 @@ export default function CabinetStockTabs({
   typeMode,
   onTypeModeChange,
 }: CabinetStockTabsProps) {
-  const withStock = cabinets.filter((c) => c.stock_id != null && Number(c.stock_id) > 0);
-  const weighingCabinets = withStock.filter((c) => cabinetStockTableMode(c) === 'WEIGHING');
-  const rfidCabinets = withStock.filter((c) => cabinetStockTableMode(c) === 'RFID');
-  const visible = typeMode === 'RFID' ? rfidCabinets : weighingCabinets;
+  const weighingCabinets = cabinets.filter(
+    (c) => cabinetStockTableMode(c) === 'WEIGHING' && c.stock_id != null && Number(c.stock_id) > 0,
+  );
+  const rfidCabinets = cabinets.filter(
+    (c) => cabinetStockTableMode(c) === 'RFID' && c.stock_id != null && Number(c.stock_id) > 0,
+  );
+  const narcoticCabinets = cabinets.filter(
+    (c) => cabinetStockTableMode(c) === 'NARCOTIC' && resolveNarcoticTrolleyId(c) != null,
+  );
+  const withStock = weighingCabinets.length + rfidCabinets.length + narcoticCabinets.length;
+  const visible =
+    typeMode === 'RFID'
+      ? rfidCabinets
+      : typeMode === 'NARCOTIC'
+        ? narcoticCabinets
+        : weighingCabinets;
 
   if (loading) {
     return (
@@ -265,6 +302,7 @@ export default function CabinetStockTabs({
           typeMode={typeMode}
           weighingCount={0}
           rfidCount={0}
+          narcoticCount={0}
           onTypeModeChange={onTypeModeChange}
         />
         <div className="flex min-h-[72px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-4 py-5 text-sm text-gray-500 md:py-6">
@@ -281,15 +319,18 @@ export default function CabinetStockTabs({
           typeMode={typeMode}
           weighingCount={weighingCabinets.length}
           rfidCount={rfidCabinets.length}
+          narcoticCount={narcoticCabinets.length}
           onTypeModeChange={onTypeModeChange}
         />
       </div>
 
       {visible.length === 0 ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
-          {withStock.length === 0
-            ? 'ไม่พบตู้ที่มี stock_id — ไม่สามารถแสดงการ์ดตู้ได้'
-            : `ไม่พบตู้ประเภท ${typeMode}`}
+          {withStock === 0
+            ? 'ไม่พบตู้ที่มี stock_id / trolley_id — ไม่สามารถแสดงการ์ดตู้ได้'
+            : typeMode === 'NARCOTIC'
+              ? 'ไม่พบตู้นาโคติกที่มี trolley_id'
+              : `ไม่พบตู้ประเภท ${typeMode}`}
         </div>
       ) : (
         <>

@@ -15,6 +15,13 @@ function toNullableIp({ value }: { value: unknown }): string | null {
   return ip || null;
 }
 
+function toNullableInt({ value }: { value: unknown }): number | null | unknown {
+  if (value === '' || value == null) return null;
+  if (typeof value === 'number') return Number.isFinite(value) ? Math.trunc(value) : value;
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.trunc(n) : value;
+}
+
 const IPV4_PATTERN =
   /^(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)$/;
 
@@ -35,6 +42,14 @@ export class CreateCabinetDto {
   @IsInt()
   @Type(() => Number)
   stock_id?: number;
+
+  /** ตู้นาโคติก — ตรงกับ item_narcotic_detail.trolley_id */
+  @IsOptional()
+  @Transform(toNullableInt)
+  @ValidateIf((_, v) => v != null)
+  @IsInt()
+  @Min(1)
+  trolley_id?: number | null;
 
   @IsOptional()
   @Transform(toNullableIp)
@@ -102,6 +117,13 @@ export class UpdateCabinetDto {
   @IsInt()
   @Type(() => Number)
   stock_id?: number;
+
+  @IsOptional()
+  @Transform(toNullableInt)
+  @ValidateIf((_, v) => v != null)
+  @IsInt()
+  @Min(1)
+  trolley_id?: number | null;
 
   @IsOptional()
   @Transform(toNullableIp)

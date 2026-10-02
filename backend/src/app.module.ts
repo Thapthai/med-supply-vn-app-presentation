@@ -18,6 +18,7 @@ import { StickerPrintModule } from './sticker-print/sticker-print.module';
 import { EmpolyeeModule } from './empolyee/empolyee.module';
 import { DepartmentDispenseModule } from './department-dispense/department-dispense.module';
 import { CabinetSlotLocationModule } from './cabinet-slot-location/cabinet-slot-location.module';
+import { NarcoticModule } from './narcotic/narcotic.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { CabinetSlotLocationModule } from './cabinet-slot-location/cabinet-slot-
     EmpolyeeModule,
     DepartmentDispenseModule,
     CabinetSlotLocationModule,
+    NarcoticModule,
   ],
   controllers: [AppController],
   providers: [AppService],

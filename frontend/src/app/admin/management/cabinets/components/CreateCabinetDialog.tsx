@@ -70,6 +70,7 @@ export default function CreateCabinetDialog({
     resolver: zodResolver(cabinetFormSchema),
     defaultValues,
   });
+  const cabinetType = form.watch('cabinet_type');
 
   useEffect(() => {
     if (!open) {
@@ -101,8 +102,10 @@ export default function CreateCabinetDialog({
         hum_max: climatePayload(values.hum_max),
       };
       if (divisionIds[0]) data.department_id = divisionIds[0];
-      const stockId = stockIdFromMachineIp(values.machine_ip);
-      if (stockId != null) data.stock_id = stockId;
+      if (values.cabinet_type !== 'NARCOTIC') {
+        const stockId = stockIdFromMachineIp(values.machine_ip);
+        if (stockId != null) data.stock_id = stockId;
+      }
       if (values.machine_ip?.trim()) data.machine_ip = values.machine_ip.trim();
 
       const response = await cabinetApi.create(data);
@@ -295,7 +298,7 @@ export default function CreateCabinetDialog({
                       value={field.value ?? ''}
                     />
                   </FormControl>
-                  <p className="text-xs text-muted-foreground">{machineIpHint(field.value)}</p>
+                  <p className="text-xs text-muted-foreground">{machineIpHint(field.value, null, cabinetType)}</p>
                   <FormMessage />
                 </FormItem>
               )}

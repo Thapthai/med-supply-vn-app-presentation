@@ -1,10 +1,11 @@
-export const CABINET_TYPES = ['WEIGHING', 'RFID'] as const;
+export const CABINET_TYPES = ['WEIGHING', 'RFID', 'NARCOTIC'] as const;
 
 export type CabinetTypeCode = (typeof CABINET_TYPES)[number];
 
 export const CABINET_TYPE_OPTIONS: { value: CabinetTypeCode; label: string }[] = [
   { value: 'WEIGHING', label: 'WEIGHING' },
   { value: 'RFID', label: 'RFID' },
+  { value: 'NARCOTIC', label: 'ตู้นาโคติก (Narcotic Cabinet)' },
 ];
 
 export function normalizeCabinetType(value?: string | null): CabinetTypeCode | '' {
@@ -31,6 +32,7 @@ export type CabinetRow = {
   cabinet_code?: string;
   cabinet_type?: string;
   stock_id?: number;
+  trolley_id?: number | null;
   machine_ip?: string | null;
   cabinet_status?: string;
   temp_min?: number | string | null;
@@ -67,6 +69,10 @@ export function climatePayload(raw?: string): number | null {
   if (!raw?.trim()) return null;
   const n = Number(raw.trim());
   return Number.isFinite(n) ? n : null;
+}
+
+export function isNarcoticCabinetType(value?: string | null): boolean {
+  return (value ?? '').toUpperCase().includes('NARCOTIC');
 }
 
 export function climateFormError(values: {
@@ -117,15 +123,23 @@ export function stockIdFromMachineIp(raw?: string): number | null {
   return Number(parts[3]) + 1;
 }
 
-export function machineIpHint(ip?: string, currentStockId?: number | null): string {
+export function machineIpHint(
+  ip?: string,
+  currentStockId?: number | null,
+  cabinetType?: string | null,
+  currentTrolleyId?: number | null,
+): string {
   const typed = ip?.trim() ?? '';
   const derived = stockIdFromMachineIp(typed);
-  if (derived != null) return `Stock ID ที่จะใช้: ${derived}`;
+  const narcotic = isNarcoticCabinetType(cabinetType);
+  const idLabel = narcotic ? 'Trolley ID' : 'Stock ID';
+  const currentId = narcotic ? (currentTrolleyId ?? currentStockId) : currentStockId;
+  if (derived != null) return `${idLabel} ที่จะใช้: ${derived}`;
   if (typed) return 'รูปแบบ IP ไม่ถูกต้อง เช่น 192.168.1.2';
-  if (currentStockId != null && currentStockId > 0) {
-    return `Stock ID ปัจจุบัน: ${currentStockId} — กรอก IP เพื่อเปลี่ยน (ท้าย .0 = 1, ท้าย .2 = 3)`;
+  if (currentId != null && currentId > 0) {
+    return `${idLabel} ปัจจุบัน: ${currentId} — กรอก IP เพื่อเปลี่ยน (ท้าย .0 = 1, ท้าย .2 = 3)`;
   }
-  return 'ไม่กรอกระบบจะสร้าง Stock ID ให้อัตโนมัติ (ท้าย .0 = 1, ท้าย .2 = 3)';
+  return `ไม่กรอกระบบจะสร้าง ${idLabel} ให้อัตโนมัติ (ท้าย .0 = 1, ท้าย .2 = 3)`;
 }
 
 export function formatClimateRange(

@@ -6,19 +6,22 @@ import { cabinetApi, reportsApi } from '@/lib/api';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AppLayout from '@/components/AppLayout';
 import { toast } from 'sonner';
-import { Download, Package } from 'lucide-react';
+import { Download, Package, Search } from 'lucide-react';
 import type { Item } from '@/types/item';
 import UpdateMinMaxDialog from '../items/components/UpdateMinMaxDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import CabinetStockTabs, {
   cabinetStockTableMode,
   pickDefaultCabinet,
+  resolveNarcoticTrolleyId,
   type CabinetStockTableMode,
   type CabinetTabCabinet,
 } from './components/CabinetStockTabs';
 import WeighingStockTable from './components/WeighingStockTable';
 import RfidStockTable from './components/RfidStockTable';
+import NarcoticCabinetLayout from './components/NarcoticCabinetLayout';
 import {
   RfidStockReportDownloadGroups,
   WeighingStockReportDownloadGroups,
@@ -153,6 +156,11 @@ export default function ItemsStockPage() {
     return Number.isFinite(n) && n > 0 ? n : null;
   }, [stockIdFilter]);
 
+  const narcoticTrolleyId = useMemo(
+    () => (tableMode === 'NARCOTIC' ? resolveNarcoticTrolleyId(selectedCabinet) : null),
+    [tableMode, selectedCabinet],
+  );
+
   const handleSearch = () => {
     setAppliedItemName(itemNameDraft.trim());
     setCurrentPage(1);
@@ -165,10 +173,15 @@ export default function ItemsStockPage() {
   };
 
   const handleSelectCabinet = (c: CabinetTabCabinet) => {
-    if (c.stock_id == null || Number(c.stock_id) <= 0) return;
-    setTypeMode(cabinetStockTableMode(c));
+    const mode = cabinetStockTableMode(c);
+    if (mode === 'NARCOTIC') {
+      if (resolveNarcoticTrolleyId(c) == null) return;
+    } else if (c.stock_id == null || Number(c.stock_id) <= 0) {
+      return;
+    }
+    setTypeMode(mode);
     setSelectedCabinetId(c.id);
-    setStockIdFilter(String(c.stock_id));
+    setStockIdFilter(c.stock_id != null && Number(c.stock_id) > 0 ? String(c.stock_id) : '');
     setCurrentPage(1);
   };
 
@@ -179,9 +192,13 @@ export default function ItemsStockPage() {
     setStatusFilter('all');
     setStockExpiryAfterDay('');
     const first = pickDefaultCabinet(cabinets, mode);
-    if (first?.stock_id != null && Number(first.stock_id) > 0) {
+    const canSelect =
+      mode === 'NARCOTIC'
+        ? resolveNarcoticTrolleyId(first) != null
+        : first?.stock_id != null && Number(first.stock_id) > 0;
+    if (first && canSelect) {
       setSelectedCabinetId(first.id);
-      setStockIdFilter(String(first.stock_id));
+      setStockIdFilter(first.stock_id != null && Number(first.stock_id) > 0 ? String(first.stock_id) : '');
     } else {
       setSelectedCabinetId(null);
       setStockIdFilter('');
@@ -366,7 +383,7 @@ export default function ItemsStockPage() {
             <div className="min-w-0">
               <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">สต๊อกอุปกรณ์ตามตู้</h1>
               <p className="text-sm text-gray-500">
-                เลือกประเภท RFID หรือ WEIGHING แล้วเลือกตู้ — ตู้ชั่งแสดงช่อง/สล็อต ตู้ RFID แสดงวันหมดอายุและแท็ก
+                เลือกประเภท RFID, WEIGHING หรือตู้นาโคติก แล้วเลือกตู้ — ตู้ชั่งเป็นตาราง ตู้ RFID แสดงวันหมดอายุ ตู้นาโคติกแสดงผังลิ้นชัก/ช่อง
               </p>
             </div>
           </div>
@@ -390,11 +407,31 @@ export default function ItemsStockPage() {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0 space-y-0.5">
                   <CardTitle className="text-lg leading-tight">
-                    {tableMode === 'RFID' ? 'รายการในตู้ (RFID)' : 'รายการในตู้ (Weighing)'}
+                    {tableMode === 'RFID'
+                      ? 'รายการในตู้ (RFID)'
+                      : tableMode === 'NARCOTIC'
+                        ? 'รายการในตู้ (ตู้นาโคติก)'
+                        : 'รายการในตู้ (Weighing)'}
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">ทั้งหมด {listStats.systemTotal} รายการจากระบบ</p>
                 </div>
-                {tableMode !== 'WEIGHING' && !(tableMode === 'RFID' && selectedCabinetId != null) && (
+                {tableMode === 'NARCOTIC' ? (
+                  <div className="relative w-full min-w-0 sm:max-w-sm">
+                    <Search
+                      className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                      aria-hidden
+                    />
+                    <Input
+                      type="search"
+                      autoComplete="off"
+                      placeholder="ค้นหา รหัส / ชื่ออุปกรณ์"
+                      value={itemNameDraft}
+                      onChange={(e) => setItemNameDraft(e.target.value)}
+                      className="h-9 border-slate-200 bg-white pl-9 text-sm shadow-none"
+                    />
+                  </div>
+                ) : null}
+                {tableMode === 'RFID' && selectedCabinetId == null && (
                   <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
                     <Button
                       type="button"
@@ -412,7 +449,21 @@ export default function ItemsStockPage() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              {tableMode === 'WEIGHING' ? (
+              {tableMode === 'NARCOTIC' ? (
+                <NarcoticCabinetLayout
+                  trolleyId={narcoticTrolleyId}
+                  stockId={stockIdParsed}
+                  appliedItemName={appliedItemName}
+                  refetchSignal={refetchTick}
+                  onLoadingChange={setListLoading}
+                  onStatsChange={setListStats}
+                  keywordDraft={itemNameDraft}
+                  onKeywordDraftChange={setItemNameDraft}
+                  onSearch={handleSearch}
+                  onClearSearch={handleClearSearch}
+                  listLoading={listLoading}
+                />
+              ) : tableMode === 'WEIGHING' ? (
                 <WeighingStockTable
                   stockId={stockIdParsed}
                   appliedItemName={appliedItemName}

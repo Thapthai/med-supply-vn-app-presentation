@@ -2457,6 +2457,7 @@ export const cabinetApi = {
     cabinet_code?: string;
     cabinet_type?: string;
     stock_id?: number;
+    trolley_id?: number | null;
     machine_ip?: string | null;
     cabinet_status?: string;
     department_id?: number;
@@ -2474,6 +2475,7 @@ export const cabinetApi = {
     cabinet_code?: string;
     cabinet_type?: string;
     stock_id?: number;
+    trolley_id?: number | null;
     machine_ip?: string | null;
     cabinet_status?: string;
     temp_min?: number | null;
@@ -2581,6 +2583,96 @@ export const weighingApi = {
       cabinetId != null ? `/weighing/${code}/minmax?cabinet_id=${cabinetId}` : `/weighing/${code}/minmax`;
     const response = await api.patch(url, data);
     return response.data;
+  },
+};
+
+export type NarcoticSlot = {
+  id: number;
+  trolley_id: number;
+  drawer: number;
+  box: number;
+  itemcode: string;
+  itemname?: string | null;
+  qty: number;
+  item_min: number;
+  item_max: number;
+  permission_id: number;
+  low_stock?: boolean;
+};
+
+export type NarcoticDetail = {
+  id: number;
+  trolley_id: number;
+  drawer: number;
+  box: number;
+  itemcode: string;
+  itemname?: string | null;
+  qty: number;
+  sign: string;
+  sign_label?: string;
+  userid1: string;
+  userid2: string;
+  note: string;
+  modify_date: string;
+};
+
+export const narcoticApi = {
+  getLayout: async (trolleyId: number) => {
+    const response = await api.get('/narcotic/layout', { params: { trolleyId } });
+    return response.data as {
+      success: boolean;
+      data: {
+        trolley_id: number;
+        cabinet: {
+          id: number;
+          cabinet_name: string | null;
+          cabinet_code: string | null;
+          trolley_id?: number | null;
+        } | null;
+        drawers: Array<{ drawer: number; box_count: number; boxes: NarcoticSlot[] }>;
+      };
+    };
+  },
+
+  getSlots: async (params?: {
+    trolleyId?: number;
+    keyword?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const response = await api.get('/narcotic', { params });
+    return response.data as { success: boolean; data: NarcoticSlot[]; meta?: { total: number } };
+  },
+
+  getDetails: async (params?: {
+    trolleyId?: number;
+    drawer?: number;
+    box?: number;
+    itemcode?: string;
+    keyword?: string;
+    sign?: '+' | '-';
+    dateFrom?: string;
+    dateTo?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const response = await api.get('/narcotic/details', { params });
+    return response.data as { success: boolean; data: NarcoticDetail[]; meta?: { total: number } };
+  },
+
+  getDispense: async (params?: {
+    trolleyId?: number;
+    drawer?: number;
+    box?: number;
+    itemcode?: string;
+    keyword?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const response = await api.get('/narcotic/dispense', { params });
+    return response.data as { success: boolean; data: NarcoticDetail[]; meta?: { total: number } };
   },
 };
 

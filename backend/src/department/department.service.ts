@@ -13,6 +13,21 @@ function normalizeMachineIp(raw?: string | null): string | null {
   return ip || null;
 }
 
+function isNarcoticCabinetType(value?: string | null): boolean {
+  return (value ?? '').toUpperCase().includes('NARCOTIC');
+}
+
+function resolveTrolleyId(
+  cabinetType?: string | null,
+  ...candidates: Array<number | null | undefined>
+): number | null {
+  if (!isNarcoticCabinetType(cabinetType)) return null;
+  for (const value of candidates) {
+    if (value != null && value > 0) return value;
+  }
+  return null;
+}
+
 /** stock_id = เลขท้าย IPv4 + 1 เช่น 192.168.1.2 → 3 */
 function stockIdFromMachineIp(raw?: string | null): number | null {
   const ip = normalizeMachineIp(raw);
@@ -206,10 +221,13 @@ export class DepartmentService {
 
   async createCabinet(data: CreateCabinetDto) {
     try {
-      const { department_id, machine_ip: rawIp, ...rest } = data;
+      const { department_id, machine_ip: rawIp, trolley_id: rawTrolley, ...rest } = data;
       const machine_ip = normalizeMachineIp(rawIp);
+      const derivedFromIp = stockIdFromMachineIp(machine_ip);
+      const isNarcotic = isNarcoticCabinetType(data.cabinet_type);
       let cabinet_code = data.cabinet_code?.trim();
-      let stock_id = data.stock_id ?? stockIdFromMachineIp(machine_ip) ?? undefined;
+      /** ตู้นาโคติก: เลขจาก IP เก็บที่ trolley_id เท่านั้น อย่าเขียนทับ stock_id */
+      let stock_id = isNarcotic ? undefined : (data.stock_id ?? derivedFromIp ?? undefined);
       if (!cabinet_code || stock_id == null) {
         const generated = await this.generateCabinetCode({
           hospitalPrefix: this.HOSPITAL_PREFIX,
@@ -219,11 +237,13 @@ export class DepartmentService {
         if (!cabinet_code) cabinet_code = generated.cabinet_code;
         if (stock_id == null) stock_id = generated.stock_id;
       }
+      const trolley_id = resolveTrolleyId(data.cabinet_type, rawTrolley, derivedFromIp, stock_id);
       const cabinet = await this.prisma.cabinet.create({
         data: {
           ...rest,
           cabinet_code,
           stock_id,
+          trolley_id,
           machine_ip,
           ...(department_id ? { cabinet_status: 'USED' } : {}),
         },
@@ -259,6 +279,9 @@ export class DepartmentService {
         if (lowerTargets.includes('stock_id')) {
           return { success: false, message: 'ไม่สามารถสร้างตู้ได้: stock_id ซ้ำในระบบ', error: err.message };
         }
+        if (lowerTargets.includes('trolley_id')) {
+          return { success: false, message: 'ไม่สามารถสร้างตู้ได้: trolley_id ซ้ำในระบบ', error: err.message };
+        }
         if (lowerTargets.includes('cabinet_code')) {
           return { success: false, message: 'ไม่สามารถสร้างตู้ได้: cabinet_code ซ้ำในระบบ', error: err.message };
         }
@@ -284,10 +307,14 @@ export class DepartmentService {
     const skip = (page - 1) * limit;
     const where: any = {};
     if (query?.keyword) {
+      const keywordNum = parseInt(query.keyword, 10);
       where.OR = [
         { cabinet_name: { contains: query.keyword } },
         { cabinet_code: { contains: query.keyword } },
         { machine_ip: { contains: query.keyword } },
+        ...(Number.isFinite(keywordNum)
+          ? [{ trolley_id: keywordNum }, { stock_id: keywordNum }]
+          : []),
       ];
     }
 
@@ -354,19 +381,30 @@ export class DepartmentService {
 
   async updateCabinet(id: number, data: UpdateCabinetDto) {
     try {
-      const { machine_ip: rawIp, stock_id: rawStock, ...rest } = data;
+      const { machine_ip: rawIp, stock_id: rawStock, trolley_id: rawTrolley, ...rest } = data;
       const machine_ip = rawIp !== undefined ? normalizeMachineIp(rawIp) : undefined;
       const derivedStock = machine_ip ? stockIdFromMachineIp(machine_ip) : null;
+      const existing = await this.prisma.cabinet.findUnique({
+        where: { id },
+        select: { cabinet_type: true, stock_id: true, trolley_id: true },
+      });
+      const nextType = data.cabinet_type ?? existing?.cabinet_type;
+      const isNarcotic = isNarcoticCabinetType(nextType);
       const cabinet = await this.prisma.cabinet.update({
         where: { id },
         data: {
           ...rest,
           ...(machine_ip !== undefined ? { machine_ip } : {}),
-          ...(derivedStock != null
-            ? { stock_id: derivedStock }
-            : rawStock != null
-              ? { stock_id: rawStock }
-              : {}),
+          ...(isNarcotic
+            ? {}
+            : derivedStock != null
+              ? { stock_id: derivedStock }
+              : rawStock != null
+                ? { stock_id: rawStock }
+                : {}),
+          trolley_id: isNarcotic
+            ? resolveTrolleyId(nextType, derivedStock, rawTrolley, existing?.trolley_id)
+            : null,
         },
       });
       return { success: true, message: 'อัปเดตตู้แล้ว', data: cabinet };
@@ -383,6 +421,9 @@ export class DepartmentService {
         const lowerTargets = targets.map((t) => t.toLowerCase());
         if (lowerTargets.includes('stock_id')) {
           return { success: false, message: 'ไม่สามารถอัปเดตตู้ได้: stock_id ซ้ำในระบบ', error: err.message };
+        }
+        if (lowerTargets.includes('trolley_id')) {
+          return { success: false, message: 'ไม่สามารถอัปเดตตู้ได้: trolley_id ซ้ำในระบบ', error: err.message };
         }
         if (lowerTargets.includes('cabinet_code')) {
           return { success: false, message: 'ไม่สามารถอัปเดตตู้ได้: cabinet_code ซ้ำในระบบ', error: err.message };

@@ -85,7 +85,7 @@ const cabinetFormObject = z.object({
     .refine((v) => !v?.trim() || stockIdFromMachineIp(v) != null, {
       message: 'รูปแบบ IP ไม่ถูกต้อง เช่น 192.168.1.2',
     }),
-  cabinet_type: z.enum(['WEIGHING', 'RFID'], {
+  cabinet_type: z.enum(['WEIGHING', 'RFID', 'NARCOTIC'], {
     message: 'กรุณาเลือกประเภทตู้',
   }),
   temp_min: optionalLimit('อุณหภูมิต่ำสุด', -50, 80),

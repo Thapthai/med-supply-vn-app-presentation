@@ -331,6 +331,8 @@ model Item {
   itemDepartments                 ItemDepartments[]
   departmentDispenseDocumentLines DepartmentDispenseDocumentLine[]
   itemStorageLocations            ItemStorageLocation[]
+  itemNarcotics                   ItemNarcotic[]
+  itemNarcoticDetails             ItemNarcoticDetail[]
 
   @@index([itemtypeID])
   @@index([SubUnitID], map: "idx_item_sub_unit_id")
@@ -664,6 +666,8 @@ model cabinet {
   cabinet_type   String?  @map("cabinet_type") @db.VarChar(255)
   cabinet_status String?  @default("ACTIVE") @map("cabinet_status") @db.VarChar(255)
   stock_id       Int?     @unique() @map("stock_id")
+  /// รหัส trolley ของตู้นาโคติก — ตรงกับ item_narcotic / item_narcotic_detail.trolley_id
+  trolley_id     Int?     @unique() @map("trolley_id")
   /// IP เครื่องตู้ — stock_id = เลขท้าย IP + 1
   machine_ip     String?  @map("machine_ip") @db.VarChar(45)
   /// เกณฑ์อุณหภูมิ (°C)
@@ -682,6 +686,8 @@ model cabinet {
   itemSlotInCabinet       ItemSlotInCabinet[]
   cabinetSlotLocations    CabinetSlotLocation[]
   stickerPrintHistories   StickerPrintHistory[]
+  itemNarcotics           ItemNarcotic[]
+  itemNarcoticSets        ItemNarcoticSet[]
 
   @@map("app_cabinets")
 }
@@ -993,6 +999,84 @@ model Unit {
   itemsSubUnit Item[] @relation("ItemSubUnit")
 
   @@map("units")
+}
+
+/// ช่องยาในตู้นาโคติก — ตาราง `item_narcotic` (trolley_id = app_cabinets.trolley_id)
+model ItemNarcotic {
+  id              Int      @id @default(autoincrement())
+  trolley_id      Int      @map("trolley_id")
+  drawer          Int
+  box             Int
+  itemcode        String   @default("") @db.VarChar(20)
+  qty             Int      @default(0)
+  item_min        Int      @default(0) @map("item_min")
+  item_max        Int      @default(0) @map("item_max")
+  permission_id   Int      @default(1) @map("permission_id")
+  weight_per_item Decimal  @default(0.0000) @map("weight_per_item") @db.Decimal(10, 4)
+  last_weight_g   Decimal  @default(0.0000) @map("last_weight_g") @db.Decimal(10, 4)
+  weight_tare_g   Decimal  @default(0.0000) @map("weight_tare_g") @db.Decimal(10, 4)
+  created_at      DateTime @default(now()) @map("created_at")
+  updated_at      DateTime @updatedAt @map("updated_at")
+
+  item       Item?                   @relation(fields: [itemcode], references: [itemcode])
+  cabinet    cabinet?                @relation(fields: [trolley_id], references: [trolley_id])
+  setDetails ItemNarcoticSetDetail[]
+
+  @@unique([trolley_id, drawer, box], map: "uq_slot")
+  @@map("item_narcotic")
+}
+
+/// ประวัติเติม/เบิกตู้นาโคติก — `item_narcotic_detail` (sign + = เติม, - = เบิก)
+model ItemNarcoticDetail {
+  id          Int      @id @default(autoincrement())
+  trolley_id  Int      @map("trolley_id")
+  drawer      Int
+  box         Int
+  itemcode    String   @default("") @db.VarChar(20)
+  qty         Int      @default(0)
+  sign        String   @default("+") @db.Char(1)
+  userid1     String   @default("") @map("userid1") @db.VarChar(50)
+  userid2     String   @default("") @map("userid2") @db.VarChar(50)
+  note        String   @default("") @db.VarChar(255)
+  modify_date DateTime @default(now()) @map("modify_date")
+
+  item Item? @relation(fields: [itemcode], references: [itemcode])
+
+  @@index([trolley_id, modify_date], map: "idx_trolley_date")
+  @@index([itemcode], map: "idx_itemcode")
+  @@index([trolley_id, drawer], map: "idx_drawer")
+  @@map("item_narcotic_detail")
+}
+
+/// ชุดยา preset ของตู้นาโคติก — `item_narcotic_set`
+model ItemNarcoticSet {
+  id         Int      @id @default(autoincrement())
+  trolley_id Int      @map("trolley_id")
+  set_name   String   @default("") @map("set_name") @db.VarChar(100)
+  created_by String   @default("") @map("created_by") @db.VarChar(150)
+  is_active  Boolean  @default(true) @map("is_active")
+  created_at DateTime @default(now()) @map("created_at")
+
+  cabinet cabinet?               @relation(fields: [trolley_id], references: [trolley_id])
+  details ItemNarcoticSetDetail[]
+
+  @@index([trolley_id, is_active], map: "idx_trolley_active")
+  @@map("item_narcotic_set")
+}
+
+/// รายการในชุดยา — `item_narcotic_set_detail`
+model ItemNarcoticSetDetail {
+  id      Int @id @default(autoincrement())
+  set_id  Int @map("set_id")
+  item_id Int @map("item_id")
+  qty     Int @default(1)
+
+  set  ItemNarcoticSet @relation(fields: [set_id], references: [id], onDelete: Cascade)
+  slot ItemNarcotic    @relation(fields: [item_id], references: [id], onDelete: Cascade)
+
+  @@index([set_id], map: "idx_set")
+  @@index([item_id], map: "idx_item")
+  @@map("item_narcotic_set_detail")
 }
 
  
